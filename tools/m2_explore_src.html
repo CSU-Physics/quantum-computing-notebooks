@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Module 2 Explorer: Bloch Sphere and Bases</title>
+<style>
+  :root { --maroon:#99004C; --ink:#24313D; --muted:#6A626B; --line:#E4DCE0; --tint:#F8F4F6; --gold:#C9A227; --ok:#2E7D4F; --bad:#B3261E; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:#fff; color:var(--ink); font-family:"Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size:15px; }
+  .tabs { display:flex; border-bottom:2px solid var(--line); background:var(--tint); }
+  .tabs button { flex:1; border:0; background:none; padding:10px 8px; font-size:15px; cursor:pointer; color:var(--muted); border-bottom:3px solid transparent; }
+  .tabs button.on { color:var(--maroon); border-bottom-color:var(--maroon); font-weight:600; background:#fff; }
+  .tool { display:none; padding:14px 16px; }
+  .tool.on { display:block; }
+  h2 { font-family:Georgia, serif; color:var(--maroon); font-size:19px; margin:0 0 6px; }
+  .hint { color:var(--muted); margin:0 0 12px; line-height:1.45; }
+  .grid { display:grid; grid-template-columns: 300px 1fr; gap:14px; align-items:start; }
+  @media (max-width: 660px) { .grid { grid-template-columns: 1fr; } }
+  .box { border:1px solid var(--line); border-radius:6px; padding:10px 12px; }
+  .box h3 { margin:0 0 8px; font-size:15px; color:var(--maroon); }
+  svg.sphere { width:100%; max-width:290px; height:auto; display:block; margin:0 auto; touch-action:none; cursor:grab; overflow:visible; }
+  .small { font-size:12.5px; color:var(--muted); text-align:center; margin:4px 0 0; }
+  label { display:flex; justify-content:space-between; margin:8px 0 2px; font-size:14px; }
+  input[type=range] { width:100%; }
+  .row { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+  button.act { border:2px solid var(--maroon); background:#fff; color:var(--maroon); padding:5px 10px; border-radius:5px; font-size:14px; cursor:pointer; }
+  button.act.fill { background:var(--maroon); color:#fff; }
+  .mono { font-family: Consolas, "Courier New", monospace; }
+  table { border-collapse:collapse; width:100%; font-size:14px; margin-top:8px; }
+  td, th { border:1px solid var(--line); padding:5px 8px; text-align:left; }
+  th { background:var(--tint); }
+  .pbar { display:flex; align-items:center; gap:8px; margin:6px 0; font-size:14px; }
+  .pbar .lab { width:92px; }
+  .pbar .track { flex:1; height:16px; background:var(--tint); border:1px solid var(--line); border-radius:3px; overflow:hidden; }
+  .pbar .fill { display:block; height:100%; background:var(--maroon); transition:width .2s; }
+  .pbar .track { display:block; }
+  .pbar .val { width:48px; text-align:right; font-family:Consolas, monospace; }
+  .note { margin-top:8px; padding:7px 10px; border-radius:4px; font-size:14px; background:#EEF6F0; color:var(--ok); line-height:1.4; }
+  .note.warn { background:#FFF7E0; color:#7A5C00; }
+  .credit { color:var(--muted); font-size:12px; padding:8px 16px 12px; border-top:1px solid var(--line); }
+  select { font-size:14px; padding:3px; }
+</style>
+</head>
+<body>
+<div class="tabs" role="tablist">
+  <button type="button" data-t="bloch" role="tab">1. Bloch sphere and phase</button>
+  <button type="button" data-t="tomo" role="tab">2. Measure in three bases</button>
+</div>
+
+<!-- TOOL 1 -->
+<section class="tool" id="t-bloch" role="tabpanel">
+  <h2>Bloch sphere and phase</h2>
+  <p class="hint">Set θ and φ to move the state on the sphere. The third slider multiplies the whole state by a global phase e<sup>iγ</sup>. Drag the sphere to turn it.</p>
+  <div class="grid">
+    <div class="box">
+      <svg class="sphere" id="sph1" aria-label="Bloch sphere showing the state"></svg>
+      <p class="small">Drag to turn · <a href="#" id="rv1" style="color:var(--maroon)">reset the view</a></p>
+    </div>
+    <div class="box">
+      <label for="th">θ <span class="mono" id="thv"></span></label>
+      <input id="th" type="range" min="0" max="180" step="1" value="60">
+      <label for="ph">φ (relative phase) <span class="mono" id="phv"></span></label>
+      <input id="ph" type="range" min="0" max="359" step="1" value="45">
+      <label for="ga">γ (global phase) <span class="mono" id="gav"></span></label>
+      <input id="ga" type="range" min="0" max="359" step="1" value="0">
+      <div class="row">
+        <button type="button" class="act" data-s="0,0">|0⟩</button>
+        <button type="button" class="act" data-s="180,0">|1⟩</button>
+        <button type="button" class="act" data-s="90,0">|+⟩</button>
+        <button type="button" class="act" data-s="90,180">|−⟩</button>
+        <button type="button" class="act" data-s="90,90">|+i⟩</button>
+        <button type="button" class="act" data-s="90,270">|−i⟩</button>
+        <button type="button" class="act" data-s="106.26,90">[0.6, 0.8i]</button>
+      </div>
+      <table>
+        <tr><th>State</th><td class="mono" id="st"></td></tr>
+        <tr><th>Bloch vector (x, y, z)</th><td class="mono" id="bv"></td></tr>
+      </table>
+      <div class="pbar"><span class="lab">Z: P(0)</span><span class="track"><span class="fill" id="pz"></span></span><span class="val" id="pzv"></span></div>
+      <div class="pbar"><span class="lab">X: P(+)</span><span class="track"><span class="fill" id="px"></span></span><span class="val" id="pxv"></span></div>
+      <div class="pbar"><span class="lab">Y: P(+i)</span><span class="track"><span class="fill" id="py"></span></span><span class="val" id="pyv"></span></div>
+      <div class="note" id="gnote"></div>
+    </div>
+  </div>
+</section>
+
+<!-- TOOL 2 -->
+<section class="tool" id="t-tomo" role="tabpanel">
+  <h2>Measure in three bases</h2>
+  <p class="hint">Prepare a state, measure N copies in each of the Z, X and Y bases, and estimate its Bloch vector from the counts alone: each coordinate is about 2f − 1, where f is the fraction of 0 results in that basis. Try a <strong>mystery state</strong> and find it before you reveal it.</p>
+  <div class="grid">
+    <div class="box">
+      <svg class="sphere" id="sph2" aria-label="Bloch sphere with the true and the estimated state"></svg>
+      <p class="small"><span style="color:var(--maroon)">■</span> true state &nbsp; <span style="color:var(--gold)">■</span> estimate · drag to turn</p>
+    </div>
+    <div class="box">
+      <div id="setters">
+        <label for="th2">θ <span class="mono" id="th2v"></span></label>
+        <input id="th2" type="range" min="0" max="180" step="1" value="120">
+        <label for="ph2">φ <span class="mono" id="ph2v"></span></label>
+        <input id="ph2" type="range" min="0" max="359" step="1" value="60">
+      </div>
+      <div class="row">
+        <label style="margin:0;align-items:center;gap:6px">Shots per basis N
+          <select id="n2"><option>100</option><option selected>1000</option><option>10000</option></select></label>
+      </div>
+      <div class="row">
+        <button type="button" class="act fill" id="run2">Measure in Z, X and Y</button>
+        <button type="button" class="act" id="mys">Mystery state</button>
+        <button type="button" class="act" id="rev">Reveal the state</button>
+      </div>
+      <table id="tab2">
+        <tr><th>Basis</th><th>0s</th><th>1s</th><th>Estimate 2f − 1</th><th>True value</th></tr>
+        <tr><td>X</td><td id="x0">–</td><td id="x1">–</td><td id="xe">–</td><td id="xt">–</td></tr>
+        <tr><td>Y</td><td id="y0">–</td><td id="y1">–</td><td id="ye">–</td><td id="yt">–</td></tr>
+        <tr><td>Z</td><td id="z0">–</td><td id="z1">–</td><td id="ze">–</td><td id="zt">–</td></tr>
+      </table>
+      <div class="note warn" id="tnote">Press "Measure in Z, X and Y" to start.</div>
+    </div>
+  </div>
+</section>
+
+<div class="credit">Module 2 explorer · Quantum Computing Foundations · SemiAcademy / ISEP-CSU · CC BY 4.0. Random numbers come from your browser, so your counts differ from other learners'. This is a practice tool: the graded values come from the lab notebook.</div>
+
+<script>
+(function () {
+/*BLOCH*/
+  var $ = function (id) { return document.getElementById(id); };
+  var D = Math.PI / 180;
+  function f3(x) { var r = Math.round(x * 1000) / 1000; return (Object.is(r, -0) ? 0 : r).toFixed(3).replace('-', '−'); }
+  function cx(re, im) {
+    if (Math.abs(im) < 5e-4) return f3(re);
+    if (Math.abs(re) < 5e-4) return f3(im) + 'i';
+    return '(' + f3(re) + (im < 0 ? ' − ' : ' + ') + f3(Math.abs(im)) + 'i)';
+  }
+  // ---------- tabs
+  var tabs = document.querySelectorAll('.tabs button');
+  function openTab(t) {
+    tabs.forEach(function (b) { b.classList.toggle('on', b.dataset.t === t); });
+    document.querySelectorAll('.tool').forEach(function (s) { s.classList.toggle('on', s.id === 't-' + t); });
+  }
+  tabs.forEach(function (b) { b.onclick = function () { openTab(b.dataset.t); }; });
+  function fromHash() { openTab(location.hash.indexOf('tomo') >= 0 ? 'tomo' : 'bloch'); }
+  window.addEventListener('hashchange', fromHash);
+  fromHash();
+
+  // ---------- draggable view
+  function dragView(svg, view, redraw) {
+    var start = null;
+    svg.addEventListener('pointerdown', function (e) { start = { x: e.clientX, y: e.clientY, az: view.az, el: view.el }; svg.setPointerCapture(e.pointerId); svg.style.cursor = 'grabbing'; });
+    svg.addEventListener('pointermove', function (e) {
+      if (!start) return;
+      view.az = start.az - (e.clientX - start.x) * 0.6;
+      view.el = Math.max(-80, Math.min(80, start.el + (e.clientY - start.y) * 0.4));
+      redraw();
+    });
+    function end() { start = null; svg.style.cursor = 'grab'; }
+    svg.addEventListener('pointerup', end); svg.addEventListener('pointercancel', end);
+  }
+
+  // ---------- tool 1
+  var v1 = { az: 25, el: 20 };
+  function bloch1() {
+    var th = +$('th').value * D, ph = +$('ph').value * D, ga = +$('ga').value * D;
+    $('thv').textContent = $('th').value + '°'; $('phv').textContent = $('ph').value + '°'; $('gav').textContent = $('ga').value + '°';
+    var a = Math.cos(th / 2), b = Math.sin(th / 2);
+    var ar = a * Math.cos(ga), ai = a * Math.sin(ga), br = b * Math.cos(ga + ph), bi = b * Math.sin(ga + ph);
+    $('st').textContent = cx(ar, ai) + '|0⟩ + ' + cx(br, bi) + '|1⟩';
+    var x = Math.sin(th) * Math.cos(ph), y = Math.sin(th) * Math.sin(ph), z = Math.cos(th);
+    $('bv').textContent = '(' + f3(x) + ', ' + f3(y) + ', ' + f3(z) + ')';
+    [['pz', z], ['px', x], ['py', y]].forEach(function (p) { var v = (1 + p[1]) / 2; $(p[0]).style.width = (v * 100) + '%'; $(p[0] + 'v').textContent = v.toFixed(3); });
+    drawBloch($('sph1'), { az: v1.az, el: v1.el, font: 0.15, pts: [{ v: [x, y, z], dot: true }], angles: { theta: th, phi: ph } });
+    $('gnote').textContent = +$('ga').value === 0
+      ? 'Now move γ. The amplitudes change, but the arrow and all three probabilities stay the same: a global phase is the same physical state.'
+      : 'γ = ' + $('ga').value + '°: the amplitudes are multiplied by e^(iγ), yet the arrow and every probability are unchanged. Only φ, the relative phase, moves the state.';
+  }
+  ['th', 'ph', 'ga'].forEach(function (id) { $(id).addEventListener('input', bloch1); });
+  document.querySelectorAll('[data-s]').forEach(function (b) {
+    b.onclick = function () { var s = b.dataset.s.split(','); $('th').value = Math.round(+s[0]); $('ph').value = s[1]; $('ga').value = 0; bloch1(); };
+  });
+  $('rv1').onclick = function (e) { e.preventDefault(); v1.az = 25; v1.el = 20; bloch1(); };
+  dragView($('sph1'), v1, bloch1);
+  bloch1();
+
+  // ---------- tool 2
+  var v2 = { az: 25, el: 20 }, mystery = null, revealed = true, est = null;
+  function truth() {
+    if (mystery) return mystery;
+    return { th: +$('th2').value * D, ph: +$('ph2').value * D };
+  }
+  function vec(s) { return [Math.sin(s.th) * Math.cos(s.ph), Math.sin(s.th) * Math.sin(s.ph), Math.cos(s.th)]; }
+  function bloch2() {
+    $('th2v').textContent = $('th2').value + '°'; $('ph2v').textContent = $('ph2').value + '°';
+    var pts = [], t = vec(truth());
+    if (revealed) pts.push({ v: t, c: '#99004C', dot: true });
+    if (est) pts.push({ v: est, c: '#C9A227', dash: true, dot: true });
+    drawBloch($('sph2'), { az: v2.az, el: v2.el, font: 0.15, pts: pts });
+    ['x', 'y', 'z'].forEach(function (c, i) { $(c + 't').textContent = revealed ? f3(t[i]) : 'hidden'; });
+  }
+  function sample(p, n) { var c = 0; for (var k = 0; k < n; k++) if (Math.random() < p) c++; return c; }
+  $('run2').onclick = function () {
+    var t = vec(truth()), n = +$('n2').value;
+    est = [0, 0, 0];
+    ['x', 'y', 'z'].forEach(function (c, i) {
+      var zeros = sample((1 + t[i]) / 2, n);
+      $(c + '0').textContent = zeros; $(c + '1').textContent = n - zeros;
+      est[i] = 2 * zeros / n - 1;
+      $(c + 'e').textContent = f3(est[i]);
+    });
+    var r = Math.sqrt(est[0] * est[0] + est[1] * est[1] + est[2] * est[2]);
+    var eth = Math.acos(Math.max(-1, Math.min(1, est[2] / (r || 1)))) / D, eph = (Math.atan2(est[1], est[0]) / D + 360) % 360;
+    var msg = 'Estimate: θ ≈ ' + eth.toFixed(0) + '°, φ ≈ ' + eph.toFixed(0) + '° (length ' + r.toFixed(2) + '; a pure state has length 1, shot noise makes it differ).';
+    if (revealed) {
+      var d = Math.sqrt(Math.pow(est[0] - t[0], 2) + Math.pow(est[1] - t[1], 2) + Math.pow(est[2] - t[2], 2));
+      msg += ' Distance from the true vector: ' + d.toFixed(3) + '. With N shots each coordinate is off by about 1/√N = ' + (1 / Math.sqrt(n)).toFixed(3) + ' or less.';
+    } else msg += ' Write down your guess for θ and φ, then press "Reveal the state".';
+    $('tnote').className = 'note'; $('tnote').textContent = msg;
+    bloch2();
+  };
+  $('mys').onclick = function () {
+    mystery = { th: Math.acos(2 * Math.random() - 1), ph: Math.random() * 2 * Math.PI };
+    revealed = false; est = null; $('setters').style.display = 'none';
+    ['x', 'y', 'z'].forEach(function (c) { ['0', '1', 'e'].forEach(function (k) { $(c + k).textContent = '–'; }); });
+    $('tnote').className = 'note warn'; $('tnote').textContent = 'A mystery state is ready. Measure it, estimate θ and φ from the counts, then reveal it.';
+    bloch2();
+  };
+  $('rev').onclick = function () {
+    if (mystery) {
+      $('th2').value = Math.round(mystery.th / D); $('ph2').value = Math.round(mystery.ph / D);
+      var m = mystery; mystery = null; revealed = true;
+      $('setters').style.display = '';
+      $('tnote').className = 'note'; $('tnote').textContent = 'The mystery state was θ = ' + (m.th / D).toFixed(0) + '°, φ = ' + (m.ph / D).toFixed(0) + '°. Compare with your estimate on the sphere and in the table.';
+    }
+    bloch2();
+  };
+  ['th2', 'ph2'].forEach(function (id) { $(id).addEventListener('input', function () { est = null; bloch2(); }); });
+  dragView($('sph2'), v2, bloch2);
+  bloch2();
+})();
+</script>
+</body>
+</html>
