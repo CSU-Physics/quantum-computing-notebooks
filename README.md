@@ -10,6 +10,17 @@ Site: https://csu-physics.github.io/quantum-computing-notebooks/
 | 1 | `content/level1/QC-L1-M1-lab-state-vectors.ipynb` | Module 1 Lab: State Vectors and Measurement | `lab/index.html?path=level1/QC-L1-M1-lab-state-vectors.ipynb` |
 | 1 | `content/level1/QC-L1-final-coding-task-GHZ.ipynb` | Final Coding Task: GHZ State | `lab/index.html?path=level1/QC-L1-final-coding-task-GHZ.ipynb` |
 
+## Course media (slides and explorers)
+
+The folder `media/` holds self-contained HTML pages that Canvas embeds next to the readings. The workflow copies it into the site, so each file is served at `https://csu-physics.github.io/quantum-computing-notebooks/media/...`.
+
+| File | What it is | Canvas page (course 51) |
+|---|---|---|
+| `media/level1/m1-slides.html` | Module 1 slide deck, 19 slides. Arrow keys or the buttons move between slides; **Print / PDF** gives one slide per page. `#s7` opens slide 7. | Module 1: From Bits to Qubits |
+| `media/level1/m1-explore.html` | Module 1 explorer: a state builder (`#state`) and a shot simulator (`#shots`). | Module 1: From Bits to Qubits |
+
+They use no outside libraries and no network calls, and they are licensed CC BY 4.0 (see each page's credit line). To change one, edit the HTML and commit; the site updates in about a minute.
+
 ## Why qsim and not Qiskit
 
 Qiskit and Qiskit Aer have no build for the browser (they need compiled Rust and C++ code). The labs therefore use **qsim** (`content/level1/qsim.py`), a small NumPy simulator written for the course. It keeps Qiskit's names (`QuantumCircuit`, `h`, `cx`, `ry`, `measure`, `measure_all`, `AerSimulator`, `transpile`, `Statevector`, `state_fidelity`, `plot_histogram`), its bit order and its error messages, so learner code carries over to Qiskit by changing the import lines.
