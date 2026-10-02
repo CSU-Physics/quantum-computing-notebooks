@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Module 1 Explorer: Qubit States and Shots</title>
+<style>
+  :root { --maroon:#99004C; --ink:#24313D; --muted:#6A626B; --line:#E4DCE0; --tint:#F8F4F6; --gold:#C9A227; --ok:#2E7D4F; --bad:#B3261E; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:#fff; color:var(--ink); font-family:"Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size:15px; }
+  .tabs { display:flex; border-bottom:2px solid var(--line); background:var(--tint); }
+  .tabs button { flex:1; border:0; background:none; padding:10px 8px; font-size:15px; cursor:pointer; color:var(--muted); border-bottom:3px solid transparent; }
+  .tabs button.on { color:var(--maroon); border-bottom-color:var(--maroon); font-weight:600; background:#fff; }
+  .tool { display:none; padding:14px 16px; }
+  .tool.on { display:block; }
+  h2 { font-family:Georgia, serif; color:var(--maroon); font-size:19px; margin:0 0 6px; }
+  .hint { color:var(--muted); margin:0 0 12px; line-height:1.45; }
+  .grid { display:grid; grid-template-columns: 1fr 1fr; gap:14px; }
+  @media (max-width: 640px) { .grid { grid-template-columns: 1fr; } }
+  .box { border:1px solid var(--line); border-radius:6px; padding:10px 12px; }
+  .box h3 { margin:0 0 8px; font-size:15px; color:var(--maroon); }
+  label { display:block; margin:6px 0 2px; font-size:14px; }
+  .amp { display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
+  .amp input { width:78px; padding:5px 6px; font-size:15px; border:1px solid #BBB; border-radius:4px; }
+  .row { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+  button.act { border:2px solid var(--maroon); background:#fff; color:var(--maroon); padding:6px 12px; border-radius:5px; font-size:14px; cursor:pointer; }
+  button.act.fill { background:var(--maroon); color:#fff; }
+  button.act:disabled { opacity:.4; cursor:default; }
+  .mono { font-family: Consolas, "Courier New", monospace; }
+  .status { margin-top:8px; padding:7px 10px; border-radius:4px; font-size:14px; }
+  .status.ok { background:#EEF6F0; color:var(--ok); }
+  .status.bad { background:#FBEDEC; color:var(--bad); }
+  .bars { display:flex; gap:24px; align-items:flex-end; height:140px; padding:6px 14px 0; border-bottom:2px solid var(--ink); }
+  .bar { flex:1; display:flex; flex-direction:column; justify-content:flex-end; align-items:center; height:100%; }
+  .bar .fill { width:70%; transition:height .25s; }
+  .bar .v { font-size:14px; margin-bottom:3px; }
+  .barlbl { display:flex; gap:24px; padding:3px 14px 0; }
+  .barlbl span { flex:1; text-align:center; }
+  .big { font-size:30px; font-weight:600; color:var(--maroon); }
+  table { border-collapse:collapse; width:100%; font-size:14px; }
+  td, th { border:1px solid var(--line); padding:5px 8px; text-align:left; }
+  th { background:var(--tint); }
+  .log { min-height:22px; font-size:14px; line-height:1.45; }
+  input[type=range] { width:100%; }
+  .credit { color:var(--muted); font-size:12px; padding:8px 16px 12px; border-top:1px solid var(--line); }
+  svg text { font-family:"Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+</style>
+</head>
+<body>
+<div class="tabs" role="tablist">
+  <button type="button" data-t="state" role="tab">1. State builder</button>
+  <button type="button" data-t="shots" role="tab">2. Shot simulator</button>
+</div>
+
+<!-- TOOL 1: STATE BUILDER -->
+<section class="tool" id="t-state" role="tabpanel">
+  <h2>State builder</h2>
+  <p class="hint">Type two amplitudes, α for |0⟩ and β for |1⟩, as a real part and an imaginary part. The builder checks whether the vector is a valid state, normalizes it, and lets you measure it.</p>
+  <div class="grid">
+    <div class="box">
+      <h3>Your vector [α, β]</h3>
+      <label>α (amplitude of |0⟩)</label>
+      <div class="amp"><input id="ar" type="number" step="0.1" value="3"> <span>+</span> <input id="ai" type="number" step="0.1" value="0"> <span>i</span></div>
+      <label>β (amplitude of |1⟩)</label>
+      <div class="amp"><input id="br" type="number" step="0.1" value="0"> <span>+</span> <input id="bi" type="number" step="0.1" value="4"> <span>i</span></div>
+      <div class="row">
+        <button type="button" class="act" data-p="1,0,0,0">|0⟩</button>
+        <button type="button" class="act" data-p="0,0,1,0">|1⟩</button>
+        <button type="button" class="act" data-p="0.7071,0,0.7071,0">|+⟩</button>
+        <button type="button" class="act" data-p="0.6,0,0,0.8">[0.6, 0.8i]</button>
+        <button type="button" class="act" data-p="0.5,0,0.5,0">[0.5, 0.5]</button>
+        <button type="button" class="act" data-p="3,0,0,4">[3, 4i]</button>
+      </div>
+      <div id="valid" class="status"></div>
+      <table style="margin-top:8px">
+        <tr><th>Length √(|α|² + |β|²)</th><td id="len" class="mono"></td></tr>
+        <tr><th>Normalized state</th><td id="norm" class="mono"></td></tr>
+      </table>
+    </div>
+    <div class="box">
+      <h3 id="phead">Probabilities of the normalized state</h3>
+      <div class="bars">
+        <div class="bar"><div class="v" id="p0v"></div><div class="fill" id="p0b" style="background:var(--gold)"></div></div>
+        <div class="bar"><div class="v" id="p1v"></div><div class="fill" id="p1b" style="background:var(--maroon)"></div></div>
+      </div>
+      <div class="barlbl"><span>P(0) = |α|²</span><span>P(1) = |β|²</span></div>
+      <h3 style="margin-top:14px">Measure it</h3>
+      <div class="row" style="margin-top:4px">
+        <button type="button" class="act fill" id="m1">Measure once</button>
+        <button type="button" class="act" id="mreset">Prepare the state again</button>
+      </div>
+      <div id="mres" class="log" style="margin-top:8px"></div>
+    </div>
+  </div>
+</section>
+
+<!-- TOOL 2: SHOT SIMULATOR -->
+<section class="tool" id="t-shots" role="tabpanel">
+  <h2>Shot simulator</h2>
+  <p class="hint">Choose P(1) and the number of shots N. One <strong>experiment</strong> measures the state N times and counts the 1s. Run many experiments to see how much the count varies, and compare it with N·p and √(N·p·(1 − p)).</p>
+  <div class="grid">
+    <div class="box">
+      <label for="pp">P(1) = <strong id="ppv">0.64</strong></label>
+      <input id="pp" type="range" min="0" max="1" step="0.01" value="0.64">
+      <label for="nn">Shots per experiment N</label>
+      <select id="nn" style="font-size:15px;padding:4px">
+        <option>10</option><option>100</option><option selected>1000</option><option>10000</option>
+      </select>
+      <div class="row">
+        <button type="button" class="act fill" id="run1">Run 1 experiment</button>
+        <button type="button" class="act" id="run100">Run 100 experiments</button>
+        <button type="button" class="act" id="clr">Clear</button>
+      </div>
+      <p style="margin:12px 0 2px">Last experiment: <span class="big" id="last">–</span> ones</p>
+      <table style="margin-top:8px">
+        <tr><th></th><th>Formula</th><th>Your experiments</th></tr>
+        <tr><td>Average count</td><td id="fmu" class="mono"></td><td id="omu" class="mono">–</td></tr>
+        <tr><td>Spread</td><td id="fsd" class="mono"></td><td id="osd" class="mono">–</td></tr>
+        <tr><td>Experiments run</td><td></td><td id="nexp" class="mono">0</td></tr>
+        <tr><td>Within 3 spreads</td><td class="mono">almost all</td><td id="in3" class="mono">–</td></tr>
+      </table>
+    </div>
+    <div class="box">
+      <h3>Counts of 1 in each experiment</h3>
+      <svg id="hg" viewBox="0 0 420 260" width="100%" aria-label="Histogram of the counts of 1 from each experiment"></svg>
+      <p class="hint" style="margin:6px 0 0;font-size:13px">Shaded band: N·p ± 1 spread (dark) and ± 3 spreads (light). The line marks N·p.</p>
+    </div>
+  </div>
+</section>
+
+<div class="credit">Module 1 explorer · Quantum Computing Foundations · SemiAcademy / ISEP-CSU · CC BY 4.0. Random numbers come from your browser, so your results differ from other learners'. This is a practice tool: the graded values come from the lab notebook.</div>
+
+<script>
+(function () {
+  // ---------- tabs ----------
+  var tabs = document.querySelectorAll('.tabs button');
+  function openTab(t) {
+    tabs.forEach(function (b) { b.classList.toggle('on', b.dataset.t === t); });
+    document.querySelectorAll('.tool').forEach(function (s) { s.classList.toggle('on', s.id === 't-' + t); });
+  }
+  tabs.forEach(function (b) { b.onclick = function () { openTab(b.dataset.t); }; });
+  function fromHash() { openTab(location.hash.indexOf('shots') >= 0 ? 'shots' : 'state'); }
+  window.addEventListener('hashchange', fromHash);
+  fromHash();
+
+  // ---------- state builder ----------
+  var $ = function (id) { return document.getElementById(id); };
+  var collapsed = null;   // null, 0 or 1 after a measurement
+  function num(id) { var v = parseFloat($(id).value); return isFinite(v) ? v : 0; }
+  function fmt(x) { var r = Math.round(x * 1000) / 1000; return (Object.is(r, -0) ? 0 : r).toString(); }
+  function cfmt(re, im) {
+    if (Math.abs(im) < 5e-4) return fmt(re);
+    if (Math.abs(re) < 5e-4) return fmt(im) + 'i';
+    return fmt(re) + (im < 0 ? ' − ' : ' + ') + fmt(Math.abs(im)) + 'i';
+  }
+  function current() {
+    var a = [num('ar'), num('ai')], b = [num('br'), num('bi')];
+    var L = Math.sqrt(a[0] * a[0] + a[1] * a[1] + b[0] * b[0] + b[1] * b[1]);
+    return { a: a, b: b, L: L };
+  }
+  function draw() {
+    var s = current(), v = $('valid');
+    $('len').textContent = fmt(s.L);
+    if (s.L < 1e-12) {
+      v.className = 'status bad'; v.textContent = 'The zero vector cannot be normalized: enter at least one nonzero amplitude.';
+      $('norm').textContent = '–'; setBars(0, 0); $('m1').disabled = true; return;
+    }
+    $('m1').disabled = false;
+    if (Math.abs(s.L - 1) < 1e-3) { v.className = 'status ok'; v.textContent = 'Valid state: the length is 1, so the probabilities add up to 1.'; }
+    else { v.className = 'status bad'; v.textContent = 'Not a valid state: |α|² + |β|² = ' + fmt(s.L * s.L) + ', not 1. Divide by the length ' + fmt(s.L) + ' to normalize it.'; }
+    var na = [s.a[0] / s.L, s.a[1] / s.L], nb = [s.b[0] / s.L, s.b[1] / s.L];
+    $('norm').textContent = '[' + cfmt(na[0], na[1]) + ', ' + cfmt(nb[0], nb[1]) + ']';
+    var p0 = na[0] * na[0] + na[1] * na[1], p1 = nb[0] * nb[0] + nb[1] * nb[1];
+    if (collapsed === null) { setBars(p0, p1); $('phead').textContent = 'Probabilities of the normalized state'; }
+    else { setBars(collapsed === 0 ? 1 : 0, collapsed === 1 ? 1 : 0); $('phead').textContent = 'Probabilities now: the qubit is in |' + collapsed + '⟩'; }
+  }
+  function setBars(p0, p1) {
+    $('p0b').style.height = (p0 * 100) + '%'; $('p1b').style.height = (p1 * 100) + '%';
+    $('p0v').textContent = fmt(p0); $('p1v').textContent = fmt(p1);
+  }
+  ['ar', 'ai', 'br', 'bi'].forEach(function (id) { $(id).addEventListener('input', function () { reset(); }); });
+  document.querySelectorAll('[data-p]').forEach(function (b) {
+    b.onclick = function () { var v = b.dataset.p.split(','); $('ar').value = v[0]; $('ai').value = v[1]; $('br').value = v[2]; $('bi').value = v[3]; reset(); };
+  });
+  var history = [];
+  function reset() { collapsed = null; history = []; $('mres').innerHTML = ''; draw(); }
+  $('m1').onclick = function () {
+    var s = current(); if (s.L < 1e-12) return;
+    var p1 = (s.b[0] * s.b[0] + s.b[1] * s.b[1]) / (s.L * s.L);
+    var r = collapsed !== null ? collapsed : (Math.random() < p1 ? 1 : 0);
+    collapsed = r; history.push(r);
+    $('mres').innerHTML = 'Results so far: <span class="mono">' + history.join(' ') + '</span><br>' +
+      (history.length === 1 ? 'The qubit reported <strong>' + r + '</strong>, so it is now |' + r + '⟩. Measure again: the result stays ' + r + '. Press "Prepare the state again" for a fresh copy.'
+                            : 'Same result again: after a measurement the qubit stays in the state it reported.');
+    draw();
+  };
+  $('mreset').onclick = function () {
+    collapsed = null;
+    var prev = history.length ? 'Previous copy gave ' + history[0] + '. ' : '';
+    history = [];
+    $('mres').innerHTML = prev + 'A fresh copy of the state is ready. Measure it.';
+    draw();
+  };
+  draw();
+
+  // ---------- shot simulator ----------
+  var counts = [];
+  function N() { return parseInt($('nn').value, 10); }
+  function P() { return parseFloat($('pp').value); }
+  function oneExperiment(n, p) { var c = 0; for (var k = 0; k < n; k++) if (Math.random() < p) c++; return c; }
+  function stats() {
+    var n = N(), p = P(), mu = n * p, sd = Math.sqrt(n * p * (1 - p));
+    $('ppv').textContent = p.toFixed(2);
+    $('fmu').textContent = fmt(mu); $('fsd').textContent = fmt(sd);
+    $('nexp').textContent = counts.length;
+    if (counts.length) {
+      var m = counts.reduce(function (a, b) { return a + b; }, 0) / counts.length;
+      var v = counts.reduce(function (a, b) { return a + (b - m) * (b - m); }, 0) / counts.length;
+      $('omu').textContent = fmt(m); $('osd').textContent = counts.length > 1 ? fmt(Math.sqrt(v)) : '–';
+      var inside = counts.filter(function (c) { return Math.abs(c - mu) <= 3 * sd + 1e-9; }).length;
+      $('in3').textContent = inside + ' of ' + counts.length;
+      $('last').textContent = counts[counts.length - 1];
+    } else { $('omu').textContent = '–'; $('osd').textContent = '–'; $('in3').textContent = '–'; $('last').textContent = '–'; }
+    hist(n, p, mu, sd);
+  }
+  function hist(n, p, mu, sd) {
+    var svg = $('hg'); while (svg.firstChild) svg.removeChild(svg.firstChild);
+    var ns = 'http://www.w3.org/2000/svg';
+    function el(t, a, txt) { var e = document.createElementNS(ns, t); for (var k in a) e.setAttribute(k, a[k]); if (txt !== undefined) e.textContent = txt; svg.appendChild(e); return e; }
+    var half = Math.max(4 * sd, 3), lo = Math.max(0, Math.floor(mu - half)), hi = Math.min(n, Math.ceil(mu + half));
+    counts.forEach(function (c) { if (c < lo) lo = c; if (c > hi) hi = c; });
+    if (hi === lo) { hi = lo + 1; }
+    var x0 = 30, x1 = 410, yb = 220, yt = 14;
+    function X(v) { return x0 + (v - lo) / (hi - lo) * (x1 - x0); }
+    el('rect', { x: X(Math.max(lo, mu - 3 * sd)), y: yt, width: Math.max(0, X(Math.min(hi, mu + 3 * sd)) - X(Math.max(lo, mu - 3 * sd))), height: yb - yt, fill: '#F8F4F6' });
+    el('rect', { x: X(Math.max(lo, mu - sd)), y: yt, width: Math.max(0, X(Math.min(hi, mu + sd)) - X(Math.max(lo, mu - sd))), height: yb - yt, fill: '#F1E3EA' });
+    var nb = Math.min(30, hi - lo + 1), w = (hi - lo + 1) / nb, bins = new Array(nb).fill(0);
+    counts.forEach(function (c) { var b = Math.min(nb - 1, Math.floor((c - lo) / w)); bins[b]++; });
+    var mx = Math.max.apply(null, bins.concat([1]));
+    bins.forEach(function (b, i) {
+      if (!b) return;
+      var xa = X(lo + i * w), xb = X(lo + (i + 1) * w), h = b / mx * (yb - yt - 18);
+      el('rect', { x: xa + 1, y: yb - h, width: Math.max(1, xb - xa - 2), height: h, fill: '#99004C' });
+    });
+    el('line', { x1: X(mu), y1: yt, x2: X(mu), y2: yb, stroke: '#C9A227', 'stroke-width': 2.5 });
+    el('line', { x1: x0, y1: yb, x2: x1, y2: yb, stroke: '#24313D', 'stroke-width': 1.5 });
+    var ticks = [lo, Math.round((lo + mu) / 2), Math.round(mu), Math.round((mu + hi) / 2), hi];
+    ticks.forEach(function (t) { el('text', { x: X(t), y: yb + 18, 'font-size': 12, 'text-anchor': 'middle', fill: '#24313D' }, String(t)); });
+    el('text', { x: (x0 + x1) / 2, y: yb + 36, 'font-size': 12, 'text-anchor': 'middle', fill: '#6A626B' }, 'number of 1s in ' + n.toLocaleString('en-US') + ' shots');
+    if (!counts.length) el('text', { x: (x0 + x1) / 2, y: 110, 'font-size': 14, 'text-anchor': 'middle', fill: '#6A626B' }, 'Run an experiment to start the histogram');
+  }
+  $('run1').onclick = function () { counts.push(oneExperiment(N(), P())); stats(); };
+  $('run100').onclick = function () { for (var k = 0; k < 100; k++) counts.push(oneExperiment(N(), P())); stats(); };
+  $('clr').onclick = function () { counts = []; stats(); };
+  $('pp').addEventListener('input', function () { counts = []; stats(); });
+  $('nn').addEventListener('change', function () { counts = []; stats(); });
+  stats();
+})();
+</script>
+</body>
+</html>
