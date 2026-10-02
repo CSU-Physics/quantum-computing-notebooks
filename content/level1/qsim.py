@@ -21,8 +21,9 @@ import numpy as np
 __all__ = [
     "CircuitError", "QuantumCircuit", "Statevector", "DensityMatrix", "AerSimulator",
     "transpile", "state_fidelity", "plot_histogram", "simulate_density_matrix",
+    "plot_bloch_vector", "plot_bloch_multivector", "bloch_vectors",
 ]
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 
 
 class CircuitError(Exception):
@@ -808,6 +809,107 @@ def plot_histogram(counts, title=None, figsize=(6, 3.5)):
     ax.spines[["top", "right"]].set_visible(False)
     if title:
         ax.set_title(title)
+    fig.tight_layout()
+    plt.close(fig)
+    return fig
+
+
+# ---------------------------------------------------------------- Bloch sphere plots
+def _bloch_of(vec2):
+    a, b = complex(vec2[0]), complex(vec2[1])
+    n = abs(a) ** 2 + abs(b) ** 2
+    if n == 0:
+        raise ValueError("The zero vector has no Bloch vector.")
+    ab = a.conjugate() * b / n
+    return (2 * ab.real, 2 * ab.imag, (abs(a) ** 2 - abs(b) ** 2) / n)
+
+
+def _draw_bloch(ax, points, title=None, elev=20.0, azim=25.0):
+    """Draw a Bloch sphere on 2D axes, seen from a fixed angle, with one arrow per (x, y, z, colour).
+    The view matches Qiskit's: +x points out of the page to the lower left, +y to the right, |0> up."""
+    e, a = math.radians(elev), math.radians(azim)
+    right = (-math.sin(a), math.cos(a), 0.0)
+    up = (-math.sin(e) * math.cos(a), -math.sin(e) * math.sin(a), math.cos(e))
+    cam = (math.cos(e) * math.cos(a), math.cos(e) * math.sin(a), math.sin(e))
+
+    def proj(x, y, z):
+        p = (x, y, z)
+        dot = lambda u: sum(pi * ui for pi, ui in zip(p, u))
+        return (dot(right), dot(up)), dot(cam)
+
+    t = np.linspace(0, 2 * np.pi, 241)
+    ax.add_patch(__import__("matplotlib").patches.Circle((0, 0), 1, fill=True, fc="#F8F4F6", ec="#6A626B", lw=1.2))
+    for ring in ([(math.cos(u), math.sin(u), 0.0) for u in t], [(math.sin(u), 0.0, math.cos(u)) for u in t],
+                 [(0.0, math.sin(u), math.cos(u)) for u in t]):
+        pts = [proj(*p) for p in ring]
+        for i in range(len(pts) - 1):
+            (p0, d0), (p1, _) = pts[i], pts[i + 1]
+            ax.plot([p0[0], p1[0]], [p0[1], p1[1]], color="#B9AEB4", lw=0.8, ls="-" if d0 >= 0 else ":")
+    labels = [((0, 0, 1), "|0⟩"), ((0, 0, -1), "|1⟩"), ((1, 0, 0), "|+⟩"), ((-1, 0, 0), "|−⟩"),
+              ((0, 1, 0), "|+i⟩"), ((0, -1, 0), "|−i⟩")]
+    for (x, y, z), lab in labels:
+        (p, _), (q, _) = proj(x, y, z), proj(1.22 * x, 1.22 * y, 1.22 * z)
+        ax.plot([0, p[0]], [0, p[1]], color="#B9AEB4", lw=0.8)
+        ax.text(q[0], q[1], lab, ha="center", va="center", fontsize=10, color="#24313D")
+    for x, y, z, col in points:
+        (p, _) = proj(x, y, z)
+        ax.annotate("", xy=p, xytext=(0, 0), arrowprops=dict(arrowstyle="-|>", color=col, lw=2.2))
+        ax.plot([p[0]], [p[1]], "o", color=col, ms=5)
+    ax.set_xlim(-1.45, 1.45)
+    ax.set_ylim(-1.45, 1.45)
+    ax.set_aspect("equal")
+    ax.axis("off")
+    if title:
+        ax.set_title(title, fontsize=11)
+
+
+def plot_bloch_vector(bloch, title="", ax=None, figsize=None, coord_type="cartesian", font_size=None):
+    """Plot one Bloch vector [x, y, z], or [r, theta, phi] with coord_type="spherical", like Qiskit's function."""
+    import matplotlib.pyplot as plt
+
+    if coord_type == "spherical":
+        r, th, ph = bloch
+        bloch = [r * math.sin(th) * math.cos(ph), r * math.sin(th) * math.sin(ph), r * math.cos(th)]
+    x, y, z = (float(v) for v in bloch)
+    fig = None
+    if ax is None:
+        fig, ax = plt.subplots(figsize=figsize or (3.6, 3.6))
+    _draw_bloch(ax, [(x, y, z, "#99004C")], title)
+    if fig is not None:
+        fig.tight_layout()
+        plt.close(fig)
+    return fig if fig is not None else ax.figure
+
+
+def bloch_vectors(state):
+    """The Bloch vector (x, y, z) of each qubit's reduced state, qubit 0 first."""
+    sv = state if isinstance(state, (Statevector, DensityMatrix)) else Statevector(state)
+    rho = DensityMatrix(sv).data if isinstance(sv, Statevector) else sv.data
+    n = int(round(math.log2(rho.shape[0])))
+    paulis = (np.array([[0, 1], [1, 0]]), np.array([[0, -1j], [1j, 0]]), np.array([[1, 0], [0, -1]]))
+    out = []
+    for q in range(n):
+        red = rho.reshape([2] * (2 * n))
+        keep = n - 1 - q               # tensor axis of qubit q (qubit 0 is the last axis)
+        for i in sorted((i for i in range(n) if i != keep), reverse=True):
+            red = np.trace(red, axis1=i, axis2=i + red.ndim // 2)
+        out.append(tuple(float(np.real(np.trace(red @ m))) for m in paulis))
+    return out
+
+
+def plot_bloch_multivector(state, title="", figsize=None, *, reverse_bits=False, **_):
+    """One Bloch sphere per qubit, like Qiskit's function. Entangled qubits show a shorter arrow."""
+    import matplotlib.pyplot as plt
+
+    vecs = bloch_vectors(state)
+    n = len(vecs)
+    order = list(range(n))[::-1] if reverse_bits else list(range(n))
+    fig, axes = plt.subplots(1, n, figsize=figsize or (3.4 * n, 3.6))
+    axes = np.atleast_1d(axes)
+    for ax, q in zip(axes, order):
+        _draw_bloch(ax, [(*vecs[q], "#99004C")], f"qubit {q}")
+    if title:
+        fig.suptitle(title)
     fig.tight_layout()
     plt.close(fig)
     return fig
