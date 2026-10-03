@@ -1,0 +1,347 @@
+
+<!-- 1 -->
+<section class="slide title-slide">
+  <div class="kicker">Quantum Computing Foundations · Module 5</div>
+  <h1>Simulators and real hardware</h1>
+  <p style="font-size:30px;max-width:560px">Shot noise, gate and readout errors, a real IBM result, and how to tell noise from bad luck.</p>
+  <svg style="position:absolute;right:60px;top:200px" width="460" height="280" viewBox="0 0 460 280" aria-label="Bell circuit results: ideal simulator gives only 00 and 11; a real IBM computer also gives a few 01 and 10">
+    <g font-family="Consolas, monospace" font-size="18" fill="#24313D">
+      <text x="105" y="22" text-anchor="middle" font-family="Georgia" font-size="20">ideal simulator</text>
+      <text x="345" y="22" text-anchor="middle" font-family="Georgia" font-size="20">ibm_pittsburgh</text>
+      <line x1="10" y1="230" x2="200" y2="230" stroke="#24313D" stroke-width="2"/>
+      <line x1="250" y1="230" x2="440" y2="230" stroke="#24313D" stroke-width="2"/>
+      <rect x="20" y="41" width="34" height="189" fill="#99004C"/><rect x="155" y="44" width="34" height="186" fill="#99004C"/>
+      <rect x="260" y="38" width="34" height="192" fill="#6A626B"/><rect x="305" y="224" width="34" height="6" fill="#B3261E"/>
+      <rect x="350" y="224" width="34" height="6" fill="#B3261E"/><rect x="395" y="55" width="34" height="175" fill="#6A626B"/>
+      <text x="37" y="254" text-anchor="middle">00</text><text x="82" y="254" text-anchor="middle">01</text><text x="127" y="254" text-anchor="middle">10</text><text x="172" y="254" text-anchor="middle">11</text>
+      <text x="277" y="254" text-anchor="middle">00</text><text x="322" y="254" text-anchor="middle">01</text><text x="367" y="254" text-anchor="middle">10</text><text x="412" y="254" text-anchor="middle">11</text>
+      <text x="345" y="214" text-anchor="middle" fill="#B3261E" font-size="16">15 + 15</text>
+    </g>
+  </svg>
+  <div class="foot"><span>SemiAcademy · ISEP-CSU</span><span>CC BY 4.0</span></div>
+</section>
+
+<!-- 2 -->
+<section class="slide">
+  <h2>By the end of this module you can</h2>
+  <ul>
+    <li>explain the difference between an <strong>ideal simulator</strong>, a <strong>noisy simulator</strong> and a <strong>real quantum computer</strong>;</li>
+    <li>compute <strong>shot noise</strong> and use the 3-sigma rule to tell noise in the hardware from bad luck;</li>
+    <li>describe what the transpiler does to a circuit before it runs on hardware;</li>
+    <li>name the main sources of error (gates, readout, T1 and T2) and model them in a noise model;</li>
+    <li>correct readout errors with <strong>readout mitigation</strong>, and say what it costs;</li>
+    <li>run a circuit on a real IBM quantum computer (optional) and interpret the counts honestly.</li>
+  </ul>
+  <p class="small" style="margin-top:24px">This module covers course outcome 4: run a circuit on a simulator and, when hardware is available, on a real quantum computer, and explain how noise changes the results.</p>
+  <div class="foot"><span>Module 5 · Simulators and real hardware</span><span>2</span></div>
+</section>
+
+<!-- 3 -->
+<section class="slide">
+  <h2>Three ways to run a circuit</h2>
+  <div class="cols">
+    <div class="card" style="flex:1"><h3>Ideal simulator</h3><p>Exact quantum mechanics on a classical computer. The only randomness is <strong>shot noise</strong>. Bell circuit: only 00 and 11.</p><p class="small">qsim in the Canvas labs; AerSimulator() in Qiskit. Fast up to about 30 qubits, then impossible.</p></div>
+    <div class="card" style="flex:1"><h3>Noisy simulator</h3><p>The same, plus a <strong>noise model</strong>: errors after gates, wrong readouts, relaxation. Gives a few 01 and 10.</p><p class="small">qsim 1.3.0 NoiseModel; AerSimulator.from_backend(...) builds one from a device's calibration data.</p></div>
+    <div class="card" style="flex:1"><h3>Real quantum computer</h3><p>Physical qubits in a refrigerator. Noise is real and drifts. Jobs wait in a <strong>queue</strong>, and time is limited.</p><p class="small">IBM's free Open Plan: up to 10 minutes of quantum time per 28 days.</p></div>
+  </div>
+  <div class="foot"><span>Module 5 · Simulators and real hardware</span><span>3</span></div>
+</section>
+
+<!-- 4 -->
+<section class="slide">
+  <h2>Shot noise and the 3-sigma rule</h2>
+  <div class="cols">
+    <div style="flex:0 0 620px">
+      <p>A result with probability p, measured with N shots, gives a fraction that varies from run to run with standard deviation</p>
+      <div class="eq">σ = √( p (1 − p) / N )</div>
+      <p><strong>3-sigma rule:</strong> a measured fraction more than 3σ from the prediction is a real effect. A gap that large happens by chance only about 3 times in 1,000.</p>
+      <p class="small">Four times the shots halves σ. Shot noise shrinks with more shots; noise in the hardware does not.</p>
+    </div>
+    <div>
+      <table>
+        <tr><th>Shots N</th><th>3σ at p = 0.5</th></tr>
+        <tr><td>100</td><td>0.150</td></tr>
+        <tr><td>1,000</td><td>0.047</td></tr>
+        <tr><td>10,000</td><td>0.015</td></tr>
+        <tr><td>100,000</td><td>0.005</td></tr>
+      </table>
+    </div>
+  </div>
+  <div class="foot"><span>Module 5 · Simulators and real hardware</span><span>4</span></div>
+</section>
+
+<!-- 5 -->
+<section class="slide">
+  <h2>Pause and predict</h2>
+  <p>An ideal Bell circuit run with 400 shots gives 00 in 56% of them. The prediction is 50%. Is something wrong with the simulator?</p>
+  <div class="reveal"><button type="button">Show the answer</button>
+    <div class="ans">σ = √(0.5 × 0.5 / 400) = 0.025, so 3σ = 0.075. The gap is 0.06, inside 3σ. Nothing is wrong: this is shot noise. With 10,000 shots the same 0.06 gap would be far outside 3σ (0.015) and would show a real problem.</div></div>
+  <div class="foot"><span>Module 5 · Simulators and real hardware</span><span>5</span></div>
+</section>
+
+<!-- 6 -->
+<section class="slide">
+  <h2>What an IBM qubit is</h2>
+  <div class="cols">
+    <div style="flex:0 0 640px">
+      <ul>
+        <li>A <strong>superconducting circuit</strong> (a transmon): a capacitor and a Josephson junction, a nonlinear inductor made of two superconducting layers with a thin insulator between them.</li>
+        <li>Its two lowest energy levels are |0⟩ and |1⟩.</li>
+        <li>It works only at about 0.01 kelvin, inside a dilution refrigerator.</li>
+        <li>A gate is a calibrated <strong>microwave pulse</strong>, tens of nanoseconds long. A measurement sends another pulse and reads the reflected signal.</li>
+      </ul>
+      <p class="small">Every one of these steps is slightly imperfect, which is where the noise comes from.</p>
+    </div>
+    <svg width="400" height="300" viewBox="0 0 400 300" aria-label="Circuit diagram of a transmon: a capacitor in parallel with a Josephson junction">
+      <g stroke="#24313D" stroke-width="3" fill="none">
+        <line x1="80" y1="40" x2="320" y2="40"/><line x1="80" y1="260" x2="320" y2="260"/>
+        <line x1="120" y1="40" x2="120" y2="135"/><line x1="120" y1="165" x2="120" y2="260"/>
+        <line x1="85" y1="135" x2="155" y2="135"/><line x1="85" y1="165" x2="155" y2="165"/>
+        <line x1="280" y1="40" x2="280" y2="130"/><line x1="280" y1="170" x2="280" y2="260"/>
+        <rect x="262" y="130" width="36" height="40" stroke="#99004C"/>
+        <line x1="262" y1="130" x2="298" y2="170" stroke="#99004C"/><line x1="298" y1="130" x2="262" y2="170" stroke="#99004C"/>
+      </g>
+      <g font-family="Georgia" font-size="20" fill="#24313D">
+        <text x="72" y="157" text-anchor="middle">C</text>
+        <text x="330" y="156" fill="#99004C">junction</text>
+        <text x="200" y="290" text-anchor="middle" font-size="18" fill="#6A626B">a transmon qubit</text>
+      </g>
+    </svg>
+  </div>
+  <div class="foot"><span>Module 5 · Simulators and real hardware</span><span>6</span></div>
+</section>
+
+<!-- 7 -->
+<section class="slide">
+  <h2>What the hardware really runs</h2>
+  <p>IBM's Heron processors have a few <strong>native gates</strong>: <code>rz</code>, <code>sx</code> (√X), <code>x</code> and <code>cz</code>, and each qubit is wired to only two or three neighbours. The <strong>transpiler</strong> rewrites a circuit in native gates on connected qubits. The Bell circuit for <code>ibm_pittsburgh</code>:</p>
+  <svg width="1130" height="200" viewBox="0 0 1130 200" aria-label="The transpiled Bell circuit: Rz, sqrt X, Rz on both qubits, a CZ, then Rz, sqrt X, Rz on qubit 1">
+    <g font-family="Consolas, monospace" font-size="20" fill="#24313D">
+      <text x="0" y="66">q0</text><text x="0" y="156">q1</text>
+      <line x1="40" y1="60" x2="1110" y2="60" stroke="#24313D" stroke-width="2.5"/>
+      <line x1="40" y1="150" x2="1110" y2="150" stroke="#24313D" stroke-width="2.5"/>
+      <g stroke="#6A626B" stroke-width="2" fill="#fff">
+        <rect x="70" y="38" width="96" height="44" rx="6"/><rect x="290" y="38" width="96" height="44" rx="6"/>
+        <rect x="70" y="128" width="96" height="44" rx="6"/><rect x="290" y="128" width="96" height="44" rx="6"/>
+        <rect x="630" y="128" width="96" height="44" rx="6"/><rect x="850" y="128" width="96" height="44" rx="6"/>
+      </g>
+      <g stroke="#99004C" stroke-width="2.5" fill="#fff">
+        <rect x="190" y="38" width="76" height="44" rx="6"/><rect x="190" y="128" width="76" height="44" rx="6"/><rect x="750" y="128" width="76" height="44" rx="6"/>
+      </g>
+      <text x="118" y="67" text-anchor="middle">Rz(π/2)</text><text x="338" y="67" text-anchor="middle">Rz(π/2)</text>
+      <text x="118" y="157" text-anchor="middle">Rz(π/2)</text><text x="338" y="157" text-anchor="middle">Rz(π/2)</text>
+      <text x="678" y="157" text-anchor="middle">Rz(π/2)</text><text x="898" y="157" text-anchor="middle">Rz(π/2)</text>
+      <text x="228" y="67" text-anchor="middle" fill="#99004C">√X</text><text x="228" y="157" text-anchor="middle" fill="#99004C">√X</text><text x="788" y="157" text-anchor="middle" fill="#99004C">√X</text>
+      <line x1="500" y1="60" x2="500" y2="150" stroke="#99004C" stroke-width="3"/>
+      <circle cx="500" cy="60" r="9" fill="#99004C"/><circle cx="500" cy="150" r="9" fill="#99004C"/>
+      <text x="500" y="196" text-anchor="middle" font-size="18" fill="#99004C">CZ</text>
+      <rect x="990" y="40" width="40" height="40" fill="#fff" stroke="#24313D" stroke-width="2"/><text x="1010" y="67" text-anchor="middle">M</text>
+      <rect x="1040" y="130" width="40" height="40" fill="#fff" stroke="#24313D" stroke-width="2"/><text x="1060" y="157" text-anchor="middle">M</text>
+    </g>
+  </svg>
+  <p class="small">Same gate up to a global phase (Operator.equiv, Module 3). The rz gates are done in software and add no error; the three √X pulses and the CZ do. Longer circuits, and SWAPs between distant qubits, mean more chances to go wrong.</p>
+  <div class="foot"><span>Module 5 · Simulators and real hardware</span><span>7</span></div>
+</section>
+
+<!-- 8 -->
+<section class="slide">
+  <h2>Where the errors come from</h2>
+  <table style="font-size:21px">
+    <tr><th>Source</th><th>What happens</th><th>ibm_pittsburgh, qubits 0 and 1 (April 2026 snapshot)</th></tr>
+    <tr><td>One-qubit gates</td><td>the pulse turns the qubit slightly too far or not far enough</td><td>error per √X: 0.02% to 0.07%</td></tr>
+    <tr><td>Two-qubit gates</td><td>the CZ is the hardest pulse to get right</td><td>error per CZ: 0.54%</td></tr>
+    <tr><td>Readout</td><td>the measurement records the wrong bit</td><td>0.2% to 1.5% per qubit</td></tr>
+    <tr><td>T1 relaxation</td><td>|1⟩ decays to |0⟩ by itself</td><td>T1 = 67 µs and 311 µs</td></tr>
+    <tr><td>T2 dephasing</td><td>a superposition loses its phase</td><td>T2 = 112 µs and 219 µs</td></tr>
+    <tr><td>Other</td><td>crosstalk between neighbours, drift since the last calibration</td><td>not in a simple model</td></tr>
+  </table>
+  <p class="small" style="margin-top:8px">From Qiskit's FakePittsburgh, a snapshot of IBM's published calibration data. Real values change from day to day.</p>
+  <div class="foot"><span>Module 5 · Simulators and real hardware</span><span>8</span></div>
+</section>
+
+<!-- 9 -->
+<section class="slide">
+  <h2>T1 and T2: qubits forget</h2>
+  <div class="cols">
+    <div style="flex:0 0 560px">
+      <p><strong>T1:</strong> a qubit in |1⟩ stays there with probability e<sup>−t/T1</sup>. <strong>T2:</strong> the phase of a superposition fades as e<sup>−t/T2</sup>, so the Bloch vector shrinks toward the axis.</p>
+      <p>A CZ takes 88 ns and T1 is about 67 µs, so about 760 CZ gates fit into one T1. Relaxation matters most for long circuits.</p>
+      <p class="small">T1 also explains why readout errors are uneven: a qubit in |1⟩ can decay to |0⟩ during the 2.6 µs measurement, so P(read 0 | was 1) is larger than P(read 1 | was 0).</p>
+    </div>
+    <svg width="480" height="300" viewBox="0 0 480 300" aria-label="Probability of staying in state 1 decays exponentially with time, falling to 0.37 at t equals T1">
+      <g font-family="Georgia" font-size="22" fill="#24313D">
+        <line x1="60" y1="250" x2="460" y2="250" stroke="#24313D" stroke-width="2"/>
+        <line x1="60" y1="250" x2="60" y2="30" stroke="#24313D" stroke-width="2"/>
+        <path d="M60 50 C 120 105, 160 140, 200 158 S 330 222, 460 238" fill="none" stroke="#99004C" stroke-width="3.5"/>
+        <line x1="200" y1="250" x2="200" y2="158" stroke="#6A626B" stroke-dasharray="5 5"/>
+        <line x1="60" y1="158" x2="200" y2="158" stroke="#6A626B" stroke-dasharray="5 5"/>
+        <text x="200" y="272" text-anchor="middle">T1</text><text x="52" y="163" text-anchor="end">0.37</text>
+        <text x="52" y="56" text-anchor="end">1</text><text x="52" y="256" text-anchor="end">0</text>
+        <text x="260" y="292" text-anchor="middle">time</text>
+        <text x="230" y="90" fill="#99004C">P(still |1⟩) = e<tspan baseline-shift="super" font-size="15">−t/T1</tspan></text>
+      </g>
+    </svg>
+  </div>
+  <div class="foot"><span>Module 5 · Simulators and real hardware</span><span>9</span></div>
+</section>
+
+<!-- 10 -->
+<section class="slide">
+  <h2>Readout errors: the readout matrix</h2>
+  <p>For one qubit, put the true state in the columns and the recorded result in the rows:</p>
+  <div class="eq" style="font-size:30px">A = [[1 − e0, e1], [e0, 1 − e1]], &nbsp; e0 = P(read 1 | was 0), &nbsp; e1 = P(read 0 | was 1)</div>
+  <div class="cols">
+    <div class="card"><h3>Recorded = A × true</h3><p>A qubit that is really in |1⟩ (true [0, 1]) is recorded as [e1, 1 − e1].</p></div>
+    <div class="card"><h3>Two qubits</h3><p>A = <code>np.kron(A1, A0)</code>, qubit 1 first, the same order as a two-qubit state in Module 4.</p></div>
+    <div class="card"><h3>ibm_pittsburgh</h3><p>qubit 0: e0 = 0.34%, e1 = 1.46%<br>qubit 1: e0 = 0.20%, e1 = 0.83%<br>Readout alone turns 1.4% of Bell results into 01 or 10.</p></div>
+  </div>
+  <div class="foot"><span>Module 5 · Simulators and real hardware</span><span>10</span></div>
+</section>
+
+<!-- 11 -->
+<section class="slide">
+  <h2>Gate errors: the depolarizing model</h2>
+  <div class="cols">
+    <div style="flex:0 0 560px">
+      <p>The simplest gate error: with probability λ the gate scrambles the qubits into a random state; otherwise it works.</p>
+      <div class="eq" style="font-size:28px">ρ → (1 − λ) ρ + λ I / 4</div>
+      <p>A scrambled pair gives each of 00, 01, 10, 11 a quarter of the time, so a depolarizing error λ on the CNOT gives <strong>λ/2</strong> different results in the Bell circuit.</p>
+      <p class="small">In qsim and Qiskit Aer: <code>depolarizing_error(lam, 2)</code> added to "cx" in a NoiseModel.</p>
+    </div>
+    <svg width="480" height="300" viewBox="0 0 480 300" aria-label="The fraction of different results grows linearly as lambda over 2">
+      <g font-family="Georgia" font-size="21" fill="#24313D">
+        <line x1="60" y1="250" x2="460" y2="250" stroke="#24313D" stroke-width="2"/>
+        <line x1="60" y1="250" x2="60" y2="30" stroke="#24313D" stroke-width="2"/>
+        <line x1="60" y1="250" x2="440" y2="60" stroke="#24313D" stroke-width="2.5"/>
+        <g fill="#99004C"><circle cx="60" cy="250" r="6"/><circle cx="123" cy="217" r="6"/><circle cx="187" cy="187" r="6"/><circle cx="250" cy="154" r="6"/><circle cx="313" cy="128" r="6"/><circle cx="377" cy="93" r="6"/><circle cx="440" cy="67" r="6"/></g>
+        <text x="60" y="272" text-anchor="middle">0</text><text x="250" y="272" text-anchor="middle">0.15</text><text x="440" y="272" text-anchor="middle">0.30</text>
+        <text x="52" y="254" text-anchor="end">0</text><text x="52" y="64" text-anchor="end">0.15</text>
+        <text x="260" y="294" text-anchor="middle">λ on the CNOT</text>
+        <text x="80" y="48" fill="#99004C">dots: qsim, 4,000 shots</text>
+        <text x="80" y="78">line: λ / 2</text>
+      </g>
+    </svg>
+  </div>
+  <div class="foot"><span>Module 5 · Simulators and real hardware</span><span>11</span></div>
+</section>
+
+<!-- 12 -->
+<section class="slide">
+  <h2>A real result: ibm_pittsburgh</h2>
+  <div class="cols">
+    <div style="flex:0 0 560px">
+      <p>IBM's lesson <em>Build and run your first quantum program</em> runs the Bell circuit on <code>ibm_pittsburgh</code>, a 156-qubit Heron processor, with 1,000 shots:</p>
+      <div class="eq" style="font-size:28px">00: 507 &nbsp; 01: 15 &nbsp; 10: 15 &nbsp; 11: 463</div>
+      <ul>
+        <li>30 different results. An ideal Bell state never gives them, so every one is <strong>noise</strong>.</li>
+        <li>The counts alone cannot say <strong>which</strong> noise: readout, gates, or both.</li>
+      </ul>
+    </div>
+    <svg width="480" height="300" viewBox="0 0 480 300" aria-label="Bar chart of the ibm_pittsburgh counts: 507, 15, 15, 463">
+      <g font-family="Consolas, monospace" font-size="18" fill="#24313D">
+        <line x1="40" y1="250" x2="460" y2="250" stroke="#24313D" stroke-width="2"/>
+        <rect x="60" y="48" width="70" height="202" fill="#6A626B"/><rect x="160" y="244" width="70" height="6" fill="#B3261E"/>
+        <rect x="260" y="244" width="70" height="6" fill="#B3261E"/><rect x="360" y="65" width="70" height="185" fill="#6A626B"/>
+        <text x="95" y="40" text-anchor="middle">507</text><text x="195" y="236" text-anchor="middle" fill="#B3261E">15</text>
+        <text x="295" y="236" text-anchor="middle" fill="#B3261E">15</text><text x="395" y="57" text-anchor="middle">463</text>
+        <text x="95" y="276" text-anchor="middle">00</text><text x="195" y="276" text-anchor="middle">01</text><text x="295" y="276" text-anchor="middle">10</text><text x="395" y="276" text-anchor="middle">11</text>
+      </g>
+    </svg>
+  </div>
+  <p class="small">Counts published by IBM Quantum Learning (CC BY-SA 4.0).</p>
+  <div class="foot"><span>Module 5 · Simulators and real hardware</span><span>12</span></div>
+</section>
+
+<!-- 13 -->
+<section class="slide">
+  <h2>Pause and predict</h2>
+  <p>In IBM's run, 507 of the 970 equal results were 00 and 463 were 11. Is that imbalance evidence that the device favours 0?</p>
+  <div class="reveal"><button type="button">Show the answer</button>
+    <div class="ans">00 is 507/970 = 0.523 of the equal results. With N = 970 and p = 0.5, σ = √(0.25/970) = 0.016 and 3σ = 0.048. The gap, 0.023, is inside 3σ, so this run alone is not evidence of a bias. (Real devices often do favour 0 slightly, because of T1, but 1,000 shots cannot show it here.)</div></div>
+  <div class="foot"><span>Module 5 · Simulators and real hardware</span><span>13</span></div>
+</section>
+
+<!-- 14 -->
+<section class="slide">
+  <h2>A noise model from calibration data</h2>
+  <div class="cols">
+    <div style="flex:0 0 600px">
+      <p>Turn the snapshot's numbers into a noise model: a depolarizing error for each gate's error rate, T1 and T2 relaxation during each gate, and the readout errors. Run the transpiled circuit with it.</p>
+      <table>
+        <tr><th></th><th>Different results</th></tr>
+        <tr><td>Model: gates only</td><td>0.005</td></tr>
+        <tr><td>Model: gates and readout</td><td>0.019</td></tr>
+        <tr><td>IBM's run</td><td>0.030</td></tr>
+      </table>
+    </div>
+    <div class="card" style="flex:1"><h3>Is the model wrong?</h3><p>At p = 0.019 and 1,000 shots, 3σ = 0.013. The gap, 0.011, is inside it.</p><p>So these counts <strong>cannot tell</strong> whether the device was noisier on the day of the run than its April snapshot says. More shots, and calibration data from the same day and qubits, would be needed.</p></div>
+  </div>
+  <div class="foot"><span>Module 5 · Simulators and real hardware</span><span>14</span></div>
+</section>
+
+<!-- 15 -->
+<section class="slide">
+  <h2>Readout error mitigation</h2>
+  <div class="cols">
+    <div style="flex:0 0 600px">
+      <p>Recorded probabilities are p = A × true, so the best estimate of the true ones solves</p>
+      <div class="eq" style="font-size:28px">A x = p &nbsp;→&nbsp; x = np.linalg.solve(A, p)</div>
+      <ul>
+        <li>x holds <strong>quasi-probabilities</strong>: they add up to 1 but can be slightly negative. Keep them.</li>
+        <li>Mitigation removes the <strong>bias</strong> readout adds, not shot noise; the spread grows a little, so it needs more shots.</li>
+      </ul>
+    </div>
+    <div class="card" style="flex:1"><h3>Suppression and mitigation</h3><p><strong>Error suppression</strong> changes the circuit before it runs (for example dynamical decoupling pulses on idle qubits).</p><p><strong>Error mitigation</strong> corrects the results afterwards (readout mitigation; IBM's TREX; zero-noise extrapolation).</p></div>
+  </div>
+  <div class="foot"><span>Module 5 · Simulators and real hardware</span><span>15</span></div>
+</section>
+
+<!-- 16 -->
+<section class="slide">
+  <h2>Pause and predict</h2>
+  <p>Mitigating IBM's counts with the April readout matrix gives 1.7% different results instead of 3.0%. Which conclusion does the evidence support?</p>
+  <div class="reveal"><button type="button">Show the answer</button>
+    <div class="ans">Readout explains part of the noise, about 1.3 points. The remaining 1.7% is more than the snapshot predicts for the gates (0.5%), but a mitigated value at 1,000 shots has a spread of about 0.005, so 3σ is about 0.014 and the gap (0.012) is inside it. The honest answer: there is insufficient evidence to say how much of the rest is extra gate error. "All of it is readout" and "the model is wrong" both go beyond the data.</div></div>
+  <div class="foot"><span>Module 5 · Simulators and real hardware</span><span>16</span></div>
+</section>
+
+<!-- 17 -->
+<section class="slide">
+  <h2>Run it yourself (optional)</h2>
+  <div class="cols">
+    <div style="flex:0 0 620px">
+      <ul>
+        <li>IBM's free <strong>Open Plan</strong>: up to 10 minutes of quantum time per 28-day rolling window, on IBM's current processors. Instances are created in the us-east region.</li>
+        <li>The Module 5 Colab notebook transpiles the Bell circuit, runs 1,000 shots with the <code>SamplerV2</code> primitive, and prints your counts and your qubits' readout errors.</li>
+        <li>A Bell run uses a few seconds. The queue can take longer than the run.</li>
+        <li>Paste the counts into Step 8 of the lab to analyse them like IBM's run.</li>
+      </ul>
+    </div>
+    <div class="card" style="flex:1"><h3>Not graded</h3><p>The hardware run is optional. The simulator work in the Canvas lab counts the same for the badge.</p><p class="small">Keep your API key in Colab's secrets, never in a notebook cell.</p></div>
+  </div>
+  <div class="foot"><span>Module 5 · Simulators and real hardware</span><span>17</span></div>
+</section>
+
+<!-- 18 -->
+<section class="slide">
+  <h2>Summary</h2>
+  <ul>
+    <li style="font-size:25px">Shot noise: σ = √(p(1 − p)/N). Gaps larger than 3σ are real.</li>
+    <li style="font-size:25px">Hardware runs native gates (rz, √X, CZ) on connected qubits; every pulse adds a little error.</li>
+    <li style="font-size:25px">Readout: recorded = A × true, A = <code>np.kron(A1, A0)</code>. Depolarizing λ on the CNOT gives λ/2 different results.</li>
+    <li style="font-size:25px">A noise model from calibration data is a first guess; real devices drift.</li>
+    <li style="font-size:25px">Mitigation solves A x = p: less bias, a little more spread. State only what the data supports.</li>
+  </ul>
+  <div class="eq" style="font-size:24px;margin-top:12px"><strong>Next:</strong> the Module 5 lab. You write <code>shot_noise()</code>, <code>two_qubit_readout()</code> and <code>mitigate()</code>, model ibm_pittsburgh, and compare with its real run.</div>
+  <div class="foot"><span>Module 5 · Simulators and real hardware</span><span>18</span></div>
+</section>
+
+<!-- 19 -->
+<section class="slide">
+  <h2>Credits and license</h2>
+  <p>These slides were written for SemiAcademy's <em>Quantum Computing Foundations</em> course, developed through the Intel Semiconductor Education Program at Central State University (ISEP-CSU).</p>
+  <p>License: <strong>Creative Commons Attribution 4.0 International (CC BY 4.0)</strong>, https://creativecommons.org/licenses/by/4.0/. You may copy, adapt and share them, with credit.</p>
+  <p>The ibm_pittsburgh counts are from IBM Quantum Learning, "Build and run your first quantum program" (CC BY-SA 4.0). The calibration numbers are from Qiskit's FakePittsburgh backend (Apache License 2.0).</p>
+  <p class="small">Suggested credit: "Module 5 slides, Quantum Computing Foundations, SemiAcademy / ISEP-CSU, CC BY 4.0." Source: github.com/CSU-Physics/quantum-computing-notebooks (media/level1/m5-slides.html).</p>
+  <div class="foot"><span>Module 5 · Simulators and real hardware</span><span>19</span></div>
+</section>
