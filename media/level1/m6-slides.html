@@ -9,7 +9,7 @@
   * { box-sizing:border-box; }
   html, body { margin:0; height:100%; background:#2B2230; font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color:var(--ink); }
   #viewport { position:absolute; inset:0 0 44px 0; display:flex; align-items:center; justify-content:center; overflow:hidden; }
-  #stage { width:1280px; height:720px; flex-shrink:0; position:relative; transform-origin:center center; }
+  #stage { width:1280px; height:720px; flex-shrink:0; flex-shrink:0; position:relative; transform-origin:center center; }
   .slide { position:absolute; inset:0; background:#fff; padding:56px 72px 64px; display:none; flex-direction:column; border-top:10px solid var(--maroon); }
   .slide.on { display:flex; }
   .slide h1 { font-family: Georgia, serif; color:var(--maroon); font-size:56px; margin:0 0 18px; line-height:1.1; }
@@ -93,7 +93,7 @@
     <li>implement the <strong>Bernstein-Vazirani</strong> circuit and explain how interference gives the answer in one query;</li>
     <li>use the same circuit for <strong>Deutsch-Jozsa</strong>, and say what these speedups do and do not show.</li>
   </ul>
-  <p class="small" style="margin-top:24px">This module covers course outcome 5: implement Bernstein-Vazirani as a quantum circuit in Python, with Qiskit's circuit commands, and explain how it differs from a classical search for the hidden string.</p>
+  <p class="small" style="margin-top:24px">This module covers course outcome 5: implement Bernstein-Vazirani as a quantum circuit in Python, using Qiskit-compatible circuit commands, and explain how it differs from a classical search for the hidden string.</p>
   <div class="foot"><span>Module 6 · A first quantum algorithm</span><span>2</span></div>
 </section>
 
