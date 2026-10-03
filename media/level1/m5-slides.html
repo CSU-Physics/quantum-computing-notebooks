@@ -110,7 +110,7 @@
     <div style="flex:0 0 620px">
       <p>A result with probability p, measured with N shots, gives a fraction that varies from run to run with standard deviation</p>
       <div class="eq">σ = √( p (1 − p) / N )</div>
-      <p><strong>3-sigma rule:</strong> a measured fraction more than 3σ from the prediction is a real effect. A gap that large happens by chance only about 3 times in 1,000.</p>
+      <p><strong>3-sigma rule:</strong> a measured fraction more than 3σ from the prediction is treated as a real difference: under the model, a gap that large happens by chance only about 3 times in 1,000. It is evidence against the prediction, not proof of a particular cause.</p>
       <p class="small">Four times the shots halves σ. Shot noise shrinks with more shots; noise in the hardware does not.</p>
     </div>
     <div>
@@ -355,9 +355,9 @@
 <!-- 16 -->
 <section class="slide">
   <h2>Pause and predict</h2>
-  <p>Mitigating IBM's counts with the April readout matrix gives 1.7% different results instead of 3.0%. Which conclusion does the evidence support?</p>
+  <p>As an illustration, mitigating IBM's counts with the April snapshot's readout matrix for qubits 0 and 1 gives 1.7% different results instead of 3.0%. (IBM's lesson does not say which physical qubits the run used, or give that day's calibration.) Which conclusion does the evidence support?</p>
   <div class="reveal"><button type="button">Show the answer</button>
-    <div class="ans">Readout explains part of the noise, about 1.3 points. The remaining 1.7% is more than the snapshot predicts for the gates (0.5%), but a mitigated value at 1,000 shots has a spread of about 0.005, so 3σ is about 0.014 and the gap (0.012) is inside it. The honest answer: there is insufficient evidence to say how much of the rest is extra gate error. "All of it is readout" and "the model is wrong" both go beyond the data.</div></div>
+    <div class="ans">Readout errors of the snapshot's size would account for part of the noise, about 1.3 points; without the run's own calibration this is an illustration, not a measurement. The remaining 1.7% is more than the snapshot predicts for the gates (0.5%), but a mitigated value at 1,000 shots has a spread of about 0.005, so 3σ is about 0.014 and the gap (0.012) is inside it. The honest answer: there is insufficient evidence to say how much of the rest is extra gate error. "All of it is readout" and "the model is wrong" both go beyond the data.</div></div>
   <div class="foot"><span>Module 5 · Simulators and real hardware</span><span>16</span></div>
 </section>
 

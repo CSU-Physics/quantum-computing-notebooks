@@ -9,7 +9,7 @@
   * { box-sizing:border-box; }
   html, body { margin:0; height:100%; background:#2B2230; font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color:var(--ink); }
   #viewport { position:absolute; inset:0 0 44px 0; display:flex; align-items:center; justify-content:center; overflow:hidden; }
-  #stage { width:1280px; height:720px; position:relative; transform-origin:center center; }
+  #stage { width:1280px; height:720px; flex-shrink:0; position:relative; transform-origin:center center; }
   .slide { position:absolute; inset:0; background:#fff; padding:56px 72px 64px; display:none; flex-direction:column; border-top:10px solid var(--maroon); }
   .slide.on { display:flex; }
   .slide h1 { font-family: Georgia, serif; color:var(--maroon); font-size:56px; margin:0 0 18px; line-height:1.1; }
@@ -159,7 +159,7 @@
 
 <!-- 8 -->
 <section class="slide">
-  <h2>Two angles describe every qubit state</h2>
+  <h2>Two angles describe any pure state</h2>
   <div class="cols">
     <div style="flex:1.7">
       <p>Up to a global phase, every state can be written</p>
@@ -253,7 +253,7 @@
 <!-- 14 -->
 <section class="slide">
   <h2>On a quantum computer: rotate, then measure</h2>
-  <p>Hardware measures only in the Z basis. To measure in another basis, first rotate that basis onto Z:</p>
+  <p>In the circuit model used here, the readout measures in the Z basis. To measure in another basis, first rotate that basis onto Z:</p>
   <svg width="100%" height="300" viewBox="0 0 1130 300" aria-label="Circuits for measuring in the Z, X and Y bases">
     <g font-size="23" fill="#24313D">
       <text x="10" y="58">Z</text><text x="10" y="158">X</text><text x="10" y="258">Y</text>
@@ -308,8 +308,8 @@
     <div style="flex:1.25">
       <p>Turn the rule around. If a fraction f of shots gives 0 in a basis, estimate that coordinate as</p>
       <div class="eq">x̂ = 2f − 1</div>
-      <p>Do it in X, Y and Z to locate the arrow. The estimate's spread is √((1 − x²)/N), at most 1/√N: about 0.03 with 1,000 shots.</p>
-      <p class="small">Three bases are needed: Z alone gives only z, and misses the phase.</p>
+      <p>Do it in X, Y and Z to locate the arrow. Each estimate's standard deviation is √((1 − x²)/N), at most about 0.032 for 1,000 shots.</p>
+      <p class="small">Three bases are needed: Z alone misses the phase. Raw estimates can land just outside the sphere (this one has length 1.0004), and near the poles φ is poorly determined.</p>
     </div>
     <div><svg class="bloch" data-cfg='{"font":0.15,"pts":[{"v":[0.433,0.75,-0.5],"c":"#99004C","l":"true","dx":-0.42,"dy":0.2},{"v":[0.436,0.758,-0.486],"c":"#C9A227","dash":true,"l":"estimate","dx":0.08,"dy":-0.1}]}' width="380" height="370" aria-label="The true and the estimated Bloch vectors almost overlap"></svg></div>
   </div>
@@ -351,7 +351,7 @@
 <script>
 (function () {
   // ---- Bloch sphere drawing (same view as qsim and Qiskit: +x out of the page to the lower left, +y right, |0> up)
-  var NS = 'http://www.w3.org/2000/svg';
+  var NS = 'http://www.w3.org/2000/svg', D2R = Math.PI / 180;
   function blochView(az, el) {
     var a = az * Math.PI / 180, e = el * Math.PI / 180;
     var R = [-Math.sin(a), Math.cos(a), 0];
@@ -409,6 +409,38 @@
       q = P([0.7 * Math.cos(ph / 2), 0.7 * Math.sin(ph / 2), 0]);
       sv(svg, 'text', { x: q.x, y: q.y + 0.12, 'font-size': f, fill: '#8A6D00', 'font-style': 'italic' }, 'φ');
     }
+    // rotation arcs: {v: start point, n: axis (unit vector), a: angle in degrees (right-hand rule), c, l, axis: true}
+    (cfg.rots || []).forEach(function (r, j) {
+      var col = r.c || '#C9A227', n = r.n, L = Math.sqrt(n[0] * n[0] + n[1] * n[1] + n[2] * n[2]);
+      n = [n[0] / L, n[1] / L, n[2] / L];
+      if (r.axis) {
+        var a1 = P([1.18 * n[0], 1.18 * n[1], 1.18 * n[2]]), a2 = P([-1.18 * n[0], -1.18 * n[1], -1.18 * n[2]]);
+        sv(svg, 'line', { x1: a2.x, y1: a2.y, x2: a1.x, y2: a1.y, stroke: col, 'stroke-width': 0.014, 'stroke-dasharray': '0.05 0.035' });
+        if (r.al) sv(svg, 'text', { x: a1.x + 0.03, y: a1.y - 0.03, 'font-size': f * 0.95, fill: col, 'font-style': 'italic' }, r.al);
+      }
+      var steps = Math.max(8, Math.round(Math.abs(r.a) / 4)), prev = null, pts = [];
+      for (var k = 0; k <= steps; k++) {
+        var ang = r.a * D2R * k / steps, c = Math.cos(ang), s2 = Math.sin(ang), v = r.v;
+        var dot = n[0] * v[0] + n[1] * v[1] + n[2] * v[2];
+        var cr = [n[1] * v[2] - n[2] * v[1], n[2] * v[0] - n[0] * v[2], n[0] * v[1] - n[1] * v[0]];
+        var w = [v[0] * c + cr[0] * s2 + n[0] * dot * (1 - c), v[1] * c + cr[1] * s2 + n[1] * dot * (1 - c), v[2] * c + cr[2] * s2 + n[2] * dot * (1 - c)];
+        pts.push(P(w));
+      }
+      var mid2 = id + 'r' + j;
+      var mk = sv(defs, 'marker', { id: mid2, viewBox: '0 0 10 10', refX: 6, refY: 5, markerWidth: 4, markerHeight: 4, orient: 'auto' });
+      sv(mk, 'path', { d: 'M0,0 L10,5 L0,10 z', fill: col });
+      for (k = 1; k < pts.length; k++) {
+        var back = pts[k].d < -0.02 && pts[k - 1].d < -0.02;
+        var seg = { x1: pts[k - 1].x, y1: pts[k - 1].y, x2: pts[k].x, y2: pts[k].y, stroke: col, 'stroke-width': r.w || 0.026, 'stroke-linecap': 'round', opacity: back ? 0.55 : 1 };
+        if (back) seg['stroke-dasharray'] = '0.04 0.03';
+        if (k === pts.length - 1) seg['marker-end'] = 'url(#' + mid2 + ')';
+        sv(svg, 'line', seg);
+      }
+      if (r.l) {
+        var mpt = pts[Math.floor(pts.length / 2)];
+        sv(svg, 'text', { x: mpt.x + (r.dx || 0.05), y: mpt.y + (r.dy || -0.05), 'font-size': f, fill: col, 'font-weight': 600 }, r.l);
+      }
+    });
     (cfg.pts || []).forEach(function (pt, j) {
       var col = pt.c || '#99004C', mid = id + j;
       var m = sv(defs, 'marker', { id: mid, viewBox: '0 0 10 10', refX: 8, refY: 5, markerWidth: 5, markerHeight: 5, orient: 'auto-start-reverse' });

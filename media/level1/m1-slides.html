@@ -9,7 +9,7 @@
   * { box-sizing:border-box; }
   html, body { margin:0; height:100%; background:#2B2230; font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color:var(--ink); }
   #viewport { position:absolute; inset:0 0 44px 0; display:flex; align-items:center; justify-content:center; overflow:hidden; }
-  #stage { width:1280px; height:720px; position:relative; transform-origin:center center; }
+  #stage { width:1280px; height:720px; flex-shrink:0; position:relative; transform-origin:center center; }
   .slide { position:absolute; inset:0; background:#fff; padding:56px 72px 64px; display:none; flex-direction:column; border-top:10px solid var(--maroon); }
   .slide.on { display:flex; }
   .slide h1 { font-family: Georgia, serif; color:var(--maroon); font-size:56px; margin:0 0 18px; line-height:1.1; }
@@ -143,7 +143,7 @@
     <tr><td>|0⟩</td><td>[1, 0]</td><td>always measures 0</td></tr>
     <tr><td>|1⟩</td><td>[0, 1]</td><td>always measures 1</td></tr>
     <tr><td>α|0⟩ + β|1⟩</td><td>[α, β]</td><td>a combination of both</td></tr>
-    <tr><td>|+⟩ = (|0⟩ + |1⟩)/√2</td><td>[0.707, 0.707]</td><td>equal mix, appears in almost every module</td></tr>
+    <tr><td>|+⟩ = (|0⟩ + |1⟩)/√2</td><td>[0.707, 0.707]</td><td>equal-amplitude superposition, appears in almost every module</td></tr>
   </table>
   <p class="small" style="margin-top:22px">In NumPy: <code>np.array([1, 0], dtype=complex)</code></p>
   <div class="foot"><span>Module 1 · From bits to qubits</span><span>6</span></div>

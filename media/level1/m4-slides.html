@@ -9,7 +9,7 @@
   * { box-sizing:border-box; }
   html, body { margin:0; height:100%; background:#2B2230; font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color:var(--ink); }
   #viewport { position:absolute; inset:0 0 44px 0; display:flex; align-items:center; justify-content:center; overflow:hidden; }
-  #stage { width:1280px; height:720px; flex-shrink:0; position:relative; transform-origin:center center; }
+  #stage { width:1280px; height:720px; flex-shrink:0; flex-shrink:0; position:relative; transform-origin:center center; }
   .slide { position:absolute; inset:0; background:#fff; padding:56px 72px 64px; display:none; flex-direction:column; border-top:10px solid var(--maroon); }
   .slide.on { display:flex; }
   .slide h1 { font-family: Georgia, serif; color:var(--maroon); font-size:56px; margin:0 0 18px; line-height:1.1; }
@@ -345,12 +345,12 @@
     <div style="flex:0 0 640px">
       <p>Can Bob send Alice a message by choosing how to measure his half of phi+?</p>
       <ul>
-        <li>Alice's own results stay 50/50 whatever Bob does: 502 zeros in 1,000 shots in the lab, with or without Bob's H.</li>
+        <li>Alice's own results stay 50/50 whatever Bob does. In the lab both runs show 502 zeros only because the simulator reuses the same seed; independent runs would scatter around 500 by shot noise.</li>
         <li>Only the <strong>correlation</strong> changes, and Alice can see that only by comparing lists with Bob over an ordinary channel.</li>
       </ul>
       <p><strong>Entanglement cannot send information faster than light.</strong> Combined with ordinary communication, it powers protocols such as teleportation.</p>
     </div>
-    <div class="card" style="flex:0 0 400px"><h3>Does and does not</h3><p><strong>Does:</strong> give correlations that no classical source can match, in every basis.<br><br><strong>Does not:</strong> let either side control or signal through the other side's results.</p></div>
+    <div class="card" style="flex:0 0 400px"><h3>Does and does not</h3><p><strong>Does:</strong> give perfect correlations in both the Z and X bases, which no separable (unentangled) two-qubit state can reproduce. Ruling out every classical hidden-variable explanation needs a Bell test such as CHSH, with more measurement settings.<br><br><strong>Does not:</strong> let either side control or signal through the other side's results.</p></div>
   </div>
   <div class="foot"><span>Module 4 · Two qubits and entanglement</span><span>16</span></div>
 </section>
