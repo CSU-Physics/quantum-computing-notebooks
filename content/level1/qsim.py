@@ -21,9 +21,9 @@ import numpy as np
 __all__ = [
     "CircuitError", "QuantumCircuit", "Statevector", "DensityMatrix", "AerSimulator",
     "transpile", "state_fidelity", "plot_histogram", "simulate_density_matrix",
-    "plot_bloch_vector", "plot_bloch_multivector", "bloch_vectors",
+    "plot_bloch_vector", "plot_bloch_multivector", "bloch_vectors", "Operator",
 ]
-__version__ = "1.1.0"
+__version__ = "1.2.0"
 
 
 class CircuitError(Exception):
@@ -585,6 +585,118 @@ class DensityMatrix:
 
     def __repr__(self):
         return "DensityMatrix(\n" + np.array2string(np.round(self.data, 4), precision=4) + ")"
+
+
+# ---------------------------------------------------------------- operators
+_LABEL_1Q = {"I": "id", "X": "x", "Y": "y", "Z": "z", "H": "h", "S": "s", "T": "t"}
+
+
+class Operator:
+    """A matrix, as in qiskit.quantum_info.Operator.
+
+    Operator(circuit without measurements) gives the circuit's unitary matrix, in Qiskit's qubit
+    order. Operator(matrix) wraps a square matrix. The matrix is in .data.
+    """
+
+    def __init__(self, data):
+        if isinstance(data, Operator):
+            m = data.data.copy()
+        elif isinstance(data, QuantumCircuit):
+            n = data.num_qubits
+            dim = 2 ** n
+            cols = []
+            for j in range(dim):
+                e = np.zeros(dim, dtype=complex)
+                e[j] = 1
+                try:
+                    cols.append(_run_unitary(data, e))
+                except CircuitError:
+                    raise CircuitError(
+                        "Cannot make an Operator from a circuit with measurements or resets. "
+                        "Remove them first, for example with qc.remove_final_measurements().") from None
+            m = np.array(cols).T
+        else:
+            m = np.array(data, dtype=complex)
+            if m.ndim != 2 or m.shape[0] != m.shape[1]:
+                raise ValueError("An Operator needs a square matrix.")
+        n = int(round(math.log2(m.shape[0]))) if m.shape[0] else 0
+        if m.shape[0] < 2 or 2 ** n != m.shape[0]:
+            raise ValueError("An Operator acts on qubits, so it must be 2 x 2, 4 x 4, 8 x 8, ...")
+        self.data = m
+        self.num_qubits = n
+
+    @classmethod
+    def from_label(cls, label):
+        """Operator.from_label("X"), "HZ", ... Letters I, X, Y, Z, H, S, T; qubit 0 is on the right."""
+        m = np.array([[1]], dtype=complex)
+        for ch in label:
+            if ch not in _LABEL_1Q:
+                raise ValueError(f"Unknown label letter {ch!r}; use I, X, Y, Z, H, S or T.")
+            m = np.kron(m, _FIXED[_LABEL_1Q[ch]])
+        return cls(m)
+
+    @property
+    def dim(self):
+        return (self.data.shape[1], self.data.shape[0])
+
+    def adjoint(self):
+        """The conjugate transpose, U-dagger: the inverse of a unitary."""
+        return Operator(self.data.conj().T)
+
+    def conjugate(self):
+        return Operator(self.data.conj())
+
+    def transpose(self):
+        return Operator(self.data.T)
+
+    def compose(self, other, front=False):
+        """a.compose(b) applies a first, then b (the matrix b @ a), as in Qiskit."""
+        b = Operator(other).data
+        return Operator(self.data @ b if front else b @ self.data)
+
+    def dot(self, other):
+        """a.dot(b) is the matrix product a @ b (b is applied first)."""
+        return Operator(self.data @ Operator(other).data)
+
+    def power(self, k):
+        return Operator(np.linalg.matrix_power(self.data, int(k)))
+
+    def is_unitary(self, atol=1e-8):
+        d = self.data
+        return bool(np.allclose(d.conj().T @ d, np.eye(d.shape[0]), atol=atol))
+
+    def equiv(self, other, atol=1e-8):
+        """True if the two operators are equal up to a global phase."""
+        try:
+            b = Operator(other).data
+        except (ValueError, TypeError):
+            return False
+        a = self.data
+        if a.shape != b.shape:
+            return False
+        k = int(np.argmax(np.abs(b)))
+        i, j = divmod(k, b.shape[1])
+        if abs(b[i, j]) < atol or abs(a[i, j]) < atol:
+            return bool(np.allclose(a, b, atol=atol))
+        phase = a[i, j] / b[i, j]
+        if abs(abs(phase) - 1) > 1e-6:
+            return False
+        return bool(np.allclose(a, phase * b, atol=atol))
+
+    def __eq__(self, other):
+        try:
+            b = Operator(other).data
+        except (ValueError, TypeError):
+            return False
+        return self.data.shape == b.shape and bool(np.allclose(self.data, b, rtol=1e-5, atol=1e-8))
+
+    def __array__(self, dtype=None, copy=None):
+        return self.data if dtype is None else self.data.astype(dtype)
+
+    def __repr__(self):
+        rows = ",\n          ".join("[" + ", ".join(_fmt_complex(x) for x in r) + "]" for r in self.data)
+        dims = tuple([2] * self.num_qubits)
+        return f"Operator([{rows}],\n         input_dims={dims}, output_dims={dims})"
 
 
 def _fmt_complex(a):
