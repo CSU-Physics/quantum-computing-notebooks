@@ -1,0 +1,408 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Module 6 Slides: A First Quantum Algorithm</title>
+<style>
+  :root { --maroon:#99004C; --ink:#24313D; --muted:#6A626B; --line:#E4DCE0; --tint:#F8F4F6; --gold:#C9A227; --ok:#2E7D4F; }
+  * { box-sizing:border-box; }
+  html, body { margin:0; height:100%; background:#2B2230; font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color:var(--ink); }
+  #viewport { position:absolute; inset:0 0 44px 0; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+  #stage { width:1280px; height:720px; flex-shrink:0; position:relative; transform-origin:center center; }
+  .slide { position:absolute; inset:0; background:#fff; padding:56px 72px 64px; display:none; flex-direction:column; border-top:10px solid var(--maroon); }
+  .slide.on { display:flex; }
+  .slide h1 { font-family: Georgia, serif; color:var(--maroon); font-size:56px; margin:0 0 18px; line-height:1.1; }
+  .slide h2 { font-family: Georgia, serif; color:var(--maroon); font-size:40px; margin:0 0 22px; line-height:1.15; }
+  .slide p, .slide li { font-size:27px; line-height:1.45; margin:0 0 14px; }
+  .slide ul { margin:0 0 10px 0; padding-left:34px; }
+  .kicker { font-size:20px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); margin-bottom:10px; }
+  .eq { background:var(--tint); border-left:6px solid var(--maroon); padding:16px 24px; font-size:34px; margin:10px 0 18px; font-family: Georgia, serif; }
+  .small { font-size:20px !important; color:var(--muted); }
+  .cols { display:flex; gap:40px; align-items:flex-start; flex:1; }
+  .cols > div { flex:1; }
+  .card { border:2px solid var(--line); border-radius:10px; padding:18px 22px; }
+  .card h3 { margin:0 0 8px; font-size:27px; color:var(--maroon); }
+  .card p { font-size:23px; margin:0; }
+  table { border-collapse:collapse; font-size:26px; }
+  th, td { border:1px solid var(--line); padding:10px 18px; text-align:left; }
+  th { background:var(--tint); }
+  .foot { position:absolute; left:72px; right:72px; bottom:20px; display:flex; justify-content:space-between; font-size:15px; color:var(--muted); }
+  .reveal { margin-top:10px; }
+  .reveal button { font-size:22px; padding:8px 18px; border:2px solid var(--maroon); background:#fff; color:var(--maroon); border-radius:6px; cursor:pointer; }
+  .reveal .ans { display:none; margin-top:14px; background:#EEF6F0; border-left:6px solid var(--ok); padding:12px 20px; font-size:25px; line-height:1.45; }
+  .reveal.open .ans { display:block; }
+  .reveal.open button { display:none; }
+  .title-slide { background: linear-gradient(135deg, #fff 0%, #fff 58%, var(--tint) 58%); }
+  #bar { position:absolute; left:0; right:0; bottom:0; height:44px; background:#1E1722; display:flex; align-items:center; justify-content:center; gap:10px; color:#fff; font-size:14px; }
+  #bar button { background:#3A2F40; color:#fff; border:0; border-radius:4px; padding:7px 14px; font-size:14px; cursor:pointer; }
+  #bar button:hover { background:var(--maroon); }
+  #count { min-width:70px; text-align:center; }
+  svg text { font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  @media print {
+    @page { size: 1280px 720px; margin:0; }
+    html, body { background:#fff; height:auto; }
+    #bar { display:none; }
+    #viewport { position:static; display:block; }
+    #stage { transform:none !important; width:1280px; height:auto; }
+    .slide { display:flex !important; position:relative; width:1280px; height:720px; page-break-after:always; break-after:page; }
+    .reveal .ans { display:block !important; }
+    .reveal button { display:none !important; }
+  }
+</style>
+</head>
+<body>
+<div id="viewport"><div id="stage">
+
+
+<!-- 1 -->
+<section class="slide title-slide">
+  <div class="kicker">Quantum Computing Foundations · Module 6</div>
+  <h1>A first quantum algorithm</h1>
+  <p style="font-size:30px;max-width:560px">Bernstein-Vazirani: find a hidden string with one query instead of n. With Deutsch-Jozsa as a demonstration.</p>
+  <svg style="position:absolute;right:50px;top:190px" width="480" height="300" viewBox="0 0 480 300" aria-label="The Bernstein-Vazirani circuit for the hidden string 101">
+    <g font-family="Georgia" font-size="22" fill="#24313D">
+      <text x="0" y="248">q0</text><text x="0" y="178">q1</text><text x="0" y="108">q2</text><text x="0" y="38">ans</text>
+      <g stroke="#24313D" stroke-width="2.5"><line x1="50" y1="240" x2="470" y2="240"/><line x1="50" y1="170" x2="470" y2="170"/><line x1="50" y1="100" x2="470" y2="100"/><line x1="50" y1="30" x2="470" y2="30"/></g>
+      <g fill="#fff" stroke="#6A626B" stroke-width="2.5"><rect x="62" y="12" width="36" height="36" rx="5"/><rect x="112" y="12" width="36" height="36" rx="5"/><rect x="112" y="82" width="36" height="36" rx="5"/><rect x="112" y="152" width="36" height="36" rx="5"/><rect x="112" y="222" width="36" height="36" rx="5"/>
+        <rect x="330" y="82" width="36" height="36" rx="5"/><rect x="330" y="152" width="36" height="36" rx="5"/><rect x="330" y="222" width="36" height="36" rx="5"/></g>
+      <text x="80" y="38" text-anchor="middle">X</text><text x="130" y="38" text-anchor="middle">H</text><text x="130" y="108" text-anchor="middle">H</text><text x="130" y="178" text-anchor="middle">H</text><text x="130" y="248" text-anchor="middle">H</text>
+      <text x="348" y="108" text-anchor="middle">H</text><text x="348" y="178" text-anchor="middle">H</text><text x="348" y="248" text-anchor="middle">H</text>
+      <rect x="180" y="4" width="120" height="270" rx="8" fill="#F8F4F6" stroke="#99004C" stroke-width="2.5" stroke-dasharray="7 5" opacity="0.9"/>
+      <g stroke="#99004C" stroke-width="3" fill="#99004C">
+        <line x1="210" y1="240" x2="210" y2="30"/><circle cx="210" cy="240" r="7"/>
+        <line x1="268" y1="100" x2="268" y2="30"/><circle cx="268" cy="100" r="7"/>
+      </g>
+      <g stroke="#99004C" stroke-width="3" fill="#fff"><circle cx="210" cy="30" r="14"/><circle cx="268" cy="30" r="14"/></g>
+      <g stroke="#99004C" stroke-width="3"><line x1="196" y1="30" x2="224" y2="30"/><line x1="210" y1="16" x2="210" y2="44"/><line x1="254" y1="30" x2="282" y2="30"/><line x1="268" y1="16" x2="268" y2="44"/></g>
+      <text x="240" y="292" text-anchor="middle" fill="#99004C" font-size="19">oracle for s = 101</text>
+      <g fill="#fff" stroke="#24313D" stroke-width="2"><rect x="400" y="84" width="34" height="32"/><rect x="400" y="154" width="34" height="32"/><rect x="400" y="224" width="34" height="32"/></g>
+      <text x="417" y="108" text-anchor="middle" font-size="18">M</text><text x="417" y="178" text-anchor="middle" font-size="18">M</text><text x="417" y="248" text-anchor="middle" font-size="18">M</text>
+    </g>
+  </svg>
+  <div class="foot"><span>SemiAcademy · ISEP-CSU</span><span>CC BY 4.0</span></div>
+</section>
+
+<!-- 2 -->
+<section class="slide">
+  <h2>By the end of this module you can</h2>
+  <ul>
+    <li>describe the <strong>query model</strong>: a black box you may only ask questions, and the number of questions as the cost;</li>
+    <li>solve the Bernstein-Vazirani problem classically with n queries, and explain why fewer is impossible;</li>
+    <li>build the <strong>oracle</strong> as a circuit and explain <strong>phase kickback</strong>;</li>
+    <li>implement the <strong>Bernstein-Vazirani</strong> circuit and explain how interference gives the answer in one query;</li>
+    <li>use the same circuit for <strong>Deutsch-Jozsa</strong>, and say what these speedups do and do not show.</li>
+  </ul>
+  <p class="small" style="margin-top:24px">This module covers course outcome 5: implement Bernstein-Vazirani in Qiskit and explain how it differs from a classical search for the hidden string.</p>
+  <div class="foot"><span>Module 6 · A first quantum algorithm</span><span>2</span></div>
+</section>
+
+<!-- 3 -->
+<section class="slide">
+  <h2>The query model</h2>
+  <div class="cols">
+    <div style="flex:0 0 620px">
+      <p>A function f is hidden in a <strong>black box</strong>. You cannot look inside; you can only ask it questions: give it x, get f(x).</p>
+      <p>The cost of an algorithm is the number of <strong>queries</strong>. Everything else is free.</p>
+      <p class="small">An idealized model, but a clean place to compare classical and quantum algorithms. The ideas behind Shor's factoring algorithm were first found in this setting.</p>
+    </div>
+    <svg width="420" height="260" viewBox="0 0 420 260" aria-label="A black box receives x and returns f of x">
+      <g font-family="Georgia" font-size="26" fill="#24313D">
+        <rect x="130" y="70" width="160" height="120" rx="12" fill="#24313D"/>
+        <text x="210" y="140" text-anchor="middle" fill="#fff" font-size="30">f</text>
+        <line x1="20" y1="130" x2="125" y2="130" stroke="#99004C" stroke-width="4"/><polygon points="125,120 125,140 140,130" fill="#99004C"/>
+        <line x1="290" y1="130" x2="390" y2="130" stroke="#99004C" stroke-width="4"/><polygon points="390,120 390,140 405,130" fill="#99004C"/>
+        <text x="60" y="115" text-anchor="middle">x</text><text x="345" y="115" text-anchor="middle">f(x)</text>
+        <text x="210" y="235" text-anchor="middle" font-size="20" fill="#6A626B">each question costs one query</text>
+      </g>
+    </svg>
+  </div>
+  <div class="foot"><span>Module 6 · A first quantum algorithm</span><span>3</span></div>
+</section>
+
+<!-- 4 -->
+<section class="slide">
+  <h2>The Bernstein-Vazirani problem</h2>
+  <div class="cols">
+    <div style="flex:0 0 600px">
+      <p>The box hides an n-bit string s and answers</p>
+      <div class="eq">f(x) = s·x mod 2</div>
+      <p>the parity of the positions where both s and x have a 1. Find s.</p>
+      <p class="small">Strings are written like Qiskit results: the rightmost bit belongs to qubit 0.</p>
+    </div>
+    <table>
+      <tr><th>x</th><th>f(x) for s = 101</th></tr>
+      <tr><td>000</td><td>0</td></tr><tr><td>001</td><td>1</td></tr><tr><td>010</td><td>0</td></tr><tr><td>011</td><td>1</td></tr>
+      <tr><td>100</td><td>1</td></tr><tr><td>101</td><td>0</td></tr><tr><td>110</td><td>1</td></tr><tr><td>111</td><td>0</td></tr>
+    </table>
+  </div>
+  <div class="foot"><span>Module 6 · A first quantum algorithm</span><span>4</span></div>
+</section>
+
+<!-- 5 -->
+<section class="slide">
+  <h2>The classical answer: n queries</h2>
+  <div class="cols">
+    <div style="flex:0 0 620px">
+      <p>Ask about inputs with a single 1. The input with a 1 in position j answers with that bit of s:</p>
+      <div class="eq" style="font-size:28px">f(100) = 1, &nbsp; f(010) = 0, &nbsp; f(001) = 1 &nbsp;→&nbsp; s = 101</div>
+      <p>That takes <strong>n queries</strong>. No classical method can do better: each answer is a single bit, and s has n unknown bits.</p>
+    </div>
+    <div class="card" style="flex:1"><h3>In the lab</h3><p><code>classical_bv(query, n)</code> asks the n questions and joins the answers into s.</p><p class="small">An 8-bit string takes 8 queries.</p></div>
+  </div>
+  <div class="foot"><span>Module 6 · A first quantum algorithm</span><span>5</span></div>
+</section>
+
+<!-- 6 -->
+<section class="slide">
+  <h2>Pause and predict</h2>
+  <p>The hidden string has 20 bits. How many queries does a classical computer need to be sure of s? Could a clever choice of inputs, such as x = 111…1, do better?</p>
+  <div class="reveal"><button type="button">Show the answer</button>
+    <div class="ans">20. Any input, clever or not, returns one bit, so 19 answers leave at least two possible strings. x = 111…1 returns the parity of all of s: useful, but still only one bit.</div></div>
+  <div class="foot"><span>Module 6 · A first quantum algorithm</span><span>6</span></div>
+</section>
+
+<!-- 7 -->
+<section class="slide">
+  <h2>The oracle as a circuit</h2>
+  <div class="cols">
+    <div style="flex:0 0 560px">
+      <p>The quantum box acts on n input qubits and one <strong>answer qubit</strong>:</p>
+      <div class="eq" style="font-size:28px">|x⟩|y⟩ → |x⟩|y ⊕ f(x)⟩</div>
+      <p>For f(x) = s·x mod 2: one CNOT from each input qubit where s has a 1 to the answer qubit. Each adds x<sub>i</sub>; together they add the parity.</p>
+      <p class="small">Character s[n − 1 − i] belongs to qubit i.</p>
+    </div>
+    <svg width="460" height="300" viewBox="0 0 460 300" aria-label="Oracle for s equals 1011: CNOTs from qubits 0, 1 and 3 to the answer qubit">
+      <g font-family="Georgia" font-size="22" fill="#24313D">
+        <text x="0" y="276">q0</text><text x="0" y="216">q1</text><text x="0" y="156">q2</text><text x="0" y="96">q3</text><text x="0" y="36">ans</text>
+        <g stroke="#24313D" stroke-width="2.5"><line x1="50" y1="270" x2="440" y2="270"/><line x1="50" y1="210" x2="440" y2="210"/><line x1="50" y1="150" x2="440" y2="150"/><line x1="50" y1="90" x2="440" y2="90"/><line x1="50" y1="30" x2="440" y2="30"/></g>
+        <g stroke="#99004C" stroke-width="3" fill="#99004C">
+          <line x1="140" y1="270" x2="140" y2="30"/><circle cx="140" cy="270" r="8"/>
+          <line x1="240" y1="210" x2="240" y2="30"/><circle cx="240" cy="210" r="8"/>
+          <line x1="340" y1="90" x2="340" y2="30"/><circle cx="340" cy="90" r="8"/>
+        </g>
+        <g stroke="#99004C" stroke-width="3" fill="#fff"><circle cx="140" cy="30" r="15"/><circle cx="240" cy="30" r="15"/><circle cx="340" cy="30" r="15"/></g>
+        <g stroke="#99004C" stroke-width="3"><line x1="125" y1="30" x2="155" y2="30"/><line x1="225" y1="30" x2="255" y2="30"/><line x1="325" y1="30" x2="355" y2="30"/></g>
+        <text x="240" y="298" text-anchor="middle" font-size="19" fill="#99004C">s = 1011</text>
+      </g>
+    </svg>
+  </div>
+  <div class="foot"><span>Module 6 · A first quantum algorithm</span><span>7</span></div>
+</section>
+
+<!-- 8 -->
+<section class="slide">
+  <h2>Phase kickback</h2>
+  <div class="cols">
+    <div style="flex:0 0 600px">
+      <p>Put the answer qubit in <strong>|−⟩</strong> first. Flipping |−⟩ gives −|−⟩: the qubit does not change, but the state picks up a sign.</p>
+      <div class="eq" style="font-size:28px">|x⟩|−⟩ → (−1)<sup>f(x)</sup> |x⟩|−⟩</div>
+      <p>The answer moves from the answer qubit into the <strong>phase</strong> of the input. A CNOT on |+⟩|−⟩ turns the control into |−⟩, while the target stays put.</p>
+    </div>
+    <div class="card" style="flex:1"><h3>From the lab</h3><p class="mono" style="font-size:19px;line-height:1.7;font-family:Consolas,monospace">input qubit 0<br>before (1, 0, 0) &nbsp;after (−1, 0, 0)<br>answer qubit<br>before (−1, 0, 0) after (−1, 0, 0)</p><p class="small">Bloch vectors, qsim.</p></div>
+  </div>
+  <div class="foot"><span>Module 6 · A first quantum algorithm</span><span>8</span></div>
+</section>
+
+<!-- 9 -->
+<section class="slide">
+  <h2>The Bernstein-Vazirani circuit</h2>
+  <ol style="font-size:27px;line-height:1.55">
+    <li>Answer qubit to |−⟩ (X, then H); every input qubit to |+⟩ (H).</li>
+    <li>Use the oracle <strong>once</strong>: the input register becomes Σ<sub>x</sub> (−1)<sup>s·x</sup> |x⟩ / √2<sup>n</sup>.</li>
+    <li>H on every input qubit again.</li>
+    <li>Measure the inputs: the result is s, in every shot.</li>
+  </ol>
+  <div class="eq" style="font-size:24px;margin-top:10px"><code>qc.x(n); qc.h(range(n + 1)); qc = qc.compose(oracle); qc.h(range(n)); qc.measure(range(n), range(n))</code></div>
+  <div class="foot"><span>Module 6 · A first quantum algorithm</span><span>9</span></div>
+</section>
+
+<!-- 10 -->
+<section class="slide">
+  <h2>Why it works: signs, then interference</h2>
+  <svg width="1130" height="340" viewBox="0 0 1130 340" aria-label="Amplitudes for s equals 101: all equal after H, signs after the oracle, a single bar at 101 after the final H">
+    <g font-family="Georgia" font-size="19" fill="#24313D">
+      <text x="185" y="26" text-anchor="middle">1. after H: all equal</text>
+      <text x="565" y="26" text-anchor="middle">2. after the oracle: signs (−1)<tspan baseline-shift="super" font-size="13">s·x</tspan></text>
+      <text x="945" y="26" text-anchor="middle">3. after H again: only s</text>
+      <g stroke="#24313D" stroke-width="1.5"><line x1="20" y1="180" x2="350" y2="180"/><line x1="400" y1="180" x2="730" y2="180"/><line x1="780" y1="180" x2="1110" y2="180"/></g>
+      <g fill="#99004C">
+        <rect x="28" y="130" width="32" height="50"/><rect x="68" y="130" width="32" height="50"/><rect x="108" y="130" width="32" height="50"/><rect x="148" y="130" width="32" height="50"/>
+        <rect x="188" y="130" width="32" height="50"/><rect x="228" y="130" width="32" height="50"/><rect x="268" y="130" width="32" height="50"/><rect x="308" y="130" width="32" height="50"/>
+        <rect x="408" y="130" width="32" height="50"/><rect x="488" y="130" width="32" height="50"/><rect x="608" y="130" width="32" height="50"/><rect x="688" y="130" width="32" height="50"/>
+        <rect x="988" y="40" width="32" height="140"/>
+      </g>
+      <g fill="#B3261E"><rect x="448" y="180" width="32" height="50"/><rect x="528" y="180" width="32" height="50"/><rect x="568" y="180" width="32" height="50"/><rect x="648" y="180" width="32" height="50"/></g>
+      <g font-family="Consolas, monospace" font-size="15" text-anchor="middle">
+        <text x="44" y="262">000</text><text x="84" y="262">001</text><text x="124" y="262">010</text><text x="164" y="262">011</text><text x="204" y="262">100</text><text x="244" y="262">101</text><text x="284" y="262">110</text><text x="324" y="262">111</text>
+        <text x="424" y="262">000</text><text x="464" y="262">001</text><text x="504" y="262">010</text><text x="544" y="262">011</text><text x="584" y="262">100</text><text x="624" y="262">101</text><text x="664" y="262">110</text><text x="704" y="262">111</text>
+        <text x="804" y="262">000</text><text x="844" y="262">001</text><text x="884" y="262">010</text><text x="924" y="262">011</text><text x="964" y="262">100</text><text x="1004" y="262" fill="#99004C" font-weight="700">101</text><text x="1044" y="262">110</text><text x="1084" y="262">111</text>
+      </g>
+      <text x="565" y="310" text-anchor="middle" font-size="20" fill="#6A626B">s = 101. The oracle changes only signs, not probabilities; the final H gates turn the sign pattern into |s⟩.</text>
+    </g>
+  </svg>
+  <div class="foot"><span>Module 6 · A first quantum algorithm</span><span>10</span></div>
+</section>
+
+<!-- 11 -->
+<section class="slide">
+  <h2>The one-line reason</h2>
+  <p>H on n qubits turns a basis state |s⟩ into exactly the sign pattern of s:</p>
+  <div class="eq" style="font-size:30px">H<sup>⊗n</sup> |s⟩ = Σ<sub>x</sub> (−1)<sup>s·x</sup> |x⟩ / √2<sup>n</sup></div>
+  <p>The oracle produces that pattern. H is its own inverse, so H on every qubit turns the pattern back into |s⟩.</p>
+  <p class="small">The circuit never reads the 2<sup>n</sup> values f(x) one by one: it uses one query on a superposition, and interference does the rest.</p>
+  <div class="foot"><span>Module 6 · A first quantum algorithm</span><span>11</span></div>
+</section>
+
+<!-- 12 -->
+<section class="slide">
+  <h2>Pause and predict</h2>
+  <p>You forget the X gate, so the answer qubit starts in |+⟩ instead of |−⟩. What does the circuit return?</p>
+  <div class="reveal"><button type="button">Show the answer</button>
+    <div class="ans">Always 00…0. Flipping |+⟩ does nothing at all, not even a sign, so no phase is kicked back. The inputs get H, nothing, H again, and return to |0…0⟩. The check cell in the lab catches exactly this mistake.</div></div>
+  <div class="foot"><span>Module 6 · A first quantum algorithm</span><span>12</span></div>
+</section>
+
+<!-- 13 -->
+<section class="slide">
+  <h2>Deutsch-Jozsa: constant or balanced?</h2>
+  <div class="cols">
+    <div style="flex:0 0 600px">
+      <p>A promise problem: f on n bits is either</p>
+      <ul>
+        <li><strong>constant</strong>: the same answer for every x, or</li>
+        <li><strong>balanced</strong>: 1 for exactly half of the inputs.</li>
+      </ul>
+      <p>Run the <strong>same circuit</strong> once. The probability of 00…0 is</p>
+      <div class="eq" style="font-size:26px">| Σ<sub>x</sub> (−1)<sup>f(x)</sup> / 2<sup>n</sup> |²  =  1 if constant, 0 if balanced</div>
+    </div>
+    <table>
+      <tr><th>Oracle (lab)</th><th>Kind</th><th>P(000)</th></tr>
+      <tr><td>A: f = 1</td><td>constant</td><td>1</td></tr>
+      <tr><td>B: f = x1</td><td>balanced</td><td>0</td></tr>
+      <tr><td>C: f = x0 ⊕ x2</td><td>balanced</td><td>0</td></tr>
+      <tr><td>D: (x0 ∧ x1) ⊕ x2</td><td>balanced</td><td>0</td></tr>
+      <tr><td>E: f = 0</td><td>constant</td><td>1</td></tr>
+    </table>
+  </div>
+  <div class="foot"><span>Module 6 · A first quantum algorithm</span><span>13</span></div>
+</section>
+
+<!-- 14 -->
+<section class="slide">
+  <h2>Counting queries</h2>
+  <table>
+    <tr><th>Problem, n-bit inputs</th><th>Classical</th><th>Quantum</th><th>n = 10</th></tr>
+    <tr><td>Bernstein-Vazirani</td><td>n</td><td>1</td><td>10 against 1</td></tr>
+    <tr><td>Deutsch-Jozsa, classical must be certain</td><td>2<sup>n−1</sup> + 1 in the worst case</td><td>1</td><td>513 against 1</td></tr>
+    <tr><td>Deutsch-Jozsa, classical may err with probability 1/2<sup>k</sup></td><td>about k + 1 random queries</td><td>1</td><td>11 against 1, for k = 10</td></tr>
+  </table>
+  <p class="small" style="margin-top:16px">Bernstein-Vazirani saves a factor of n. Deutsch-Jozsa's exponential gap holds only against classical computers that must never be wrong.</p>
+  <div class="foot"><span>Module 6 · A first quantum algorithm</span><span>14</span></div>
+</section>
+
+<!-- 15 -->
+<section class="slide">
+  <h2>What these speedups do and do not show</h2>
+  <ul>
+    <li>They are counted in <strong>queries</strong> to a black box, not in seconds on a real problem.</li>
+    <li>Bernstein-Vazirani: n queries become 1. A real gain, but it grows only in proportion to n.</li>
+    <li>Deutsch-Jozsa: exponential against an exact classical algorithm, small against a randomized one.</li>
+    <li><strong>Simon's problem</strong> gives an exponential gap even against randomized classical algorithms, and its ideas lead to <strong>Shor's</strong> factoring algorithm. Grover's search gives a square-root speedup. Both come in the next level, <em>Quantum Algorithms</em>.</li>
+  </ul>
+  <div class="foot"><span>Module 6 · A first quantum algorithm</span><span>15</span></div>
+</section>
+
+<!-- 16 -->
+<section class="slide">
+  <h2>The algorithm on a noisy computer</h2>
+  <div class="cols">
+    <div style="flex:0 0 560px">
+      <p>Each CNOT in the oracle is another chance for an error (Module 5). With a depolarizing error λ on every CNOT, s = 111111 (six CNOTs) is still found most of the time:</p>
+      <p class="small">qsim, 1,000 shots, seed 7. The most frequent result is still s, so repeating the run and taking the majority works. Bigger circuits need lower error rates.</p>
+    </div>
+    <table style="font-size:24px">
+      <tr><th>λ per CNOT</th><th>shots returning s</th></tr>
+      <tr><td>0</td><td>1000</td></tr><tr><td>0.01</td><td>955</td></tr><tr><td>0.02</td><td>910</td></tr><tr><td>0.05</td><td>796</td></tr><tr><td>0.10</td><td>636</td></tr>
+    </table>
+  </div>
+  <div class="foot"><span>Module 6 · A first quantum algorithm</span><span>16</span></div>
+</section>
+
+<!-- 17 -->
+<section class="slide">
+  <h2>Pause and predict</h2>
+  <p>With λ = 0.05 on every CNOT, which hidden string is found more reliably: 100000 or 111111?</p>
+  <div class="reveal"><button type="button">Show the answer</button>
+    <div class="ans">100000. Its oracle has one CNOT, so only one chance for an error: about 97.5% of shots return s. The oracle for 111111 has six CNOTs: about 81%. The number of 1s in s sets the cost of the oracle on real hardware.</div></div>
+  <div class="foot"><span>Module 6 · A first quantum algorithm</span><span>17</span></div>
+</section>
+
+<!-- 18 -->
+<section class="slide">
+  <h2>Summary</h2>
+  <ul>
+    <li style="font-size:25px">Query model: the cost is the number of questions to a black box.</li>
+    <li style="font-size:25px">Bernstein-Vazirani: f(x) = s·x mod 2. Classical: n queries. Quantum: 1.</li>
+    <li style="font-size:25px">The oracle: a CNOT to the answer qubit for each 1 in s. With the answer qubit in |−⟩, phase kickback gives (−1)<sup>s·x</sup>.</li>
+    <li style="font-size:25px">H, oracle, H: the signs interfere into |s⟩. The same circuit decides Deutsch-Jozsa.</li>
+    <li style="font-size:25px">Query speedups are real, but this one is not exponential; noise grows with the number of CNOTs.</li>
+  </ul>
+  <div class="eq" style="font-size:24px;margin-top:12px"><strong>Next:</strong> the Module 6 lab. You write <code>classical_bv()</code>, <code>bv_oracle()</code> and <code>bv_circuit()</code>, run Deutsch-Jozsa, and add noise.</div>
+  <div class="foot"><span>Module 6 · A first quantum algorithm</span><span>18</span></div>
+</section>
+
+<!-- 19 -->
+<section class="slide">
+  <h2>Credits and license</h2>
+  <p>These slides were written for SemiAcademy's <em>Quantum Computing Foundations</em> course, developed through the Intel Semiconductor Education Program at Central State University (ISEP-CSU).</p>
+  <p>License: <strong>Creative Commons Attribution 4.0 International (CC BY 4.0)</strong>, https://creativecommons.org/licenses/by/4.0/. You may copy, adapt and share them, with credit.</p>
+  <p>Suggested credit: "Module 6 slides, Quantum Computing Foundations, SemiAcademy / ISEP-CSU, CC BY 4.0."</p>
+  <p class="small">Source: github.com/CSU-Physics/quantum-computing-notebooks (media/level1/m6-slides.html). Print or save as PDF from your browser to get one slide per page.</p>
+  <div class="foot"><span>Module 6 · A first quantum algorithm</span><span>19</span></div>
+</section>
+
+</div></div>
+<div id="bar">
+  <button type="button" id="prev" aria-label="Previous slide">◀ Prev</button>
+  <span id="count">1 / 19</span>
+  <button type="button" id="next" aria-label="Next slide">Next ▶</button>
+  <button type="button" id="full">Full screen</button>
+  <button type="button" id="print">Print / PDF</button>
+</div>
+<script>
+(function () {
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide')), i = 0;
+  var m = /[#&]s=?(\d+)/.exec(location.hash); if (m) i = Math.min(slides.length - 1, Math.max(0, parseInt(m[1], 10) - 1));
+  function show(n) {
+    i = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach(function (s, j) { s.classList.toggle('on', j === i); });
+    document.getElementById('count').textContent = (i + 1) + ' / ' + slides.length;
+    try { history.replaceState(null, '', '#s' + (i + 1)); } catch (e) {}
+  }
+  function fit() {
+    var vp = document.getElementById('viewport'), st = document.getElementById('stage');
+    var sc = Math.min(vp.clientWidth / 1280, vp.clientHeight / 720);
+    st.style.transform = 'scale(' + sc + ')';
+  }
+  document.getElementById('prev').onclick = function () { show(i - 1); };
+  document.getElementById('next').onclick = function () { show(i + 1); };
+  document.getElementById('full').onclick = function () { var d = document.documentElement; if (!document.fullscreenElement && d.requestFullscreen) d.requestFullscreen(); else if (document.exitFullscreen) document.exitFullscreen(); };
+  document.getElementById('print').onclick = function () { window.print(); };
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { show(i + 1); e.preventDefault(); }
+    if (e.key === 'ArrowLeft' || e.key === 'PageUp') { show(i - 1); e.preventDefault(); }
+    if (e.key === 'Home') show(0); if (e.key === 'End') show(slides.length - 1);
+  });
+  var tx = null;
+  document.addEventListener('touchstart', function (e) { tx = e.touches[0].clientX; }, { passive: true });
+  document.addEventListener('touchend', function (e) { if (tx === null) return; var dx = e.changedTouches[0].clientX - tx; if (Math.abs(dx) > 50) show(i + (dx < 0 ? 1 : -1)); tx = null; });
+  document.getElementById('stage').addEventListener('click', function (e) {
+    var b = e.target.closest('.reveal button'); if (b) b.parentNode.classList.add('open');
+  });
+  window.addEventListener('resize', fit);
+  fit(); show(i);
+})();
+</script>
+</body>
+</html>

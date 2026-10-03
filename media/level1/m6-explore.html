@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Module 6 Explorer: A First Quantum Algorithm</title>
+<style>
+  :root { --maroon:#99004C; --ink:#24313D; --muted:#6A626B; --line:#E4DCE0; --tint:#F8F4F6; --ok:#2E7D4F; --bad:#B3261E; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:#fff; color:var(--ink); font-family:"Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size:15px; }
+  .tabs { display:flex; border-bottom:2px solid var(--line); background:var(--tint); }
+  .tabs button { flex:1; border:0; background:none; padding:10px 8px; font-size:15px; cursor:pointer; color:var(--muted); border-bottom:3px solid transparent; }
+  .tabs button.on { color:var(--maroon); border-bottom-color:var(--maroon); font-weight:600; background:#fff; }
+  .tool { display:none; padding:12px 16px; }
+  .tool.on { display:block; }
+  h2 { font-family:Georgia, serif; color:var(--maroon); font-size:19px; margin:0 0 4px; }
+  .hint { color:var(--muted); margin:0 0 10px; line-height:1.45; }
+  .grid { display:grid; grid-template-columns: 300px 1fr; gap:14px; align-items:start; }
+  @media (max-width: 660px) { .grid { grid-template-columns: 1fr; } }
+  .box { border:1px solid var(--line); border-radius:6px; padding:10px 12px; }
+  .box h3 { margin:0 0 6px; font-size:14.5px; color:var(--maroon); }
+  .row { display:flex; gap:5px; flex-wrap:wrap; margin-top:8px; align-items:center; }
+  button.bit { width:38px; height:38px; border:2px solid var(--maroon); background:#fff; color:var(--maroon); border-radius:5px; font-size:18px; cursor:pointer; font-family:Consolas, monospace; }
+  button.bit.one { background:var(--maroon); color:#fff; }
+  button.act { border:2px solid var(--ink); background:#fff; color:var(--ink); padding:4px 9px; border-radius:5px; font-size:13.5px; cursor:pointer; }
+  button.act.fill { background:var(--maroon); border-color:var(--maroon); color:#fff; }
+  button.act.on { background:var(--ink); color:#fff; }
+  .mono { font-family: Consolas, "Courier New", monospace; }
+  table { border-collapse:collapse; width:100%; font-size:13.5px; margin-top:6px; }
+  td, th { border:1px solid var(--line); padding:3px 7px; text-align:left; }
+  th { background:var(--tint); font-weight:600; }
+  .note { margin-top:8px; padding:7px 10px; border-radius:4px; font-size:13.5px; background:#EEF6F0; color:var(--ok); line-height:1.4; }
+  .note.warn { background:#FFF7E0; color:#7A5C00; }
+  .note.info { background:var(--tint); color:var(--ink); }
+  .credit { color:var(--muted); font-size:12px; padding:8px 16px 12px; border-top:1px solid var(--line); }
+  select { font-size:14px; padding:2px; }
+  svg { display:block; width:100%; height:auto; }
+  .log { font-family:Consolas, monospace; font-size:13px; background:var(--tint); border-radius:4px; padding:6px 8px; min-height:60px; max-height:150px; overflow:auto; line-height:1.5; }
+  .big { font-size:22px; font-family:Consolas, monospace; letter-spacing:3px; }
+</style>
+</head>
+<body>
+<div class="tabs" role="tablist">
+  <button type="button" data-t="classical" role="tab">1. Find the hidden string</button>
+  <button type="button" data-t="bv" role="tab">2. Why one query is enough</button>
+  <button type="button" data-t="dj" role="tab">3. Deutsch-Jozsa</button>
+</div>
+
+<!-- TOOL 1: classical vs quantum -->
+<section class="tool" id="t-classical" role="tabpanel">
+  <h2>Find the hidden string</h2>
+  <p class="hint">A box hides a string s. Give it an input x and it answers one bit: s·x mod 2 (the parity of the positions where both have a 1). Find s with as few questions as you can, then let the quantum circuit do it with one.</p>
+  <div class="grid">
+    <div class="box">
+      <h3>The box</h3>
+      <label style="font-size:13.5px">Length n <select id="n1" aria-label="length of the hidden string"><option>4</option><option selected>6</option><option>8</option></select></label>
+      <button type="button" class="act" id="newbox" style="margin-left:6px">New box</button>
+      <p style="font-size:13.5px;margin:10px 0 2px">Your input x (click the bits):</p>
+      <div class="row" id="xbits"></div>
+      <div class="row"><button type="button" class="act fill" id="ask">Ask the box</button><span id="qcount" class="mono"></span></div>
+      <p style="font-size:13.5px;margin:10px 0 2px">Your guess for s:</p>
+      <div class="row" id="gbits"></div>
+      <div class="row"><button type="button" class="act" id="guess">Check my guess</button><button type="button" class="act" id="quantum">Run the quantum circuit (1 query)</button></div>
+    </div>
+    <div class="box">
+      <h3>Questions and answers</h3>
+      <div class="log" id="log"></div>
+      <div class="note info" id="n1msg">Tip: an input with a single 1 asks about one position of s.</div>
+    </div>
+  </div>
+</section>
+
+<!-- TOOL 2: interference -->
+<section class="tool" id="t-bv" role="tabpanel">
+  <h2>Why one query is enough</h2>
+  <p class="hint">Choose a 3-bit hidden string and step through the Bernstein-Vazirani circuit. The bars are the amplitudes of the 8 input states (the answer qubit stays in |−⟩ and is not shown). Watch the signs after the oracle, and where the amplitude goes after the last H gates.</p>
+  <div class="grid">
+    <div class="box">
+      <h3>Hidden string s</h3>
+      <div class="row" id="sbits"></div>
+      <h3 style="margin-top:12px">Step</h3>
+      <div class="row">
+        <button type="button" class="act" data-st="0">1. H on inputs</button>
+        <button type="button" class="act" data-st="1">2. Oracle</button>
+        <button type="button" class="act" data-st="2">3. H again</button>
+      </div>
+      <svg id="circ2" viewBox="0 0 280 170" aria-label="The Bernstein-Vazirani circuit for the chosen hidden string" style="margin-top:10px"></svg>
+    </div>
+    <div class="box">
+      <svg id="amp2" viewBox="0 0 520 250" aria-label="Amplitudes of the 8 input states"></svg>
+      <div class="note info" id="n2"></div>
+    </div>
+  </div>
+</section>
+
+<!-- TOOL 3: Deutsch-Jozsa -->
+<section class="tool" id="t-dj" role="tabpanel">
+  <h2>Deutsch-Jozsa: constant or balanced?</h2>
+  <p class="hint">The same circuit, a different promise: f on 3 bits is either constant or balanced (1 for exactly half of the inputs). Choose a function and compare its truth table with the circuit's result. The probability of 000 decides the question in one query.</p>
+  <div class="grid">
+    <div class="box">
+      <h3>The function f</h3>
+      <select id="f3" aria-label="the function" style="width:100%">
+        <option value="c0">f(x) = 0 (constant)</option>
+        <option value="c1">f(x) = 1 (constant)</option>
+        <option value="b1">f(x) = x1 (balanced)</option>
+        <option value="b02">f(x) = x0 XOR x2 (balanced)</option>
+        <option value="b012">f(x) = x0 XOR x1 XOR x2 (balanced)</option>
+        <option value="bnl">f(x) = (x0 AND x1) XOR x2 (balanced)</option>
+        <option value="maj">f(x) = majority of x0, x1, x2 (balanced)</option>
+        <option value="and">f(x) = x0 AND x1 (neither: breaks the promise)</option>
+      </select>
+      <table id="tt"></table>
+    </div>
+    <div class="box">
+      <svg id="prob3" viewBox="0 0 520 230" aria-label="Probabilities of the 8 results"></svg>
+      <div class="note" id="n3"></div>
+    </div>
+  </div>
+</section>
+
+<div class="credit">Module 6 explorer · SemiAcademy / ISEP-CSU · CC BY 4.0. Strings are written like Qiskit results: the rightmost bit belongs to qubit 0.</div>
+
+<script>
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+  var tabs = Array.prototype.slice.call(document.querySelectorAll('.tabs button'));
+  function openTab(t) {
+    tabs.forEach(function (b) { b.classList.toggle('on', b.dataset.t === t); });
+    document.querySelectorAll('.tool').forEach(function (s) { s.classList.toggle('on', s.id === 't-' + t); });
+  }
+  tabs.forEach(function (b) { b.onclick = function () { openTab(b.dataset.t); }; });
+  function fromHash() { var h = location.hash; openTab(h.indexOf('dj') >= 0 ? 'dj' : h.indexOf('bv') >= 0 ? 'bv' : 'classical'); }
+  window.addEventListener('hashchange', fromHash);
+  fromHash();
+  function sv(svg, tag, at, txt) {
+    var e = document.createElementNS('http://www.w3.org/2000/svg', tag);
+    for (var k in at) e.setAttribute(k, at[k]);
+    if (txt !== undefined) e.textContent = txt;
+    svg.appendChild(e); return e;
+  }
+  function dot(a, b) { var s = 0; for (var i = 0; i < a.length; i++) s += (+a[i]) * (+b[i]); return s % 2; }
+  function bits(k, n) { var s = k.toString(2); while (s.length < n) s = '0' + s; return s; }
+
+  // ---------------------------------------------------------------- tool 1
+  var n1 = 6, secret = '', x = [], g = [], queries = 0;
+  function toggles(el, arr, onchange) {
+    el.innerHTML = '';
+    arr.forEach(function (v, i) {
+      var b = document.createElement('button'); b.type = 'button'; b.className = 'bit' + (v ? ' one' : ''); b.textContent = v;
+      b.setAttribute('aria-label', 'position ' + i + ', qubit ' + (arr.length - 1 - i));
+      b.onclick = function () { arr[i] = 1 - arr[i]; b.textContent = arr[i]; b.classList.toggle('one', arr[i] === 1); if (onchange) onchange(); };
+      el.appendChild(b);
+    });
+  }
+  function newBox() {
+    n1 = +$('n1').value;
+    do { secret = bits(Math.floor(Math.random() * Math.pow(2, n1)), n1); } while (secret.indexOf('1') < 0);
+    x = []; g = []; for (var i = 0; i < n1; i++) { x.push(0); g.push(0); }
+    queries = 0;
+    toggles($('xbits'), x); toggles($('gbits'), g);
+    $('log').innerHTML = ''; $('qcount').textContent = ' queries: 0';
+    $('n1msg').className = 'note info'; $('n1msg').textContent = 'A new box with a hidden ' + n1 + '-bit string. Tip: an input with a single 1 asks about one position of s.';
+  }
+  $('n1').onchange = newBox; $('newbox').onclick = newBox;
+  $('ask').onclick = function () {
+    var xs = x.join(''); queries++;
+    var f = dot(secret, xs);
+    $('log').innerHTML += 'query ' + queries + ':&nbsp; x = ' + xs + ' &nbsp;→&nbsp; f(x) = ' + f + '<br>';
+    $('log').scrollTop = 1e6;
+    $('qcount').textContent = ' queries: ' + queries;
+    var single = x.reduce(function (a, b) { return a + b; }, 0) === 1;
+    $('n1msg').className = 'note info';
+    $('n1msg').textContent = single ? 'One 1 in position ' + x.indexOf(1) + ': the answer is that bit of s.' : 'This answer mixes several positions of s: it tells you their parity, still only one bit of information.';
+  };
+  $('guess').onclick = function () {
+    var gs = g.join('');
+    if (gs === secret) { $('n1msg').className = 'note'; $('n1msg').textContent = 'Right: s = ' + secret + ', found with ' + queries + ' classical queries. No classical method can be sure with fewer than ' + n1 + ', because each answer is one bit.'; }
+    else { $('n1msg').className = 'note warn'; $('n1msg').textContent = 'Not yet: ' + gs + ' is not the hidden string. Ask more questions.'; }
+  };
+  $('quantum').onclick = function () {
+    $('log').innerHTML += '<b>quantum circuit, 1 query:</b> every shot gives ' + secret + '<br>';
+    $('log').scrollTop = 1e6;
+    $('n1msg').className = 'note';
+    $('n1msg').textContent = 'The Bernstein-Vazirani circuit used the box once, on a superposition of all ' + Math.pow(2, n1) + ' inputs, and every shot returned s = ' + secret + '. Classically that takes ' + n1 + ' queries.';
+  };
+  newBox();
+
+  // ---------------------------------------------------------------- tool 2
+  var s2 = [1, 0, 1], st = 0;
+  function amps2() {
+    var s = s2.join(''), a = [];
+    for (var k = 0; k < 8; k++) {
+      var xk = bits(k, 3);
+      if (st === 0) a.push(1 / Math.sqrt(8));
+      else if (st === 1) a.push((dot(s, xk) ? -1 : 1) / Math.sqrt(8));
+      else a.push(xk === s ? 1 : 0);
+    }
+    return a;
+  }
+  function draw2() {
+    var s = s2.join('');
+    document.querySelectorAll('[data-st]').forEach(function (b) { b.classList.toggle('on', +b.dataset.st === st); });
+    var svg = $('amp2'); while (svg.firstChild) svg.removeChild(svg.firstChild);
+    var a = amps2(), X0 = 50, W = 455, Y0 = 115, H = 95;
+    sv(svg, 'line', { x1: X0, y1: Y0, x2: X0 + W, y2: Y0, stroke: '#24313D', 'stroke-width': 1.2 });
+    [1, 0.5, -0.5, -1].forEach(function (t) {
+      sv(svg, 'line', { x1: X0, y1: Y0 - H * t, x2: X0 + W, y2: Y0 - H * t, stroke: '#E4DCE0' });
+      sv(svg, 'text', { x: X0 - 6, y: Y0 - H * t + 4, 'text-anchor': 'end', 'font-size': 11, fill: '#6A626B' }, String(t));
+    });
+    for (var k = 0; k < 8; k++) {
+      var cx = X0 + W * (k + 0.5) / 8, v = a[k], h = H * Math.abs(v);
+      sv(svg, 'rect', { x: cx - 18, y: v >= 0 ? Y0 - h : Y0, width: 36, height: Math.max(h, 0.5), fill: v < 0 ? '#B3261E' : '#99004C', rx: 2 });
+      sv(svg, 'text', { x: cx, y: 238, 'text-anchor': 'middle', 'font-size': 14, fill: bits(k, 3) === s ? '#99004C' : '#24313D', 'font-family': 'Consolas, monospace', 'font-weight': bits(k, 3) === s ? 700 : 400 }, bits(k, 3));
+      if (Math.abs(v) > 1e-9) sv(svg, 'text', { x: cx, y: v >= 0 ? Y0 - h - 4 : Y0 + h + 13, 'text-anchor': 'middle', 'font-size': 11, fill: '#6A626B' }, (v < 0 ? '−' : '') + (Math.abs(v) > 0.99 ? '1' : '0.354'));
+    }
+    var msg = ['After H on the inputs: all 8 inputs at once, each with amplitude 1/√8 = 0.354. This is the superposition the oracle will act on.',
+               'After the oracle: phase kickback multiplied each input x by (−1)^(s·x). The red bars are the inputs with s·x = 1. The probabilities have not changed at all; only the signs carry s.',
+               'After H again: the signs interfere. Every amplitude cancels except the one for ' + s + ', which is now 1. Measuring gives s with certainty.'][st];
+    $('n2').textContent = msg;
+    // circuit
+    var c = $('circ2'); while (c.firstChild) c.removeChild(c.firstChild);
+    var y = [130, 95, 60, 25], lbl = ['q0', 'q1', 'q2', 'ans'];
+    for (var q = 0; q < 4; q++) { sv(c, 'line', { x1: 34, y1: y[q], x2: 275, y2: y[q], stroke: '#24313D', 'stroke-width': 1.4 }); sv(c, 'text', { x: 2, y: y[q] + 4, 'font-size': 11, fill: '#6A626B' }, lbl[q]); }
+    function gate(xc, yc, t, on) { sv(c, 'rect', { x: xc - 11, y: yc - 11, width: 22, height: 22, fill: '#fff', stroke: on ? '#99004C' : '#B9AEB4', 'stroke-width': 1.6, rx: 3 }); sv(c, 'text', { x: xc, y: yc + 4, 'text-anchor': 'middle', 'font-size': 11, fill: on ? '#99004C' : '#6A626B' }, t); }
+    gate(50, y[3], 'X', st === 0);
+    for (q = 0; q < 4; q++) gate(80, y[q], 'H', st === 0);
+    var xo = 115, used = 0;
+    for (q = 0; q < 3; q++) if (s2[2 - q]) {
+      var xx = xo + 26 * used++;
+      sv(c, 'line', { x1: xx, y1: y[q], x2: xx, y2: y[3] - 9, stroke: st === 1 ? '#99004C' : '#6A626B', 'stroke-width': 1.6 });
+      sv(c, 'circle', { cx: xx, cy: y[q], r: 4, fill: st === 1 ? '#99004C' : '#6A626B' });
+      sv(c, 'circle', { cx: xx, cy: y[3], r: 9, fill: '#fff', stroke: st === 1 ? '#99004C' : '#6A626B', 'stroke-width': 1.6 });
+      sv(c, 'line', { x1: xx - 9, y1: y[3], x2: xx + 9, y2: y[3], stroke: st === 1 ? '#99004C' : '#6A626B', 'stroke-width': 1.6 });
+      sv(c, 'line', { x1: xx, y1: y[3] - 9, x2: xx, y2: y[3] + 9, stroke: st === 1 ? '#99004C' : '#6A626B', 'stroke-width': 1.6 });
+    }
+    if (!used) sv(c, 'text', { x: xo + 20, y: y[1] + 22, 'font-size': 11, fill: '#6A626B' }, 'no CNOTs (s = 000)');
+    for (q = 0; q < 3; q++) { gate(205, y[q], 'H', st === 2); sv(c, 'rect', { x: 236, y: y[q] - 10, width: 20, height: 20, fill: '#fff', stroke: '#24313D', rx: 2 }); sv(c, 'text', { x: 246, y: y[q] + 4, 'text-anchor': 'middle', 'font-size': 10 }, 'M'); }
+    sv(c, 'text', { x: 140, y: 162, 'text-anchor': 'middle', 'font-size': 11, fill: '#6A626B' }, 'oracle: a CNOT for each 1 in s = ' + s);
+  }
+  function redrawS() {
+    var el = $('sbits'); el.innerHTML = '';
+    s2.forEach(function (v, i) {
+      var b = document.createElement('button'); b.type = 'button'; b.className = 'bit' + (v ? ' one' : ''); b.textContent = v;
+      b.setAttribute('aria-label', 'bit of qubit ' + (2 - i));
+      b.onclick = function () { s2[i] = 1 - s2[i]; redrawS(); draw2(); };
+      el.appendChild(b);
+    });
+  }
+  document.querySelectorAll('[data-st]').forEach(function (b) { b.onclick = function () { st = +b.dataset.st; draw2(); }; });
+  redrawS(); draw2();
+
+  // ---------------------------------------------------------------- tool 3
+  var F = {
+    c0: function () { return 0; }, c1: function () { return 1; },
+    b1: function (x) { return x[1]; }, b02: function (x) { return x[0] ^ x[2]; }, b012: function (x) { return x[0] ^ x[1] ^ x[2]; },
+    bnl: function (x) { return (x[0] & x[1]) ^ x[2]; }, maj: function (x) { return (x[0] + x[1] + x[2]) >= 2 ? 1 : 0; },
+    and: function (x) { return x[0] & x[1]; }
+  };
+  function draw3() {
+    var key = $('f3').value, f = F[key], fv = [], ones = 0;
+    for (var k = 0; k < 8; k++) { var xb = [k & 1, (k >> 1) & 1, (k >> 2) & 1]; fv.push(f(xb)); ones += fv[k]; }   // xb[i] = bit of qubit i
+    var tt = '<tr><th>x</th><th>f(x)</th><th>x</th><th>f(x)</th></tr>';
+    for (k = 0; k < 4; k++) {
+      tt += '<tr>';
+      [k, k + 4].forEach(function (j) { tt += '<td class="mono">' + bits(j, 3) + '</td><td class="mono" style="text-align:center' + (fv[j] ? ';color:#99004C;font-weight:700' : '') + '">' + fv[j] + '</td>'; });
+      tt += '</tr>';
+    }
+    $('tt').innerHTML = tt;
+    // amplitude of y after the circuit: (1/8) sum_x (-1)^(f(x) + x.y)
+    var p = [];
+    for (var yk = 0; yk < 8; yk++) { var a = 0; for (k = 0; k < 8; k++) { var par = 0, m = k & yk; while (m) { par ^= m & 1; m >>= 1; } a += ((fv[k] + par) % 2) ? -1 : 1; } p.push((a / 8) * (a / 8)); }
+    var svg = $('prob3'); while (svg.firstChild) svg.removeChild(svg.firstChild);
+    var X0 = 45, W = 460, Y0 = 190, H = 160;
+    sv(svg, 'line', { x1: X0, y1: Y0, x2: X0 + W, y2: Y0, stroke: '#24313D' });
+    [0, 0.5, 1].forEach(function (t) { sv(svg, 'text', { x: X0 - 6, y: Y0 - H * t + 4, 'text-anchor': 'end', 'font-size': 11, fill: '#6A626B' }, String(t)); sv(svg, 'line', { x1: X0, y1: Y0 - H * t, x2: X0 + W, y2: Y0 - H * t, stroke: '#E4DCE0' }); });
+    for (yk = 0; yk < 8; yk++) {
+      var cx = X0 + W * (yk + 0.5) / 8, h = H * p[yk];
+      sv(svg, 'rect', { x: cx - 18, y: Y0 - h, width: 36, height: Math.max(h, 0.5), fill: yk === 0 ? '#24313D' : '#99004C', rx: 2 });
+      if (p[yk] > 1e-9) sv(svg, 'text', { x: cx, y: Y0 - h - 4, 'text-anchor': 'middle', 'font-size': 11, fill: '#6A626B' }, p[yk].toFixed(3).replace(/0+$/, '').replace(/\.$/, ''));
+      sv(svg, 'text', { x: cx, y: Y0 + 18, 'text-anchor': 'middle', 'font-size': 14, 'font-family': 'Consolas, monospace', fill: '#24313D' }, bits(yk, 3));
+    }
+    sv(svg, 'text', { x: X0 + W / 2, y: 225, 'text-anchor': 'middle', 'font-size': 11.5, fill: '#6A626B' }, 'probability of each result after one query');
+    var p0 = p[0], kind = ones === 0 || ones === 8 ? 'constant' : ones === 4 ? 'balanced' : 'neither';
+    var msg, cls = 'note';
+    if (kind === 'constant') msg = 'f is constant (' + ones + ' ones in the truth table), and the circuit gives 000 with probability 1.';
+    else if (kind === 'balanced') msg = 'f is balanced (4 ones out of 8), and the circuit never gives 000. One query decides it; a classical computer that must be certain may need 5 of the 8 inputs.' + (p.filter(function (v) { return v > 1e-9; }).length > 1 ? ' This f is not of the form s·x, so the result is spread over several strings, but 000 still never appears.' : ' This f is s·x for s = ' + bits(p.indexOf(1), 3) + ', so the circuit returns exactly that string: Bernstein-Vazirani.');
+    else { msg = 'f is neither constant nor balanced (' + ones + ' ones out of 8), so the promise is broken: P(000) = ' + p0.toFixed(2) + ' is neither 0 nor 1, and one shot cannot decide anything.'; cls = 'note warn'; }
+    $('n3').className = cls; $('n3').textContent = msg;
+  }
+  $('f3').onchange = draw3; draw3();
+})();
+</script>
+</body>
+</html>
