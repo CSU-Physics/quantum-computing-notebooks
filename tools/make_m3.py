@@ -91,9 +91,13 @@ print("H @ H @ psi  =", np.round(H @ H @ psi, 4), " <- back to the start")
 print("\\nS @ S equals Z:", np.allclose(S @ S, Z))
 print("T @ T equals S:", np.allclose(T @ T, S))
 U, n = T.copy(), 1
-while not np.allclose(U, I):
+while not np.allclose(U, I) and n < 16:      # stop after 16 so a wrong T matrix cannot loop for ever
     U, n = T @ U, n + 1
-print("T applied", n, "times in a row is the identity")"""),
+if np.allclose(U, I):
+    print("T applied", n, "times in a row is the identity")
+else:
+    print("No power of T up to 16 is the identity. Check your T matrix in gate_matrix(): "
+          "it should be [[1, 0], [0, exp(i pi/4)]].")"""),
 md("""H takes |0⟩ to |+⟩ and |+⟩ back to |0⟩, so H twice does nothing. On the Bloch sphere, S is a quarter turn and T an eighth turn about the z axis, so two T gates make an S, two S gates make a Z, and eight T gates make a full turn. Canvas asks how many T gates in a row make the identity."""),
 md("""## Step 4: rotation gates
 
@@ -247,12 +251,12 @@ else:
                               title="your final state"))"""),
 md("""## Step 9: run the check cell
 
-**Do not edit this cell.** Run it. It tests your three functions on cases you have not seen. If they all pass, it runs your personal circuit 1,000 times with your SEED and prints your **verification value**: the number of 0 results. Type it into Canvas question 1.
+**Do not edit this cell.** Run it. It tests your three functions on cases you have not seen, and your repaired `round_trip()` from Step 7. If they all pass, it runs your personal circuit 1,000 times with your SEED and prints your **verification value**: the number of 0 results. Type it into Canvas question 1.
 
 If a test does not pass, read its message, fix that function, run its cell again, then run this cell again."""),
 code("# CHECK CELL: do not edit\n" + CHECK + '''
 
-ok, messages, value = check_module3(gate_matrix, rotation, sequence_matrix, THETA_DEG, PHI_DEG, SEED)
+ok, messages, value = check_module3(gate_matrix, rotation, sequence_matrix, THETA_DEG, PHI_DEG, SEED, round_trip)
 for m in messages:
     print(m)
 if ok:

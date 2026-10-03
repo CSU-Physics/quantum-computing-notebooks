@@ -208,7 +208,9 @@ ax.legend(fontsize=8)
 plt.show()"""),
 md("""## Step 7: the algorithm with noise
 
-Real hardware adds errors (Module 5). Run the circuit for s = 111111 (six CNOTs in the oracle) with a depolarizing error λ on every CNOT, 1,000 shots and seed 7, and count how often it still returns the hidden string. Canvas asks for the count at λ = 0.05."""),
+Real hardware adds errors (Module 5). Run the circuit for s = 111111 (six CNOTs in the oracle) with a depolarizing error λ on every CNOT, 1,000 shots and seed 7, and count how often it still returns the hidden string. Canvas asks for the count at λ = 0.05.
+
+**Queries and shots.** "One query" means one use of the oracle in one ideal run of the circuit. Here each of the 1,000 shots is a separate run, so the oracle is used 1,000 times in all, and repeating runs to take the most frequent answer uses it more. The comparison with the classical n queries is about the ideal circuit; on noisy hardware you pay extra shots to read s reliably."""),
 code("""s = "111111"
 for lam in (0, 0.01, 0.02, 0.05, 0.10):
     model = NoiseModel()
@@ -249,6 +251,8 @@ md("""## Finish
 1. Answer the five questions of the **Module 6 lab check** in Canvas and submit.
 2. Take the **Module 6 quiz**.
 3. Fill in the short **Module 6 time log**.
+
+**Optional, not graded:** run your own `bv_oracle()` and `bv_circuit()` unchanged in real Qiskit, transpiled for a model of an IBM computer and run with its calibrated noise: [open the Module 6 Qiskit notebook in Colab](https://colab.research.google.com/github/CSU-Physics/quantum-computing-notebooks/blob/main/colab/level1/QC-L1-M6-bernstein-vazirani-qiskit-colab.ipynb) (a Google account is needed for Colab; no IBM account).
 
 Your notebook is saved in this browser as you work. It is not saved anywhere else, so to keep a copy choose **File > Download**. Next is Course Completion: the final quiz and the final coding task, which extends your Bell circuit to three qubits (a GHZ state)."""),
 ]

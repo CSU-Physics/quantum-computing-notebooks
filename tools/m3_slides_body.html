@@ -75,7 +75,7 @@
       <ul>
         <li>H|0⟩ = |+⟩ and H|1⟩ = |−⟩: it makes equal superpositions.</li>
         <li>H|+⟩ = |0⟩ and H|−⟩ = |1⟩: it also undoes them.</li>
-        <li>On the sphere: a half turn about the axis <strong>halfway between x and z</strong>, so it swaps the x and z axes.</li>
+        <li>On the sphere: a half turn about the axis <strong>halfway between x and z</strong>, so it swaps the x and z axes and reverses y: (x, y, z) → (z, −y, x).</li>
       </ul>
       <p class="small">That swap is why measuring in the X basis is "H, then measure in Z" (Module 2).</p>
     </div>
@@ -269,7 +269,7 @@
 <!-- 17 -->
 <section class="slide">
   <h2>Pause and predict</h2>
-  <p>The circuit is H, then T, then H, then a measurement. What fraction of shots give 0?</p>
+  <p>Starting from |0⟩, the circuit is H, then T, then H, then a measurement. What fraction of shots give 0?</p>
   <div class="reveal"><button type="button">Show the answer</button>
     <div class="ans">T is the phase gate with φ = π/4. So P(0) = cos²(π/8) ≈ 0.854: about 854 zeros in 1,000 shots. With S (φ = π/2) it would be ½, and with Z (φ = π) it would be 0: every shot gives 1.</div></div>
   <div class="foot"><span>Module 3 · Single-qubit gates</span><span>17</span></div>
@@ -280,7 +280,7 @@
   <h2>Summary</h2>
   <ul>
     <li style="font-size:25px">A gate is a unitary 2 × 2 matrix: a turn of the Bloch sphere.</li>
-    <li style="font-size:25px">X, Y, Z: half turns. H swaps x and z. S, T: 90° and 45° about z.</li>
+    <li style="font-size:25px">X, Y, Z: half turns. H swaps x and z and flips y. S, T: 90° and 45° about z.</li>
     <li style="font-size:25px">Rx, Ry, Rz turn by any angle θ; the matrix uses θ/2.</li>
     <li style="font-size:25px">U† undoes U; undo a sequence in reverse order.</li>
     <li style="font-size:25px">The first gate's matrix goes on the right. H, phase, H gives P(0) = cos²(φ/2).</li>

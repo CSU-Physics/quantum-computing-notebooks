@@ -60,6 +60,14 @@ code("""def probabilities(state):
 print("P for |+>:", probabilities(plus))
 print("P for psi:", probabilities(psi))"""),
 md("""You should see `[0.5 0.5]` for |+⟩ and `[0.36 0.64]` for psi. The probabilities add up to 1, as they must for a valid state."""),
+md("""### Your turn (not graded, about 5 minutes)
+
+A classmate wrote `probabilities()` as `return state**2`. It gives the right answer for |+⟩. Try it on psi in the cell below: compute `psi**2` yourself and compare it with `probabilities(psi)`.
+
+Then, in the text cell under it, explain in one or two sentences why squaring an amplitude is not the same as taking the size squared of a **complex** amplitude, and why the mistake does not show up for |+⟩. (Hint: what is (0.8i)²?) There is no check for this task; it prepares you for complex amplitudes in every later module."""),
+code("""# YOUR CODE: compute psi**2 and compare it with probabilities(psi).
+"""),
+md("""*Your explanation:* (double-click this cell to write here)"""),
 md("""## Step 3: normalization
 
 A list of amplitudes is a valid state only if its probabilities add up to 1, that is, if the vector has **length 1**. Any other nonzero vector can be **normalized** by dividing it by its length: `state / np.linalg.norm(state)`. This keeps the ratio between the amplitudes and fixes the length.
@@ -76,7 +84,7 @@ print("normalized:", normalize(raw))
 print("probabilities:", probabilities(normalize(raw)))"""),
 md("""## Step 4: one measurement
 
-Measuring a qubit gives 0 or 1 at random, with the probabilities from Step 2. After the measurement the qubit **is** in the state it reported, so measuring again gives the same result.
+Measuring a qubit gives 0 or 1 at random, with the probabilities from Step 2. After the measurement the qubit **is** in the state it reported, so measuring it again in the same basis, with nothing done to it in between, gives the same result.
 
 NumPy's random generator can make that choice. `rng.choice(2, p=...)` picks 0 or 1 with the probabilities you give it. The **seed** makes the random numbers repeatable, so everyone who uses the same seed gets the same results. Run the cell a few times: the result stays the same because the seed is fixed. Change the seed to see other results."""),
 code("""rng = np.random.default_rng(seed=2026)
@@ -91,6 +99,8 @@ A quantum computer runs the same circuit many times. Each run is a **shot**, and
 rng = np.random.default_rng(seed)
 return rng.choice(2, size=shots, p=probabilities(state))
 ```
+
+Use exactly this method. There are other correct ways to sample, but they give different shots for the same seed, and the lab check needs everyone's counts to match; the check cell tests this. Each shot stands for a fresh run: the state is prepared again and measured once, so the shots are independent of each other.
 
 Then run the cell. It measures the normalized state `[3, 4i]` 1,000 times with seed 7. Canvas asks how many times you got 1."""),
 code("""def simulate(state, shots, seed):
@@ -113,7 +123,7 @@ print("counts of 1 for seeds 1 to 20:", counts)
 print("average:", np.mean(counts))
 print("spread (standard deviation):", round(np.std(counts), 1))
 print("formula sqrt(N p (1-p)):", round(np.sqrt(1000 * 0.64 * 0.36), 1))"""),
-md("""Most counts land within about 15 of 640, and almost all within 3 × 15 = 45. Later modules use this rule to decide whether a difference between two histograms is real or just shot noise."""),
+md("""Most counts land within about 15 of 640, and almost all within 3 × 15 = 45. A count much farther away, such as 700, is very unlikely from shot noise alone. It does not prove that something is wrong, but it is a reason to check the setup or repeat the experiment. Later modules use this rule to judge whether a difference between two histograms is larger than shot noise usually produces."""),
 md("""## Step 7: your personal state
 
 Open the Canvas quiz **Module 1 lab check**. Question 1 gives you three numbers: **A**, **B** and **SEED**. Your personal state is A|0⟩ + iB|1⟩, normalized. Type the three numbers below in place of `None` and run the cell."""),

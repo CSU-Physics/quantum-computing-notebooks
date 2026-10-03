@@ -62,7 +62,7 @@ Even an ideal Bell circuit does not give exactly 500 zeros in 1,000 shots: each 
 
 σ = √( p (1 − p) / N ).
 
-This course uses the **3-sigma rule**: a measured fraction more than 3σ away from the prediction is a real difference, not bad luck. (A difference that large happens by chance only about 3 times in 1,000.)
+This course uses the **3-sigma rule**: if a measured fraction is more than 3σ away from the prediction, we treat the difference as real rather than bad luck, because under the model a difference that large happens by chance only about 3 times in 1,000. It is strong evidence against the prediction, under the model's assumptions, but it is not proof of any particular cause, such as a hardware fault.
 
 Complete `shot_noise(p, shots)`, then run the cell. It runs the ideal Bell circuit 40 times with different seeds and checks how many runs fall inside the 3σ band around 0.5. Canvas asks for the half-width of the band, 3σ, for p = 0.5 and 1,000 shots."""),
 code("""def shot_noise(p, shots):
@@ -273,14 +273,14 @@ print(f"\\n200 runs of the model: raw {np.mean(raw_d):.4f} ± {np.std(raw_d):.4f
 print(f"gate errors alone, from Step 6: {p_gates[1] + p_gates[2]:.4f}")"""),
 md("""For the model, mitigation removes the bias that readout adds: on average the mitigated value matches the gate errors alone (0.005). It does not remove the shot noise, and the spread from run to run is a little larger after mitigation, because the correction also scales up the random part. With larger readout errors the extra spread is larger, so mitigated results need more shots for the same precision.
 
-For IBM's run, mitigation with the April readout matrix takes out about 1.3 points and leaves about 1.7%, against 0.5% predicted for the gates. The spread of a mitigated value at 1,000 shots is about 0.005 (from the 200 runs above), so 3σ is about 0.014, and the gap of 0.012 is again inside it. The honest conclusion: the run clearly shows noise, readout explains part of it, and these 1,000 shots are not enough to say whether the rest is more than the calibration predicts. Canvas asks you to recognise exactly this kind of conclusion."""),
+For IBM's run, this step is an **illustration**, not a measurement. IBM's lesson does not say which physical qubits the run used, and it does not give that day's calibration. If we apply the April snapshot's readout matrix for qubits 0 and 1 anyway, it takes out about 1.3 points and leaves about 1.7%, against 0.5% predicted for the gates. The spread of a mitigated value at 1,000 shots is about 0.005 (from the 200 runs above), so 3σ is about 0.014, and the gap of 0.012 is again inside it. The honest conclusion: the run clearly shows noise; readout errors of the snapshot's size would account for part of it; and these 1,000 shots, without the run's own calibration, are not enough to say whether the rest is more than the calibration predicts. Canvas asks you to recognise exactly this kind of conclusion."""),
 md(f"""## Step 8 (optional): run it on a real quantum computer
 
 If you have set up an IBM Quantum account (see **Set Up Your Tools** in Start Here), you can run the Bell circuit on a real IBM computer yourself, for free. It uses Qiskit, which cannot run in the browser, so it runs in Google Colab:
 
 **[Open the Module 5 hardware notebook in Colab]({COLAB})**
 
-It takes about 15 minutes plus the queue, and uses only a few seconds of the 10 minutes of quantum time the free Open Plan gives each 28 days. This step is **optional and not graded**: the simulator work in this notebook counts the same for the badge.
+It takes about 15 minutes plus the queue, and uses only a few seconds of the 10 minutes of quantum time the free Open Plan gives each 28 days. This step is **optional and not graded**. The Module 5 run required for the badge is the simulator work in this notebook, checked by the lab check.
 
 When it finishes, paste your counts and your device's readout errors below and run the cell. It repeats the analysis of Steps 3 and 7 for your own run."""),
 code("""my_counts = None          # for example: my_counts = {"00": 488, "01": 9, "10": 14, "11": 489}
@@ -294,11 +294,18 @@ else:
     print(f"different results: {different(my_counts)} of {n} = {p:.3f}")
     same = my_counts.get("00", 0) + my_counts.get("11", 0)
     p00 = my_counts.get("00", 0) / same
-    print(f"00 among equal results: {p00:.3f}  (0.5 ± {3 * shot_noise(0.5, same):.3f} is within shot noise)")
-    r = my_read or READ
-    my_A = two_qubit_readout(single_qubit_readout(*r[0]), single_qubit_readout(*r[1]))
-    m = mitigate(my_counts, my_A)
-    print(f"mitigated different results: {m['01'] + m['10']:.3f}")
+    band = 3 * shot_noise(0.5, same)
+    print(f"00 among equal results: {p00:.3f}; the 3-sigma band is 0.5 ± {band:.3f}, so this is",
+          "within shot noise" if abs(p00 - 0.5) <= band else "outside the band (evidence of an imbalance, under the model)")
+    if my_read is None:
+        print("No mitigation yet: paste the readout errors (e0, e1) of the two physical qubits your run used, from the "
+              "Colab notebook, into my_read. The April Pittsburgh values are not used for your own run, because they "
+              "describe a different day and possibly different qubits.")
+        m = None
+    else:
+        my_A = two_qubit_readout(single_qubit_readout(*my_read[0]), single_qubit_readout(*my_read[1]))
+        m = mitigate(my_counts, my_A)
+        print(f"mitigated different results: {m['01'] + m['10']:.3f}")
     plot_histogram([my_counts, ibm], title="your run (red) and IBM's published run (grey)")"""),
 md("""## Step 9: your personal noisy circuit
 

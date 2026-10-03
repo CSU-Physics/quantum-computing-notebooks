@@ -51,14 +51,14 @@
 <!-- TOOL 1: builder -->
 <section class="tool" id="t-build" role="tabpanel">
   <h2>Two-qubit circuit builder</h2>
-  <p class="hint">Add gates to qubit 0 and qubit 1, and CNOT gates between them. Watch the four amplitudes, the verdict "product" or "entangled", and each qubit's own Bloch vector: a full-length arrow for a qubit in a state of its own, a shorter one when it is entangled.</p>
+  <p class="hint">Add gates to qubit 0 and qubit 1, and CNOT gates between them. Watch the four amplitudes, the verdict "product" or "entangled", and each qubit's own Bloch vector: a full-length arrow for a qubit with its own pure state, a shorter one when it is entangled (its own state is then mixed).</p>
   <div class="grid">
     <div class="box">
       <div class="spheres">
         <div><svg class="sphere" id="sq1" aria-label="Bloch vector of qubit 1"></svg>qubit 1 · <span class="mono" id="l1"></span></div>
         <div><svg class="sphere" id="sq0" aria-label="Bloch vector of qubit 0"></svg>qubit 0 · <span class="mono" id="l0"></span></div>
       </div>
-      <p style="font-size:12.5px;color:var(--muted);margin:6px 0 0">Arrow length: 1 for a qubit with a state of its own, 0 for a maximally entangled qubit.</p>
+      <p style="font-size:12.5px;color:var(--muted);margin:6px 0 0">Arrow length: 1 for a qubit with its own pure state, 0 for a maximally entangled qubit (its reduced state is fully mixed).</p>
       <div class="note" id="verdict"></div>
     </div>
     <div class="box">
@@ -230,8 +230,8 @@
     drawBloch($('sq0'), { font: 0.2, labels: false, pts: [{ v: v0, dot: true }] });
     drawBloch($('sq1'), { font: 0.2, labels: false, pts: [{ v: v1, dot: true, c: '#24313D' }] });
     $('l0').textContent = 'length ' + L0.toFixed(2); $('l1').textContent = 'length ' + L1.toFixed(2);
-    if (conc < 1e-6) { $('verdict').className = 'note'; $('verdict').textContent = 'Product state: a00·a11 − a01·a10 = 0. Each qubit has a state of its own.'; }
-    else { $('verdict').className = 'note warn'; $('verdict').textContent = 'Entangled: a00·a11 − a01·a10 ≠ 0 (concurrence ' + conc.toFixed(3) + (conc > 0.999 ? ', the maximum' : '') + '). Neither qubit has a state of its own.'; }
+    if (conc < 1e-6) { $('verdict').className = 'note'; $('verdict').textContent = 'Product state: a00·a11 − a01·a10 = 0. Each qubit has its own pure state.'; }
+    else { $('verdict').className = 'note warn'; $('verdict').textContent = 'Entangled: a00·a11 − a01·a10 ≠ 0 (concurrence ' + conc.toFixed(3) + (conc > 0.999 ? ', the maximum' : '') + '). Neither qubit has its own pure state vector; the reduced state of each is mixed.'; }
     if (msg) $('n1').textContent = msg;
     drawCircuit();
   }
@@ -283,8 +283,15 @@
     return st.map(ab2);
   }
   function pick(p) { var r = Math.random(), acc = 0; for (var i = 0; i < 4; i++) { acc += p[i]; if (r < acc) return i; } return 3; }
-  document.querySelectorAll('[data-a]').forEach(function (b) { b.onclick = function () { A = b.dataset.a; document.querySelectorAll('[data-a]').forEach(function (x) { x.classList.toggle('on', x === b); }); }; });
-  document.querySelectorAll('[data-b]').forEach(function (b) { b.onclick = function () { B = b.dataset.b; document.querySelectorAll('[data-b]').forEach(function (x) { x.classList.toggle('on', x === b); }); }; });
+  function clear2(why) {
+    ['00', '01', '10', '11'].forEach(function (l) { $('c' + l).textContent = '–'; });
+    ['cor', 'al', 'bo'].forEach(function (id) { $(id).textContent = '–'; });
+    $('stream').textContent = 'Press "Run 1,000 shots".';
+    $('n2').textContent = why + ' The old results were cleared: press "Run 1,000 shots" for the new settings.';
+  }
+  document.querySelectorAll('[data-a]').forEach(function (b) { b.onclick = function () { A = b.dataset.a; document.querySelectorAll('[data-a]').forEach(function (x) { x.classList.toggle('on', x === b); }); clear2('Alice now measures in the ' + A + ' basis.'); }; });
+  document.querySelectorAll('[data-b]').forEach(function (b) { b.onclick = function () { B = b.dataset.b; document.querySelectorAll('[data-b]').forEach(function (x) { x.classList.toggle('on', x === b); }); clear2('Bob now measures in the ' + B + ' basis.'); }; });
+  $('st2').addEventListener('change', function () { clear2('The shared state changed.'); });
   $('run2').onclick = function () {
     var key = $('st2').value, n = 1000, c = [0, 0, 0, 0], seq = [];
     var pFixed = key === 'mix' ? null : probs(ST[key]);
@@ -299,8 +306,8 @@
     $('cor').textContent = (corr >= 0 ? '+' : '−') + Math.abs(corr).toFixed(3);
     $('al').textContent = al.toFixed(3); $('bo').textContent = bo.toFixed(3);
     var msg;
-    if (key === 'mix') msg = A === B && A === 'Z' ? 'The classical mix also gives correlation +1 in Z. Now switch both to X: a mix cannot stay correlated in the X basis.' : 'The classical mix: in the X basis the correlation drops to about 0. Only an entangled state is correlated in both bases.';
-    else if (key === '00' || key === 'pp') msg = 'A product state: the correlation is ' + (Math.abs(corr) > 0.9 ? 'strong, but only because each qubit is certain on its own; there is nothing random to correlate.' : 'about 0: the qubits are independent, so one result tells you nothing about the other.');
+    if (key === 'mix') msg = A === B && A === 'Z' ? 'The classical mix also gives correlation +1 in Z. Now switch both to X: a mix cannot stay correlated in the X basis.' : 'The classical mix: in the X basis the correlation drops to about 0. Of the states here, only the entangled ones are perfectly correlated in both bases: no separable (unentangled) two-qubit state can give both.';
+    else if (key === '00' || key === 'pp') msg = 'A product state: the correlation is ' + (Math.abs(corr) > 0.9 ? 'strong, but only because each qubit is certain on its own; there is nothing random to correlate.' : 'about 0: equal and different results are equally common. For a product state the qubits are also independent, so one result tells you nothing about the other. (In general a correlation of 0 alone does not prove independence.)');
     else msg = (A === B ? 'Same basis for both: the correlation is ±1, perfect.' : 'Different bases: the correlation is about 0.') + ' Alice\'s own fraction of 0 stays near 0.5 whatever Bob chooses, so Bob cannot send her a message this way.';
     $('n2').textContent = msg;
   };

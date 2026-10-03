@@ -160,10 +160,11 @@
   }
 
   // ---------- tool 1
-  var v1 = { az: 25, el: 20 };
+  var v1 = { az: 25, el: 20 }, thExact = null;   // a preset keeps its exact angle until the slider is moved
   function bloch1() {
-    var th = +$('th').value * D, ph = +$('ph').value * D, ga = +$('ga').value * D;
-    $('thv').textContent = $('th').value + '°'; $('phv').textContent = $('ph').value + '°'; $('gav').textContent = $('ga').value + '°';
+    var thDeg = thExact !== null ? thExact : +$('th').value;
+    var th = thDeg * D, ph = +$('ph').value * D, ga = +$('ga').value * D;
+    $('thv').textContent = (thExact !== null ? thExact.toFixed(2) : $('th').value) + '°'; $('phv').textContent = $('ph').value + '°'; $('gav').textContent = $('ga').value + '°';
     var a = Math.cos(th / 2), b = Math.sin(th / 2);
     var ar = a * Math.cos(ga), ai = a * Math.sin(ga), br = b * Math.cos(ga + ph), bi = b * Math.sin(ga + ph);
     $('st').textContent = cx(ar, ai) + '|0⟩ + ' + cx(br, bi) + '|1⟩';
@@ -175,9 +176,9 @@
       ? 'Now move γ. The amplitudes change, but the arrow and all three probabilities stay the same: a global phase is the same physical state.'
       : 'γ = ' + $('ga').value + '°: the amplitudes are multiplied by e^(iγ), yet the arrow and every probability are unchanged. Only φ, the relative phase, moves the state.';
   }
-  ['th', 'ph', 'ga'].forEach(function (id) { $(id).addEventListener('input', bloch1); });
+  ['th', 'ph', 'ga'].forEach(function (id) { $(id).addEventListener('input', function () { if (id === 'th') thExact = null; bloch1(); }); });
   document.querySelectorAll('[data-s]').forEach(function (b) {
-    b.onclick = function () { var s = b.dataset.s.split(','); $('th').value = Math.round(+s[0]); $('ph').value = s[1]; $('ga').value = 0; bloch1(); };
+    b.onclick = function () { var s = b.dataset.s.split(','); thExact = (+s[0] % 1) ? +s[0] : null; $('th').value = Math.round(+s[0]); $('ph').value = s[1]; $('ga').value = 0; bloch1(); };
   });
   $('rv1').onclick = function (e) { e.preventDefault(); v1.az = 25; v1.el = 20; bloch1(); };
   dragView($('sph1'), v1, bloch1);
@@ -210,10 +211,10 @@
     });
     var r = Math.sqrt(est[0] * est[0] + est[1] * est[1] + est[2] * est[2]);
     var eth = Math.acos(Math.max(-1, Math.min(1, est[2] / (r || 1)))) / D, eph = (Math.atan2(est[1], est[0]) / D + 360) % 360;
-    var msg = 'Estimate: θ ≈ ' + eth.toFixed(0) + '°, φ ≈ ' + eph.toFixed(0) + '° (length ' + r.toFixed(2) + '; a pure state has length 1, shot noise makes it differ).';
+    var msg = 'Estimate: θ ≈ ' + eth.toFixed(0) + '°, φ ≈ ' + eph.toFixed(0) + '° (length ' + r.toFixed(3) + '; a pure state has length 1, shot noise makes it differ' + (r > 1 ? '. A length above 1 puts the raw estimate outside the sphere, which finite sampling can do; a physical reconstruction would bring it back onto or inside the sphere' : '') + ').';
     if (revealed) {
       var d = Math.sqrt(Math.pow(est[0] - t[0], 2) + Math.pow(est[1] - t[1], 2) + Math.pow(est[2] - t[2], 2));
-      msg += ' Distance from the true vector: ' + d.toFixed(3) + '. With N shots each coordinate is off by about 1/√N = ' + (1 / Math.sqrt(n)).toFixed(3) + ' or less.';
+      msg += ' Distance from the true vector: ' + d.toFixed(3) + '. With N shots each coordinate has a standard deviation of at most 1/√N = ' + (1 / Math.sqrt(n)).toFixed(3) + '; a single estimate can be off by more, and near the poles φ is poorly determined.';
     } else msg += ' Write down your guess for θ and φ, then press "Reveal the state".';
     $('tnote').className = 'note'; $('tnote').textContent = msg;
     bloch2();
@@ -234,7 +235,13 @@
     }
     bloch2();
   };
-  ['th2', 'ph2'].forEach(function (id) { $(id).addEventListener('input', function () { est = null; bloch2(); }); });
+  function clearRun(text) {
+    est = null;
+    ['x', 'y', 'z'].forEach(function (c) { ['0', '1', 'e'].forEach(function (k) { $(c + k).textContent = '–'; }); });
+    $('tnote').className = 'note warn'; $('tnote').textContent = text;
+  }
+  ['th2', 'ph2'].forEach(function (id) { $(id).addEventListener('input', function () { clearRun('The state changed, so the old counts were cleared. Press "Measure in Z, X and Y" to measure the new state.'); bloch2(); }); });
+  $('n2').addEventListener('change', function () { if (est) clearRun('The number of shots changed, so the old counts were cleared. Measure again.'); bloch2(); });
   dragView($('sph2'), v2, bloch2);
   bloch2();
 })();

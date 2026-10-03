@@ -102,7 +102,7 @@
 
 <!-- 8 -->
 <section class="slide">
-  <h2>Two angles describe every qubit state</h2>
+  <h2>Two angles describe any pure state</h2>
   <div class="cols">
     <div style="flex:1.7">
       <p>Up to a global phase, every state can be written</p>
@@ -196,7 +196,7 @@
 <!-- 14 -->
 <section class="slide">
   <h2>On a quantum computer: rotate, then measure</h2>
-  <p>Hardware measures only in the Z basis. To measure in another basis, first rotate that basis onto Z:</p>
+  <p>In the circuit model used here, the readout measures in the Z basis. To measure in another basis, first rotate that basis onto Z:</p>
   <svg width="100%" height="300" viewBox="0 0 1130 300" aria-label="Circuits for measuring in the Z, X and Y bases">
     <g font-size="23" fill="#24313D">
       <text x="10" y="58">Z</text><text x="10" y="158">X</text><text x="10" y="258">Y</text>
@@ -251,8 +251,8 @@
     <div style="flex:1.25">
       <p>Turn the rule around. If a fraction f of shots gives 0 in a basis, estimate that coordinate as</p>
       <div class="eq">x̂ = 2f − 1</div>
-      <p>Do it in X, Y and Z to locate the arrow. The estimate's spread is √((1 − x²)/N), at most 1/√N: about 0.03 with 1,000 shots.</p>
-      <p class="small">Three bases are needed: Z alone gives only z, and misses the phase.</p>
+      <p>Do it in X, Y and Z to locate the arrow. Each estimate's standard deviation is √((1 − x²)/N), at most about 0.032 for 1,000 shots.</p>
+      <p class="small">Three bases are needed: Z alone misses the phase. Raw estimates can land just outside the sphere (this one has length 1.0004), and near the poles φ is poorly determined.</p>
     </div>
     <div><svg class="bloch" data-cfg='{"font":0.15,"pts":[{"v":[0.433,0.75,-0.5],"c":"#99004C","l":"true","dx":-0.42,"dy":0.2},{"v":[0.436,0.758,-0.486],"c":"#C9A227","dash":true,"l":"estimate","dx":0.08,"dy":-0.1}]}' width="380" height="370" aria-label="The true and the estimated Bloch vectors almost overlap"></svg></div>
   </div>
