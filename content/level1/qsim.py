@@ -13,6 +13,8 @@ Conventions follow Qiskit:
 Everything is exact linear algebra with NumPy. It is meant for small circuits (up to about
 10 qubits), which is all this course needs.
 
+QuantumCircuit.compose (version 1.4.0) joins circuits as in Qiskit.
+
 Noise (version 1.3.0): NoiseModel, depolarizing_error, pauli_error, amplitude_damping_error,
 phase_damping_error, thermal_relaxation_error and ReadoutError work as in qiskit_aer.noise, and
 AerSimulator(noise_model=...) runs a circuit with them.
@@ -29,7 +31,7 @@ __all__ = [
     "NoiseModel", "QuantumError", "ReadoutError", "depolarizing_error", "pauli_error",
     "amplitude_damping_error", "phase_damping_error", "thermal_relaxation_error",
 ]
-__version__ = "1.3.0"
+__version__ = "1.4.0"
 
 
 class CircuitError(Exception):
@@ -329,6 +331,35 @@ class QuantumCircuit:
                 new.data.append(Instruction(inv.get(i.name, i.name), i.qubits))
         new.global_phase = -self.global_phase
         return new
+
+    def compose(self, other, qubits=None, clbits=None, front=False, inplace=False):
+        """Add another circuit's instructions, as in Qiskit: other's qubit i acts on qubits[i] of this circuit.
+
+        Returns a new circuit, or changes this one and returns None with inplace=True.
+        """
+        if not isinstance(other, QuantumCircuit):
+            raise CircuitError("compose() needs a QuantumCircuit.")
+        if other.num_qubits > self.num_qubits or other.num_clbits > self.num_clbits:
+            raise CircuitError("Trying to compose with another QuantumCircuit which has more 'in' edges.")
+        qmap = list(range(other.num_qubits)) if qubits is None else _as_list(qubits)
+        if len(qmap) != other.num_qubits:
+            raise CircuitError(f"Number of items in qubits parameter ({len(qmap)}) does not match number of "
+                               f"qubits in the circuit ({other.num_qubits}).")
+        if len(set(qmap)) != len(qmap):
+            raise CircuitError("Duplicate qubits in the qubits parameter.")
+        self._check_qubits(qmap)
+        cmap = list(range(other.num_clbits)) if clbits is None else _as_list(clbits)
+        if len(cmap) != other.num_clbits:
+            raise CircuitError(f"Number of items in clbits parameter ({len(cmap)}) does not match number of "
+                               f"clbits in the circuit ({other.num_clbits}).")
+        if cmap:
+            self._check_clbits(cmap)
+        added = [Instruction(i.name, [qmap[q] for q in i.qubits], [cmap[c] for c in i.clbits], i.params)
+                 for i in other.data]
+        target = self if inplace else self.copy()
+        target.data = added + list(target.data) if front else list(target.data) + added
+        target.global_phase = target.global_phase + other.global_phase
+        return None if inplace else target
 
     def __len__(self):
         return len(self.data)
