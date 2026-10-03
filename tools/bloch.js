@@ -1,5 +1,5 @@
   // ---- Bloch sphere drawing (same view as qsim and Qiskit: +x out of the page to the lower left, +y right, |0> up)
-  var NS = 'http://www.w3.org/2000/svg';
+  var NS = 'http://www.w3.org/2000/svg', D2R = Math.PI / 180;
   function blochView(az, el) {
     var a = az * Math.PI / 180, e = el * Math.PI / 180;
     var R = [-Math.sin(a), Math.cos(a), 0];
@@ -57,6 +57,38 @@
       q = P([0.7 * Math.cos(ph / 2), 0.7 * Math.sin(ph / 2), 0]);
       sv(svg, 'text', { x: q.x, y: q.y + 0.12, 'font-size': f, fill: '#8A6D00', 'font-style': 'italic' }, 'φ');
     }
+    // rotation arcs: {v: start point, n: axis (unit vector), a: angle in degrees (right-hand rule), c, l, axis: true}
+    (cfg.rots || []).forEach(function (r, j) {
+      var col = r.c || '#C9A227', n = r.n, L = Math.sqrt(n[0] * n[0] + n[1] * n[1] + n[2] * n[2]);
+      n = [n[0] / L, n[1] / L, n[2] / L];
+      if (r.axis) {
+        var a1 = P([1.18 * n[0], 1.18 * n[1], 1.18 * n[2]]), a2 = P([-1.18 * n[0], -1.18 * n[1], -1.18 * n[2]]);
+        sv(svg, 'line', { x1: a2.x, y1: a2.y, x2: a1.x, y2: a1.y, stroke: col, 'stroke-width': 0.014, 'stroke-dasharray': '0.05 0.035' });
+        if (r.al) sv(svg, 'text', { x: a1.x + 0.03, y: a1.y - 0.03, 'font-size': f * 0.95, fill: col, 'font-style': 'italic' }, r.al);
+      }
+      var steps = Math.max(8, Math.round(Math.abs(r.a) / 4)), prev = null, pts = [];
+      for (var k = 0; k <= steps; k++) {
+        var ang = r.a * D2R * k / steps, c = Math.cos(ang), s2 = Math.sin(ang), v = r.v;
+        var dot = n[0] * v[0] + n[1] * v[1] + n[2] * v[2];
+        var cr = [n[1] * v[2] - n[2] * v[1], n[2] * v[0] - n[0] * v[2], n[0] * v[1] - n[1] * v[0]];
+        var w = [v[0] * c + cr[0] * s2 + n[0] * dot * (1 - c), v[1] * c + cr[1] * s2 + n[1] * dot * (1 - c), v[2] * c + cr[2] * s2 + n[2] * dot * (1 - c)];
+        pts.push(P(w));
+      }
+      var mid2 = id + 'r' + j;
+      var mk = sv(defs, 'marker', { id: mid2, viewBox: '0 0 10 10', refX: 6, refY: 5, markerWidth: 4, markerHeight: 4, orient: 'auto' });
+      sv(mk, 'path', { d: 'M0,0 L10,5 L0,10 z', fill: col });
+      for (k = 1; k < pts.length; k++) {
+        var back = pts[k].d < -0.02 && pts[k - 1].d < -0.02;
+        var seg = { x1: pts[k - 1].x, y1: pts[k - 1].y, x2: pts[k].x, y2: pts[k].y, stroke: col, 'stroke-width': r.w || 0.026, 'stroke-linecap': 'round', opacity: back ? 0.55 : 1 };
+        if (back) seg['stroke-dasharray'] = '0.04 0.03';
+        if (k === pts.length - 1) seg['marker-end'] = 'url(#' + mid2 + ')';
+        sv(svg, 'line', seg);
+      }
+      if (r.l) {
+        var mpt = pts[Math.floor(pts.length / 2)];
+        sv(svg, 'text', { x: mpt.x + (r.dx || 0.05), y: mpt.y + (r.dy || -0.05), 'font-size': f, fill: col, 'font-weight': 600 }, r.l);
+      }
+    });
     (cfg.pts || []).forEach(function (pt, j) {
       var col = pt.c || '#99004C', mid = id + j;
       var m = sv(defs, 'marker', { id: mid, viewBox: '0 0 10 10', refX: 8, refY: 5, markerWidth: 5, markerHeight: 5, orient: 'auto-start-reverse' });

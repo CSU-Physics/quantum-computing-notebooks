@@ -1,0 +1,487 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Module 3 Explorer: Single-Qubit Gates</title>
+<style>
+  :root { --maroon:#99004C; --ink:#24313D; --muted:#6A626B; --line:#E4DCE0; --tint:#F8F4F6; --gold:#C9A227; --ok:#2E7D4F; --bad:#B3261E; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:#fff; color:var(--ink); font-family:"Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size:15px; }
+  .tabs { display:flex; border-bottom:2px solid var(--line); background:var(--tint); }
+  .tabs button { flex:1; border:0; background:none; padding:10px 8px; font-size:15px; cursor:pointer; color:var(--muted); border-bottom:3px solid transparent; }
+  .tabs button.on { color:var(--maroon); border-bottom-color:var(--maroon); font-weight:600; background:#fff; }
+  .tool { display:none; padding:12px 16px; }
+  .tool.on { display:block; }
+  h2 { font-family:Georgia, serif; color:var(--maroon); font-size:19px; margin:0 0 4px; }
+  .hint { color:var(--muted); margin:0 0 10px; line-height:1.45; }
+  .grid { display:grid; grid-template-columns: 290px 1fr; gap:14px; align-items:start; }
+  @media (max-width: 660px) { .grid { grid-template-columns: 1fr; } }
+  .box { border:1px solid var(--line); border-radius:6px; padding:10px 12px; }
+  .box h3 { margin:0 0 6px; font-size:14.5px; color:var(--maroon); }
+  svg.sphere { width:100%; max-width:280px; height:auto; display:block; margin:0 auto; touch-action:none; cursor:grab; overflow:visible; }
+  .small { font-size:12.5px; color:var(--muted); text-align:center; margin:4px 0 0; }
+  label { display:flex; justify-content:space-between; align-items:center; margin:6px 0 2px; font-size:14px; gap:8px; }
+  input[type=range] { width:100%; }
+  .row { display:flex; gap:5px; flex-wrap:wrap; margin-top:6px; align-items:center; }
+  button.g { min-width:38px; border:2px solid var(--maroon); background:#fff; color:var(--maroon); padding:4px 8px; border-radius:5px; font-size:15px; cursor:pointer; font-family:Georgia, serif; }
+  button.g:hover { background:var(--tint); }
+  button.act { border:2px solid var(--ink); background:#fff; color:var(--ink); padding:4px 9px; border-radius:5px; font-size:13.5px; cursor:pointer; }
+  button.act.fill { background:var(--maroon); border-color:var(--maroon); color:#fff; }
+  button:disabled { opacity:.45; cursor:default; }
+  .mono { font-family: Consolas, "Courier New", monospace; }
+  table { border-collapse:collapse; width:100%; font-size:13.5px; margin-top:6px; }
+  td, th { border:1px solid var(--line); padding:4px 7px; text-align:left; }
+  th { background:var(--tint); font-weight:600; }
+  .chips { display:flex; flex-wrap:wrap; gap:4px; align-items:center; min-height:30px; padding:4px 6px; background:var(--tint); border-radius:5px; font-size:14px; }
+  .chip { border:2px solid var(--maroon); color:var(--maroon); background:#fff; border-radius:4px; padding:1px 6px; font-family:Georgia, serif; }
+  .chip.u { border-color:var(--gold); color:#8A6D00; }
+  .wire { color:var(--muted); }
+  .pbar { display:flex; align-items:center; gap:8px; margin:5px 0; font-size:14px; }
+  .pbar .lab { width:60px; }
+  .pbar .track { flex:1; height:15px; background:var(--tint); border:1px solid var(--line); border-radius:3px; overflow:hidden; display:block; }
+  .pbar .fill { display:block; height:100%; background:var(--maroon); transition:width .2s; }
+  .pbar .val { width:48px; text-align:right; font-family:Consolas, monospace; }
+  .note { margin-top:8px; padding:7px 10px; border-radius:4px; font-size:13.5px; background:#EEF6F0; color:var(--ok); line-height:1.4; }
+  .note.warn { background:#FFF7E0; color:#7A5C00; }
+  .note.info { background:var(--tint); color:var(--ink); }
+  .mat { display:inline-block; vertical-align:middle; border-left:2px solid var(--ink); border-right:2px solid var(--ink); border-radius:4px; padding:2px 6px; font-family:Consolas, monospace; font-size:13.5px; }
+  .mat td { border:0; padding:1px 8px; text-align:right; }
+  .credit { color:var(--muted); font-size:12px; padding:8px 16px 12px; border-top:1px solid var(--line); }
+  select { font-size:14px; padding:2px; }
+  .chk { display:flex; align-items:center; gap:6px; justify-content:flex-start; }
+</style>
+</head>
+<body>
+<div class="tabs" role="tablist">
+  <button type="button" data-t="gates" role="tab">1. Gate playground</button>
+  <button type="button" data-t="interf" role="tab">2. Interference</button>
+  <button type="button" data-t="undo" role="tab">3. Undo challenge</button>
+</div>
+
+<!-- TOOL 1: gate playground -->
+<section class="tool" id="t-gates" role="tabpanel">
+  <h2>Gate playground</h2>
+  <p class="hint">Pick a starting state, then press gates. Each gate turns the arrow; the trail shows the turn. The matrix on the right is the whole sequence. Drag the sphere to turn it.</p>
+  <div class="grid">
+    <div class="box">
+      <svg class="sphere" id="sph1" aria-label="Bloch sphere showing the state and the turns made by the gates"></svg>
+      <p class="small">Drag to turn · <a href="#" id="rv1" style="color:var(--maroon)">reset the view</a></p>
+      <div class="pbar"><span class="lab">P(0)</span><span class="track"><span class="fill" id="p01"></span></span><span class="val" id="p01v"></span></div>
+      <div class="pbar"><span class="lab">P(1)</span><span class="track"><span class="fill" id="p11"></span></span><span class="val" id="p11v"></span></div>
+    </div>
+    <div class="box">
+      <div class="row"><span style="font-size:14px;width:62px">Start:</span>
+        <button type="button" class="act" data-start="0">|0⟩</button><button type="button" class="act" data-start="1">|1⟩</button>
+        <button type="button" class="act" data-start="+">|+⟩</button><button type="button" class="act" data-start="+i">|+i⟩</button></div>
+      <div class="row"><span style="font-size:14px;width:62px">Gates:</span>
+        <button type="button" class="g" data-g="X">X</button><button type="button" class="g" data-g="Y">Y</button><button type="button" class="g" data-g="Z">Z</button>
+        <button type="button" class="g" data-g="H">H</button><button type="button" class="g" data-g="S">S</button><button type="button" class="g" data-g="Sdg">S†</button>
+        <button type="button" class="g" data-g="T">T</button><button type="button" class="g" data-g="Tdg">T†</button></div>
+      <div class="row"><span style="font-size:14px;width:62px">Rotate:</span>
+        <select id="rax" aria-label="rotation axis"><option value="X">Rx</option><option value="Y" selected>Ry</option><option value="Z">Rz</option></select>
+        <input id="rang" type="range" min="-180" max="180" step="15" value="90" style="width:140px" aria-label="rotation angle">
+        <span class="mono" id="rangv" style="width:46px"></span>
+        <button type="button" class="g" id="rapply">apply</button></div>
+      <div class="row"><button type="button" class="act" id="undo1">Undo last gate</button><button type="button" class="act" id="clear1">Clear</button></div>
+      <h3 style="margin-top:10px">Circuit</h3>
+      <div class="chips" id="chips1"></div>
+      <table>
+        <tr><th style="width:42%">State</th><td class="mono" id="st1"></td></tr>
+        <tr><th>Bloch vector (x, y, z)</th><td class="mono" id="bv1"></td></tr>
+        <tr><th>Matrix of the whole sequence <span style="font-weight:400" id="uform"></span></th><td id="mat1"></td></tr>
+      </table>
+      <div class="note info" id="n1"></div>
+    </div>
+  </div>
+</section>
+
+<!-- TOOL 2: interference -->
+<section class="tool" id="t-interf" role="tabpanel">
+  <h2>Interference: H, phase, H</h2>
+  <p class="hint">The first H splits |0⟩ into two paths, the phase gate P(φ) shifts one of them, and the second H brings them together. Move φ and watch P(0) follow cos²(φ/2). Then switch off the second H.</p>
+  <div class="grid">
+    <div class="box">
+      <svg class="sphere" id="sph2" aria-label="Bloch sphere showing the path of the state through H, P of phi and H"></svg>
+      <p class="small"><span style="color:#6A626B">■</span> H &nbsp;<span style="color:#C9A227">■</span> P(φ) &nbsp;<span style="color:#24313D">■</span> second H · drag to turn</p>
+    </div>
+    <div class="box">
+      <svg id="circ2" width="100%" viewBox="0 0 430 64" style="max-height:62px" aria-label="The circuit"></svg>
+      <label for="phi2">phase φ <span class="mono" id="phi2v"></span></label>
+      <input id="phi2" type="range" min="0" max="360" step="5" value="120">
+      <div class="row">
+        <button type="button" class="act" data-phi="0">φ = 0</button><button type="button" class="act" data-phi="45">T (45°)</button>
+        <button type="button" class="act" data-phi="90">S (90°)</button><button type="button" class="act" data-phi="180">Z (180°)</button>
+        <label class="chk" style="margin:0 0 0 8px"><input type="checkbox" id="h2on" checked> second H</label>
+      </div>
+      <table>
+        <tr><th>After the first H</th><td class="mono" id="a1"></td></tr>
+        <tr><th>After P(φ)</th><td class="mono" id="a2"></td></tr>
+        <tr><th>At the end</th><td class="mono" id="a3"></td></tr>
+      </table>
+      <svg id="fr2" width="100%" viewBox="0 0 430 138" aria-label="P(0) against phi"></svg>
+      <div class="row"><button type="button" class="act fill" id="shots2">Run 1,000 shots</button><button type="button" class="act" id="clr2">Clear the dots</button><span class="mono" id="cnt2"></span></div>
+      <div class="note info" id="n2"></div>
+    </div>
+  </div>
+</section>
+
+<!-- TOOL 3: undo challenge -->
+<section class="tool" id="t-undo" role="tabpanel">
+  <h2>Undo challenge</h2>
+  <p class="hint">A circuit has moved the qubit away from |0⟩. Add gates to bring it back, so that every shot would give 0. The exact undo runs the inverse gates in reverse order, but any path back to |0⟩ counts.</p>
+  <div class="grid">
+    <div class="box">
+      <svg class="sphere" id="sph3" aria-label="Bloch sphere for the undo challenge"></svg>
+      <p class="small">Drag to turn</p>
+      <div class="pbar"><span class="lab">P(0)</span><span class="track"><span class="fill" id="p03"></span></span><span class="val" id="p03v"></span></div>
+    </div>
+    <div class="box">
+      <h3 id="lvl3">Level 1</h3>
+      <div class="chips" id="chips3"></div>
+      <div class="row"><span style="font-size:14px;width:62px">Add:</span>
+        <button type="button" class="g" data-u="X">X</button><button type="button" class="g" data-u="Y">Y</button><button type="button" class="g" data-u="Z">Z</button>
+        <button type="button" class="g" data-u="H">H</button><button type="button" class="g" data-u="S">S</button><button type="button" class="g" data-u="Sdg">S†</button>
+        <button type="button" class="g" data-u="T">T</button><button type="button" class="g" data-u="Tdg">T†</button></div>
+      <div class="row"><button type="button" class="act" id="pop3">Remove my last gate</button><button type="button" class="act" id="reset3">Start the level again</button>
+        <button type="button" class="act" id="show3">Show the exact undo</button><button type="button" class="act fill" id="next3">Next level</button></div>
+      <table>
+        <tr><th style="width:42%">State now</th><td class="mono" id="st3"></td></tr>
+        <tr><th>Gates you added</th><td class="mono" id="cnt3"></td></tr>
+      </table>
+      <div class="note warn" id="n3"></div>
+    </div>
+  </div>
+</section>
+
+<div class="credit">Module 3 explorer · Quantum Computing Foundations · SemiAcademy / ISEP-CSU · CC BY 4.0. Gate matrices follow Qiskit's conventions. Random numbers come from your browser, so your counts differ from other learners'. This is a practice tool: the graded values come from the lab notebook.</div>
+
+<script>
+(function () {
+/*BLOCH*/
+  var $ = function (id) { return document.getElementById(id); };
+  var DEG = Math.PI / 180;
+  // ---------- complex numbers [re, im] and 2 x 2 matrices
+  function C(re, im) { return [re, im || 0]; }
+  function cm(a, b) { return [a[0] * b[0] - a[1] * b[1], a[0] * b[1] + a[1] * b[0]]; }
+  function ca(a, b) { return [a[0] + b[0], a[1] + b[1]]; }
+  function cc(a) { return [a[0], -a[1]]; }
+  function ab2(a) { return a[0] * a[0] + a[1] * a[1]; }
+  function ex(t) { return [Math.cos(t), Math.sin(t)]; }
+  function mm(A, B) {
+    return [[ca(cm(A[0][0], B[0][0]), cm(A[0][1], B[1][0])), ca(cm(A[0][0], B[0][1]), cm(A[0][1], B[1][1]))],
+            [ca(cm(A[1][0], B[0][0]), cm(A[1][1], B[1][0])), ca(cm(A[1][0], B[0][1]), cm(A[1][1], B[1][1]))]];
+  }
+  function mv(A, v) { return [ca(cm(A[0][0], v[0]), cm(A[0][1], v[1])), ca(cm(A[1][0], v[0]), cm(A[1][1], v[1]))]; }
+  function dag(A) { return [[cc(A[0][0]), cc(A[1][0])], [cc(A[0][1]), cc(A[1][1])]]; }
+  var s2 = Math.SQRT1_2, I2 = [[C(1), C(0)], [C(0), C(1)]];
+  var G = {
+    X: [[C(0), C(1)], [C(1), C(0)]], Y: [[C(0), C(0, -1)], [C(0, 1), C(0)]], Z: [[C(1), C(0)], [C(0), C(-1)]],
+    H: [[C(s2), C(s2)], [C(s2), C(-s2)]], S: [[C(1), C(0)], [C(0), C(0, 1)]], Sdg: [[C(1), C(0)], [C(0), C(0, -1)]],
+    T: [[C(1), C(0)], [C(0), ex(Math.PI / 4)]], Tdg: [[C(1), C(0)], [C(0), ex(-Math.PI / 4)]]
+  };
+  var LABEL = { X: 'X', Y: 'Y', Z: 'Z', H: 'H', S: 'S', Sdg: 'S†', T: 'T', Tdg: 'T†' };
+  var INV = { X: 'X', Y: 'Y', Z: 'Z', H: 'H', S: 'Sdg', Sdg: 'S', T: 'Tdg', Tdg: 'T' };
+  var SAY = {
+    X: 'X: a half turn about the x axis. It swaps the amplitudes of |0⟩ and |1⟩.',
+    Y: 'Y: a half turn about the y axis.',
+    Z: 'Z: a half turn about the z axis. It flips the sign of |1⟩, so P(0) and P(1) do not change.',
+    H: 'H: a half turn about the axis halfway between x and z. It swaps the x and z axes.',
+    S: 'S: a quarter turn (90°) about z. Only the phase of |1⟩ changes.',
+    Sdg: 'S†: a quarter turn about z the other way. It undoes S.',
+    T: 'T: an eighth turn (45°) about z. Two T gates make an S.',
+    Tdg: 'T†: an eighth turn about z the other way. It undoes T.'
+  };
+  function rot(axis, th) {
+    var c = Math.cos(th / 2), s = Math.sin(th / 2);
+    if (axis === 'X') return [[C(c), C(0, -s)], [C(0, -s), C(c)]];
+    if (axis === 'Y') return [[C(c), C(-s)], [C(s), C(c)]];
+    return [[ex(-th / 2), C(0)], [C(0), ex(th / 2)]];
+  }
+  function blochOf(v) {
+    var p = cm(cc(v[0]), v[1]);
+    return [2 * p[0], 2 * p[1], ab2(v[0]) - ab2(v[1])];
+  }
+  // the rotation of the Bloch sphere made by a 2 x 2 unitary: unit axis n and angle (radians, 0 to pi)
+  function axisAngle(U) {
+    var det = ca(cm(U[0][0], U[1][1]), cm([-U[0][1][0], -U[0][1][1]], U[1][0]));
+    var h = Math.atan2(det[1], det[0]) / 2, ph = ex(-h);
+    var a = cm(U[0][0], ph), b = cm(U[0][1], ph);
+    if (a[0] < 0) { a = [-a[0], -a[1]]; b = [-b[0], -b[1]]; }
+    var ang = 2 * Math.acos(Math.max(-1, Math.min(1, a[0]))), sn = Math.sin(ang / 2);
+    if (sn < 1e-9) return { n: [0, 0, 1], a: 0 };
+    return { n: [-b[1] / sn, -b[0] / sn, -a[1] / sn], a: ang };
+  }
+  function rodr(v, n, t) {
+    var c = Math.cos(t), s = Math.sin(t), d = n[0] * v[0] + n[1] * v[1] + n[2] * v[2];
+    return [v[0] * c + (n[1] * v[2] - n[2] * v[1]) * s + n[0] * d * (1 - c),
+            v[1] * c + (n[2] * v[0] - n[0] * v[2]) * s + n[1] * d * (1 - c),
+            v[2] * c + (n[0] * v[1] - n[1] * v[0]) * s + n[2] * d * (1 - c)];
+  }
+  function f3(x) { var r = Math.round(x * 1000) / 1000; return (Object.is(r, -0) ? 0 : r).toFixed(3).replace('-', '−'); }
+  function cx(z) {
+    var re = z[0], im = z[1];
+    if (Math.abs(im) < 5e-4) return f3(re);
+    if (Math.abs(re) < 5e-4) return f3(im) + 'i';
+    return '(' + f3(re) + (im < 0 ? ' − ' : ' + ') + f3(Math.abs(im)) + 'i)';
+  }
+  function stateText(v) {
+    var b = v[1], sign = ' + ';
+    if (Math.abs(b[1]) < 5e-4 && b[0] < 0) { b = [-b[0], 0]; sign = ' − '; }
+    else if (Math.abs(b[0]) < 5e-4 && b[1] < 0) { b = [0, -b[1]]; sign = ' − '; }
+    return cx(v[0]) + '|0⟩' + sign + cx(b) + '|1⟩';
+  }
+  function matHTML(U) {
+    return '<span class="mat"><table><tr><td>' + cx(U[0][0]) + '</td><td>' + cx(U[0][1]) + '</td></tr><tr><td>' + cx(U[1][0]) + '</td><td>' + cx(U[1][1]) + '</td></tr></table></span>';
+  }
+  var START = { '0': [C(1), C(0)], '1': [C(0), C(1)], '+': [C(s2), C(s2)], '+i': [C(s2), C(0, s2)] };
+  var START_L = { '0': '|0⟩', '1': '|1⟩', '+': '|+⟩', '+i': '|+i⟩' };
+  var COLORS = ['#C9A227', '#6E2C4F', '#24313D', '#2E7D4F', '#8A6D00', '#6A626B'];
+
+  // ---------- tabs
+  var tabs = document.querySelectorAll('.tabs button');
+  function openTab(t) {
+    tabs.forEach(function (b) { b.classList.toggle('on', b.dataset.t === t); });
+    document.querySelectorAll('.tool').forEach(function (s) { s.classList.toggle('on', s.id === 't-' + t); });
+  }
+  tabs.forEach(function (b) { b.onclick = function () { openTab(b.dataset.t); }; });
+  function fromHash() { var h = location.hash; openTab(h.indexOf('interf') >= 0 ? 'interf' : h.indexOf('undo') >= 0 ? 'undo' : 'gates'); }
+  window.addEventListener('hashchange', fromHash);
+  fromHash();
+
+  // ---------- draggable view
+  function dragView(svg, view, redraw) {
+    var start = null;
+    svg.addEventListener('pointerdown', function (e) { start = { x: e.clientX, y: e.clientY, az: view.az, el: view.el }; svg.setPointerCapture(e.pointerId); svg.style.cursor = 'grabbing'; });
+    svg.addEventListener('pointermove', function (e) {
+      if (!start) return;
+      view.az = start.az - (e.clientX - start.x) * 0.6;
+      view.el = Math.max(-80, Math.min(80, start.el + (e.clientY - start.y) * 0.4));
+      redraw();
+    });
+    function end() { start = null; svg.style.cursor = 'grab'; }
+    svg.addEventListener('pointerup', end); svg.addEventListener('pointercancel', end);
+  }
+
+  // an animated sphere: a state, a list of trails, and gates that turn it
+  function Animator(svg, onState) {
+    var self = { view: { az: 25, el: 20 }, trails: [], busy: false, vec: [0, 0, 1], ghost: null };
+    self.draw = function () {
+      var cfg = { az: self.view.az, el: self.view.el, font: 0.15, pts: [], rots: [] };
+      self.trails.forEach(function (t) { cfg.rots.push({ v: t.v, n: t.n, a: t.a, c: t.c, w: 0.02 }); });
+      if (self.ghost) cfg.pts.push({ v: self.ghost, c: '#B9AEB4', dash: true });
+      cfg.pts.push({ v: self.vec, dot: true });
+      drawBloch(svg, cfg);
+    };
+    self.turn = function (U, done) {
+      var aa = axisAngle(U), v0 = self.vec.slice(), col = COLORS[self.trails.length % COLORS.length];
+      if (aa.a < 1e-6) { if (done) done(); return; }
+      var trail = { v: v0, n: aa.n, a: 0, c: col };
+      self.trails.push(trail);
+      if (self.trails.length > 12) self.trails.shift();
+      var t0 = null, dur = 420 + 280 * aa.a / Math.PI;
+      self.busy = true;
+      function step(ts) {
+        if (t0 === null) t0 = ts;
+        var k = Math.min(1, (ts - t0) / dur), e = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
+        trail.a = aa.a * e / DEG;
+        self.vec = rodr(v0, aa.n, aa.a * e);
+        self.draw();
+        if (k < 1) requestAnimationFrame(step);
+        else { self.busy = false; if (done) done(); }
+      }
+      requestAnimationFrame(step);
+    };
+    dragView(svg, self.view, self.draw);
+    return self;
+  }
+
+  // ---------- tool 1: playground
+  var st1 = { start: '0', ops: [] };
+  var A1 = Animator($('sph1'));
+  function cur1() {
+    var v = START[st1.start].slice(), U = I2;
+    st1.ops.forEach(function (o) { v = mv(o.U, v); U = mm(o.U, U); });
+    return { v: v, U: U };
+  }
+  function show1(msg) {
+    var c = cur1();
+    var html = '<span class="wire">' + START_L[st1.start] + ' ─</span>';
+    st1.ops.forEach(function (o) { html += '<span class="chip">' + o.l + '</span><span class="wire">─</span>'; });
+    $('chips1').innerHTML = html;
+    $('st1').textContent = stateText(c.v);
+    var b = blochOf(c.v);
+    $('bv1').textContent = '(' + f3(b[0]) + ', ' + f3(b[1]) + ', ' + f3(b[2]) + ')';
+    $('mat1').innerHTML = matHTML(c.U);
+    $('uform').textContent = st1.ops.length > 1 ? '(U = ' + st1.ops.map(function (o) { return o.l; }).reverse().join(' · ') + ')' : '';
+    var p0 = ab2(c.v[0]);
+    $('p01').style.width = (p0 * 100) + '%'; $('p01v').textContent = p0.toFixed(3);
+    $('p11').style.width = ((1 - p0) * 100) + '%'; $('p11v').textContent = (1 - p0).toFixed(3);
+    if (msg) $('n1').textContent = msg;
+    $('undo1').disabled = !st1.ops.length;
+  }
+  function apply1(U, label, msg) {
+    if (A1.busy) return;
+    st1.ops.push({ U: U, l: label });
+    show1(msg);
+    A1.turn(U, function () { A1.vec = blochOf(cur1().v); A1.draw(); });
+  }
+  document.querySelectorAll('[data-g]').forEach(function (b) {
+    b.onclick = function () { apply1(G[b.dataset.g], LABEL[b.dataset.g], SAY[b.dataset.g]); };
+  });
+  function rangText() { var a = +$('rang').value; $('rangv').textContent = (a > 0 ? '+' : '') + a + '°'; }
+  $('rang').addEventListener('input', rangText); rangText();
+  $('rapply').onclick = function () {
+    var ax = $('rax').value, a = +$('rang').value;
+    apply1(rot(ax, a * DEG), 'R' + ax.toLowerCase() + '(' + a + '°)',
+      'R' + ax.toLowerCase() + '(' + a + '°): a turn of ' + a + '° about the ' + ax.toLowerCase() + ' axis. The matrix uses half the angle, ' + (a / 2) + '°.');
+  };
+  $('undo1').onclick = function () {
+    if (A1.busy || !st1.ops.length) return;
+    var last = st1.ops.pop();
+    show1('Undo: applying the inverse of ' + last.l + ' (its conjugate transpose) turns the arrow back. Every gate can be undone this way.');
+    A1.turn(dag(last.U), function () { A1.trails.splice(-2, 2); A1.vec = blochOf(cur1().v); A1.draw(); });
+  };
+  function reset1(s) {
+    if (A1.busy) return;
+    st1.start = s; st1.ops = []; A1.trails = []; A1.vec = blochOf(START[s]); A1.draw();
+    show1('Start state ' + START_L[s] + '. Press a gate. Try H then H, or T four times, or S then H compared with H then S.');
+  }
+  document.querySelectorAll('[data-start]').forEach(function (b) { b.onclick = function () { reset1(b.dataset.start); }; });
+  $('clear1').onclick = function () { reset1(st1.start); };
+  $('rv1').onclick = function (e) { e.preventDefault(); A1.view.az = 25; A1.view.el = 20; A1.draw(); };
+  reset1('0');
+
+  // ---------- tool 2: interference
+  var v2 = { az: 25, el: 20 }, dots2 = [];
+  function circ2() {
+    var svg = $('circ2'); while (svg.firstChild) svg.removeChild(svg.firstChild);
+    var on = $('h2on').checked;
+    sv(svg, 'text', { x: 2, y: 38, 'font-size': 16, fill: '#24313D' }, '|0⟩');
+    sv(svg, 'line', { x1: 34, y1: 32, x2: 400, y2: 32, stroke: '#24313D', 'stroke-width': 2 });
+    function box(x, w, t, col, dash) {
+      sv(svg, 'rect', { x: x, y: 12, width: w, height: 40, rx: 5, fill: '#fff', stroke: col, 'stroke-width': 2.5, 'stroke-dasharray': dash ? '5 4' : 'none' });
+      sv(svg, 'text', { x: x + w / 2, y: 38, 'font-size': 17, 'text-anchor': 'middle', fill: col, 'font-family': 'Georgia' }, t);
+    }
+    box(60, 40, 'H', '#6A626B');
+    box(140, 82, 'P(' + $('phi2').value + '°)', '#8A6D00');
+    box(262, 40, 'H', on ? '#24313D' : '#C8C0C4', !on);
+    sv(svg, 'rect', { x: 340, y: 12, width: 44, height: 40, rx: 5, fill: '#fff', stroke: '#24313D', 'stroke-width': 2.5 });
+    sv(svg, 'path', { d: 'M348 44 A 14 14 0 0 1 376 44', fill: 'none', stroke: '#24313D', 'stroke-width': 2 });
+    sv(svg, 'line', { x1: 362, y1: 45, x2: 372, y2: 22, stroke: '#24313D', 'stroke-width': 2 });
+  }
+  function p0of(phi, on) { return on ? Math.pow(Math.cos(phi / 2), 2) : 0.5; }
+  function fringe2() {
+    var svg = $('fr2'); while (svg.firstChild) svg.removeChild(svg.firstChild);
+    var on = $('h2on').checked, phi = +$('phi2').value * DEG;
+    var x0 = 40, x1 = 408, y0 = 112, y1 = 12;
+    function X(p) { return x0 + (x1 - x0) * p / (2 * Math.PI); }
+    function Y(v) { return y0 - (y0 - y1) * v; }
+    sv(svg, 'line', { x1: x0, y1: y0, x2: x1, y2: y0, stroke: '#24313D', 'stroke-width': 1.2 });
+    sv(svg, 'line', { x1: x0, y1: y0, x2: x0, y2: y1, stroke: '#24313D', 'stroke-width': 1.2 });
+    [[0, '0'], [0.5, '0.5'], [1, '1']].forEach(function (t) {
+      sv(svg, 'text', { x: x0 - 6, y: Y(t[0]) + 4, 'font-size': 11, 'text-anchor': 'end', fill: '#6A626B' }, t[1]);
+      sv(svg, 'line', { x1: x0, y1: Y(t[0]), x2: x1, y2: Y(t[0]), stroke: '#EFE9EC', 'stroke-width': 1 });
+    });
+    [[0, '0°'], [Math.PI, '180°'], [2 * Math.PI, '360°']].forEach(function (t) {
+      sv(svg, 'text', { x: X(t[0]), y: y0 + 15, 'font-size': 11, 'text-anchor': 'middle', fill: '#6A626B' }, t[1]);
+    });
+    sv(svg, 'text', { x: (x0 + x1) / 2 + 60, y: y0 + 15, 'font-size': 11.5, 'text-anchor': 'middle', fill: '#6A626B' }, 'phase φ');
+    sv(svg, 'text', { x: x0 + 22, y: y1 + 34, 'font-size': 11.5, fill: '#6A626B' }, 'P(0)');
+    var pts = [];
+    for (var k = 0; k <= 120; k++) { var p = 2 * Math.PI * k / 120; pts.push(X(p) + ',' + Y(p0of(p, on))); }
+    sv(svg, 'polyline', { points: pts.join(' '), fill: 'none', stroke: '#24313D', 'stroke-width': 2 });
+    dots2.forEach(function (d) { if (d.on === on) sv(svg, 'circle', { cx: X(d.phi), cy: Y(d.f), r: 4, fill: '#99004C' }); });
+    sv(svg, 'line', { x1: X(phi), y1: y0, x2: X(phi), y2: y1, stroke: '#C9A227', 'stroke-width': 1.5, 'stroke-dasharray': '4 3' });
+    sv(svg, 'circle', { cx: X(phi), cy: Y(p0of(phi, on)), r: 5.5, fill: '#C9A227' });
+  }
+  function upd2() {
+    var on = $('h2on').checked, phi = +$('phi2').value * DEG;
+    $('phi2v').textContent = $('phi2').value + '°';
+    var a1 = [C(s2), C(s2)], a2 = [C(s2), cm(C(s2), ex(phi))], a3 = on ? mv(G.H, a2) : a2;
+    $('a1').textContent = stateText(a1); $('a2').textContent = stateText(a2); $('a3').textContent = stateText(a3);
+    var rots = [{ v: [0, 0, 1], n: [s2, 0, s2], a: 180, c: '#6A626B', w: 0.02 }, { v: [1, 0, 0], n: [0, 0, 1], a: phi / DEG, c: '#C9A227', w: 0.022 }];
+    var mid = [Math.cos(phi), Math.sin(phi), 0], end = on ? [0, -Math.sin(phi), Math.cos(phi)] : mid;
+    if (on) rots.push({ v: mid, n: [s2, 0, s2], a: 180, c: '#24313D', w: 0.02 });
+    drawBloch($('sph2'), { az: v2.az, el: v2.el, font: 0.15, rots: rots, pts: [{ v: end, dot: true }] });
+    circ2(); fringe2();
+    var p0 = p0of(phi, on);
+    $('n2').textContent = on
+      ? 'P(0) = cos²(φ/2) = ' + p0.toFixed(3) + '. The amplitude of 0 at the end is (1 + e^(iφ))/2: the two paths ' + (p0 > 0.95 ? 'add up.' : p0 < 0.05 ? 'cancel.' : p0 >= 0.5 ? 'add more than they cancel.' : 'cancel more than they add.')
+      : 'Without the second H, P(0) = 0.5 for every φ. The phase is in the state, but nothing turns it into a change of probability: no interference.';
+  }
+  $('phi2').addEventListener('input', upd2);
+  $('h2on').addEventListener('change', upd2);
+  document.querySelectorAll('[data-phi]').forEach(function (b) { b.onclick = function () { $('phi2').value = b.dataset.phi; upd2(); }; });
+  $('shots2').onclick = function () {
+    var on = $('h2on').checked, phi = +$('phi2').value * DEG, p = p0of(phi, on), z = 0;
+    for (var k = 0; k < 1000; k++) if (Math.random() < p) z++;
+    dots2.push({ phi: phi, f: z / 1000, on: on });
+    $('cnt2').textContent = z + ' zeros, ' + (1000 - z) + ' ones';
+    fringe2();
+  };
+  $('clr2').onclick = function () { dots2 = []; $('cnt2').textContent = ''; fringe2(); };
+  dragView($('sph2'), v2, upd2);
+  upd2();
+
+  // ---------- tool 3: undo challenge
+  var LEVELS = [['H'], ['H', 'S'], ['X', 'H'], ['H', 'T', 'H'], ['H', 'T', 'S', 'H'], ['S', 'H', 'T', 'H']];
+  var st3 = { lvl: 0, fwd: [], mine: [], done: false, shown: false };
+  var A3 = Animator($('sph3'));
+  function vec3(withMine) {
+    var v = [C(1), C(0)];
+    st3.fwd.forEach(function (g) { v = mv(G[g], v); });
+    if (withMine) st3.mine.forEach(function (g) { v = mv(G[g], v); });
+    return v;
+  }
+  function show3() {
+    var html = '<span class="wire">|0⟩ ─</span>';
+    st3.fwd.forEach(function (g) { html += '<span class="chip">' + LABEL[g] + '</span><span class="wire">─</span>'; });
+    html += '<span class="wire"> ┊ </span>';
+    st3.mine.forEach(function (g) { html += '<span class="chip u">' + LABEL[g] + '</span><span class="wire">─</span>'; });
+    $('chips3').innerHTML = html;
+    $('lvl3').textContent = st3.lvl < LEVELS.length ? 'Level ' + (st3.lvl + 1) + ' of ' + (LEVELS.length + 1) : 'Level ' + (LEVELS.length + 1) + ' of ' + (LEVELS.length + 1) + ' (random)';
+    var v = vec3(true), p0 = ab2(v[0]);
+    $('st3').textContent = stateText(v);
+    $('cnt3').textContent = st3.mine.length + (st3.mine.length === 1 ? ' gate' : ' gates');
+    $('p03').style.width = (p0 * 100) + '%'; $('p03v').textContent = p0.toFixed(3);
+    var exact = st3.fwd.slice().reverse().map(function (g) { return LABEL[INV[g]]; }).join(', ');
+    if (p0 > 1 - 1e-9 && st3.mine.length) {
+      st3.done = true;
+      $('n3').className = 'note';
+      $('n3').textContent = 'Back to |0⟩: every shot would give 0. ' + (st3.mine.length <= st3.fwd.length
+        ? 'You used ' + st3.mine.length + ' gate' + (st3.mine.length === 1 ? '' : 's') + '. The exact undo is ' + exact + '.'
+        : 'You used ' + st3.mine.length + ' gates; the exact undo needs ' + st3.fwd.length + ': ' + exact + '.') + ' Press "Next level".';
+    } else {
+      $('n3').className = 'note warn';
+      $('n3').textContent = st3.shown ? 'The exact undo: ' + exact + '. Reverse order, and each gate replaced by its inverse (S by S†, T by T†; X, Y, Z and H undo themselves).'
+        : 'P(0) is ' + p0.toFixed(3) + '. Add gates until it is 1. Hint: undo the last forward gate first.';
+    }
+  }
+  function load3(i) {
+    if (A3.busy) return;
+    st3.lvl = i; st3.mine = []; st3.done = false; st3.shown = false;
+    if (i < LEVELS.length) st3.fwd = LEVELS[i].slice();
+    else { var names = Object.keys(G); st3.fwd = []; for (var k = 0; k < 4; k++) st3.fwd.push(names[Math.floor(Math.random() * names.length)]); }
+    A3.trails = []; A3.vec = blochOf(vec3(false)); A3.ghost = [0, 0, 1]; A3.draw(); show3();
+  }
+  document.querySelectorAll('[data-u]').forEach(function (b) {
+    b.onclick = function () {
+      if (A3.busy) return;
+      var g = b.dataset.u; st3.mine.push(g); show3();
+      A3.turn(G[g], function () { A3.vec = blochOf(vec3(true)); A3.draw(); });
+    };
+  });
+  $('pop3').onclick = function () {
+    if (A3.busy || !st3.mine.length) return;
+    var g = st3.mine.pop(); show3();
+    A3.turn(dag(G[g]), function () { A3.trails.splice(-2, 2); A3.vec = blochOf(vec3(true)); A3.draw(); });
+  };
+  $('reset3').onclick = function () { load3(st3.lvl); };
+  $('show3').onclick = function () { st3.shown = true; show3(); };
+  $('next3').onclick = function () { load3(Math.min(st3.lvl + 1, LEVELS.length)); };
+  load3(0);
+})();
+</script>
+</body>
+</html>
