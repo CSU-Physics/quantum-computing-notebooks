@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Module 5 Explorer: Noise and Real Hardware</title>
+<style>
+  :root { --maroon:#99004C; --ink:#24313D; --muted:#6A626B; --line:#E4DCE0; --tint:#F8F4F6; --gold:#C9A227; --ok:#2E7D4F; --bad:#B3261E; --grey:#8C8A93; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:#fff; color:var(--ink); font-family:"Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size:15px; }
+  .tabs { display:flex; border-bottom:2px solid var(--line); background:var(--tint); }
+  .tabs button { flex:1; border:0; background:none; padding:10px 8px; font-size:15px; cursor:pointer; color:var(--muted); border-bottom:3px solid transparent; }
+  .tabs button.on { color:var(--maroon); border-bottom-color:var(--maroon); font-weight:600; background:#fff; }
+  .tool { display:none; padding:12px 16px; }
+  .tool.on { display:block; }
+  h2 { font-family:Georgia, serif; color:var(--maroon); font-size:19px; margin:0 0 4px; }
+  .hint { color:var(--muted); margin:0 0 10px; line-height:1.45; }
+  .grid { display:grid; grid-template-columns: 290px 1fr; gap:14px; align-items:start; }
+  @media (max-width: 660px) { .grid { grid-template-columns: 1fr; } }
+  .box { border:1px solid var(--line); border-radius:6px; padding:10px 12px; }
+  .box h3 { margin:0 0 6px; font-size:14.5px; color:var(--maroon); }
+  label.sl { display:block; font-size:13.5px; margin:8px 0 2px; }
+  label.sl b { color:var(--maroon); font-weight:600; }
+  input[type=range] { width:100%; accent-color:var(--maroon); }
+  .row { display:flex; gap:5px; flex-wrap:wrap; margin-top:8px; align-items:center; }
+  button.act { border:2px solid var(--ink); background:#fff; color:var(--ink); padding:4px 9px; border-radius:5px; font-size:13.5px; cursor:pointer; }
+  button.act.fill { background:var(--maroon); border-color:var(--maroon); color:#fff; }
+  button.act.on { background:var(--ink); color:#fff; }
+  .mono { font-family: Consolas, "Courier New", monospace; }
+  table { border-collapse:collapse; width:100%; font-size:13.5px; margin-top:6px; }
+  td, th { border:1px solid var(--line); padding:4px 7px; text-align:left; }
+  th { background:var(--tint); font-weight:600; }
+  td.num { text-align:right; font-family:Consolas, monospace; }
+  .note { margin-top:8px; padding:7px 10px; border-radius:4px; font-size:13.5px; background:#EEF6F0; color:var(--ok); line-height:1.4; }
+  .note.warn { background:#FFF7E0; color:#7A5C00; }
+  .note.info { background:var(--tint); color:var(--ink); }
+  .credit { color:var(--muted); font-size:12px; padding:8px 16px 12px; border-top:1px solid var(--line); }
+  select { font-size:14px; padding:2px; }
+  svg { display:block; width:100%; height:auto; }
+  .legend { font-size:12.5px; color:var(--muted); margin-top:4px; }
+  .sw { display:inline-block; width:11px; height:11px; vertical-align:-1px; margin:0 4px 0 10px; border-radius:2px; }
+</style>
+</head>
+<body>
+<div class="tabs" role="tablist">
+  <button type="button" data-t="noise" role="tab">1. Noise on the Bell circuit</button>
+  <button type="button" data-t="mitigate" role="tab">2. Readout mitigation</button>
+</div>
+
+<!-- TOOL 1: noise -->
+<section class="tool" id="t-noise" role="tabpanel">
+  <h2>Noise on the Bell circuit</h2>
+  <p class="hint">The Bell circuit (H, then CNOT) should give only 00 and 11. Add a gate error on the CNOT and readout errors on both qubits, run it, and compare the counts with the prediction and its 3σ shot-noise band. Then load the calibration data of a real IBM computer and compare with its published run.</p>
+  <div class="grid">
+    <div class="box">
+      <h3>Noise</h3>
+      <label class="sl" for="lam">Depolarizing error on the CNOT, λ = <b id="lamv"></b></label>
+      <input type="range" id="lam" min="0" max="30" step="0.5" value="0">
+      <label class="sl" for="e0">Readout e0 = P(read 1 | was 0) = <b id="e0v"></b></label>
+      <input type="range" id="e0" min="0" max="10" step="0.1" value="0">
+      <label class="sl" for="e1">Readout e1 = P(read 0 | was 1) = <b id="e1v"></b></label>
+      <input type="range" id="e1" min="0" max="10" step="0.1" value="0">
+      <label class="sl" for="shots">Shots</label>
+      <select id="shots" aria-label="number of shots"><option>100</option><option selected>1000</option><option>10000</option></select>
+      <div class="row">
+        <button type="button" class="act fill" id="run1">Run</button>
+        <button type="button" class="act" id="ideal">Ideal</button>
+        <button type="button" class="act" id="pitt">ibm_pittsburgh model</button>
+      </div>
+      <div class="row"><label style="font-size:13.5px"><input type="checkbox" id="showibm"> show IBM's published run (ibm_pittsburgh)</label></div>
+      <p class="hint" id="src1" style="font-size:12.5px;margin-top:8px"></p>
+    </div>
+    <div class="box">
+      <svg id="hist1" viewBox="0 0 520 250" aria-label="Counts for 00, 01, 10 and 11, with the prediction and its 3-sigma band"></svg>
+      <div class="legend"><span class="sw" style="background:#99004C"></span>this run<span class="sw" style="background:#24313D;height:3px;vertical-align:3px"></span>prediction, with 3σ band<span class="sw" style="background:#B9B6BF"></span>IBM's run (if shown)</div>
+      <table>
+        <tr><th></th><th>This run</th><th>Predicted</th><th>3σ band</th></tr>
+        <tr><td>different results (01 + 10)</td><td class="num" id="d_run"></td><td class="num" id="d_pred"></td><td class="num" id="d_band"></td></tr>
+        <tr><td>from the CNOT error alone</td><td></td><td class="num" id="d_gate"></td><td></td></tr>
+      </table>
+      <div class="note info" id="n1">Press Run.</div>
+    </div>
+  </div>
+</section>
+
+<!-- TOOL 2: mitigation -->
+<section class="tool" id="t-mitigate" role="tabpanel">
+  <h2>Readout mitigation</h2>
+  <p class="hint">If you know the readout matrix A, you can undo readout errors: solve A x = p for the measured probabilities p. Run one experiment to see the corrected numbers (they can be slightly negative), then repeat it 200 times to see what mitigation does to the average and to the spread.</p>
+  <div class="grid">
+    <div class="box">
+      <h3>The experiment</h3>
+      <label class="sl" for="m_lam">Depolarizing error on the CNOT, λ = <b id="m_lamv"></b></label>
+      <input type="range" id="m_lam" min="0" max="10" step="0.5" value="1">
+      <label class="sl" for="m_e0">Readout e0 = <b id="m_e0v"></b></label>
+      <input type="range" id="m_e0" min="0" max="15" step="0.5" value="2">
+      <label class="sl" for="m_e1">Readout e1 = <b id="m_e1v"></b></label>
+      <input type="range" id="m_e1" min="0" max="15" step="0.5" value="5">
+      <label class="sl" for="m_shots">Shots per experiment</label>
+      <select id="m_shots" aria-label="shots per experiment"><option>250</option><option selected>1000</option><option>4000</option></select>
+      <div class="row">
+        <button type="button" class="act fill" id="one">Run one experiment</button>
+        <button type="button" class="act" id="many">Repeat 200 times</button>
+      </div>
+      <p class="hint" style="font-size:12.5px;margin-top:8px">The true fraction of different results before readout is λ/2 (from the CNOT error). That is what mitigation tries to recover.</p>
+    </div>
+    <div class="box">
+      <table>
+        <tr><th>Result</th><th>Measured</th><th>Mitigated</th><th>True (before readout)</th></tr>
+        <tbody id="mt"></tbody>
+      </table>
+      <p class="mono" id="stats2" style="font-size:13px;margin:8px 0 0"></p>
+      <svg id="hist2" viewBox="0 0 520 210" aria-label="Distribution of 200 estimates of the fraction of different results, raw and mitigated"></svg>
+      <div class="legend"><span class="sw" style="background:#B9B6BF"></span>raw estimates<span class="sw" style="background:#99004C"></span>mitigated estimates<span class="sw" style="background:#2E7D4F;height:3px;vertical-align:3px"></span>true value λ/2</div>
+      <div class="note info" id="n2">Run one experiment, or repeat it 200 times.</div>
+    </div>
+  </div>
+</section>
+
+<div class="credit">Module 5 explorer · SemiAcademy / ISEP-CSU · CC BY 4.0. The ibm_pittsburgh numbers are its calibration snapshot of 17 April 2026 (Qiskit's FakePittsburgh, qubits 0 and 1) and the run published in IBM Quantum Learning's lesson "Build and run your first quantum program" (CC BY-SA 4.0).</div>
+
+<script>
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+  var LABELS = ['00', '01', '10', '11'];
+  var IBM = [507, 15, 15, 463];
+  var PITT = { lam: 0.0100, r: [[0.0034, 0.0146], [0.0020, 0.0083]] };   // qubit 0, qubit 1: (e0, e1)
+  var tabs = Array.prototype.slice.call(document.querySelectorAll('.tabs button'));
+  function openTab(t) {
+    tabs.forEach(function (b) { b.classList.toggle('on', b.dataset.t === t); });
+    document.querySelectorAll('.tool').forEach(function (s) { s.classList.toggle('on', s.id === 't-' + t); });
+  }
+  tabs.forEach(function (b) { b.onclick = function () { openTab(b.dataset.t); }; });
+  function fromHash() { openTab(location.hash.indexOf('mitig') >= 0 ? 'mitigate' : 'noise'); }
+  window.addEventListener('hashchange', fromHash);
+  fromHash();
+
+  function pct(x, d) { return (100 * x).toFixed(d === undefined ? 1 : d) + '%'; }
+  function f3(x) { var r = Math.round(x * 1000) / 1000; return (Object.is(r, -0) ? 0 : r).toFixed(3).replace('-', '−'); }
+  function f4(x) { var r = Math.round(x * 10000) / 10000; return (Object.is(r, -0) ? 0 : r).toFixed(4).replace('-', '−'); }
+  // single-qubit readout matrix: columns = true 0, 1; rows = recorded 0, 1
+  function A1(e0, e1) { return [[1 - e0, e1], [e0, 1 - e1]]; }
+  // apply kron(Aq1, Aq0) to a 4-vector in the order 00, 01, 10, 11 (index = 2 * bit(q1) + bit(q0))
+  function applyRO(p, a0, a1) {
+    var out = [0, 0, 0, 0];
+    for (var i = 0; i < 4; i++) for (var j = 0; j < 4; j++) out[i] += a1[i >> 1][j >> 1] * a0[i & 1][j & 1] * p[j];
+    return out;
+  }
+  function inv2(m) { var d = m[0][0] * m[1][1] - m[0][1] * m[1][0]; return [[m[1][1] / d, -m[0][1] / d], [-m[1][0] / d, m[0][0] / d]]; }
+  function bellTrue(lam) { var a = (1 - lam) * 0.5 + lam * 0.25, b = lam * 0.25; return [a, b, b, a]; }
+  function sample(p, n) {
+    var c = [0, 0, 0, 0], cum = [p[0], p[0] + p[1], p[0] + p[1] + p[2]];
+    for (var k = 0; k < n; k++) { var r = Math.random(); c[r < cum[0] ? 0 : r < cum[1] ? 1 : r < cum[2] ? 2 : 3]++; }
+    return c;
+  }
+  function sv(svg, tag, at, txt) {
+    var e = document.createElementNS('http://www.w3.org/2000/svg', tag);
+    for (var k in at) e.setAttribute(k, at[k]);
+    if (txt !== undefined) e.textContent = txt;
+    svg.appendChild(e); return e;
+  }
+
+  // ---------------------------------------------------------------- tool 1
+  var custom = null;     // qubit-specific readout from the ibm_pittsburgh preset, until a slider moves
+  var last = null;
+  function params() {
+    var lam = +$('lam').value / 100, e0 = +$('e0').value / 100, e1 = +$('e1').value / 100;
+    var r = custom ? custom : [[e0, e1], [e0, e1]];
+    return { lam: lam, a0: A1(r[0][0], r[0][1]), a1: A1(r[1][0], r[1][1]), r: r, n: +$('shots').value };
+  }
+  function labels1() {
+    $('lamv').textContent = pct(+$('lam').value / 100);
+    $('e0v').textContent = custom ? 'qubit-specific' : pct(+$('e0').value / 100);
+    $('e1v').textContent = custom ? 'qubit-specific' : pct(+$('e1').value / 100);
+    $('src1').textContent = custom ? 'Using the calibration snapshot of ibm_pittsburgh (17 April 2026), qubits 0 and 1: CNOT (as transpiled) error worth λ ≈ 1.0% on the Bell state; readout qubit 0: e0 0.34%, e1 1.46%; qubit 1: e0 0.20%, e1 0.83%. Move a slider to go back to your own values.' : '';
+  }
+  ['lam', 'e0', 'e1'].forEach(function (id) { $(id).oninput = function () { if (id !== 'lam') custom = null; labels1(); predict1(); }; });
+  $('shots').onchange = function () { predict1(); };
+  function predict1() { last = null; draw1(); }
+  function draw1() {
+    var P = params(), pt = bellTrue(P.lam), p = applyRO(pt, P.a0, P.a1), n = P.n;
+    var svg = $('hist1'); while (svg.firstChild) svg.removeChild(svg.firstChild);
+    var showIBM = $('showibm').checked && n === 1000;
+    var maxv = 0.6;
+    var X0 = 50, W = 455, H = 200, Y0 = 215;
+    var y = function (v) { return Y0 - H * Math.min(v, maxv) / maxv; };
+    sv(svg, 'line', { x1: X0, y1: Y0, x2: X0 + W, y2: Y0, stroke: '#24313D', 'stroke-width': 1 });
+    [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6].forEach(function (t) {
+      sv(svg, 'line', { x1: X0 - 4, y1: y(t), x2: X0 + W, y2: y(t), stroke: '#E4DCE0', 'stroke-width': 1 });
+      sv(svg, 'text', { x: X0 - 8, y: y(t) + 4, 'text-anchor': 'end', 'font-size': 11, fill: '#6A626B' }, t.toFixed(1));
+    });
+    sv(svg, 'text', { x: 12, y: 112, 'font-size': 11, fill: '#6A626B', transform: 'rotate(-90 12 112)', 'text-anchor': 'middle' }, 'fraction of shots');
+    for (var i = 0; i < 4; i++) {
+      var cx = X0 + W * (i + 0.5) / 4, bw = 46;
+      if (last) {
+        var f = last[i] / n;
+        sv(svg, 'rect', { x: cx - (showIBM ? bw + 2 : bw / 2), y: y(f), width: bw, height: Y0 - y(f), fill: '#99004C', rx: 2 });
+        sv(svg, 'text', { x: cx - (showIBM ? bw / 2 + 2 : 0), y: y(f) - 5, 'text-anchor': 'middle', 'font-size': 11.5, fill: '#99004C' }, String(last[i]));
+      }
+      if (showIBM) {
+        var g = IBM[i] / 1000;
+        sv(svg, 'rect', { x: cx + 2, y: y(g), width: bw, height: Y0 - y(g), fill: '#B9B6BF', rx: 2 });
+        sv(svg, 'text', { x: cx + 2 + bw / 2, y: y(g) - 5, 'text-anchor': 'middle', 'font-size': 11.5, fill: '#6A626B' }, String(IBM[i]));
+      }
+      var s3 = 3 * Math.sqrt(p[i] * (1 - p[i]) / n);
+      var lo = Math.max(p[i] - s3, 0), hi = p[i] + s3;
+      sv(svg, 'rect', { x: cx - 34, y: y(hi), width: 68, height: Math.max(y(lo) - y(hi), 1), fill: '#24313D', opacity: 0.12 });
+      sv(svg, 'line', { x1: cx - 34, y1: y(p[i]), x2: cx + 34, y2: y(p[i]), stroke: '#24313D', 'stroke-width': 2.5 });
+      sv(svg, 'text', { x: cx, y: Y0 + 22, 'text-anchor': 'middle', 'font-size': 15, fill: '#24313D', 'font-family': 'Consolas, monospace' }, LABELS[i]);
+    }
+    var pd = p[1] + p[2], sd = Math.sqrt(pd * (1 - pd) / n), lo2 = Math.max(pd - 3 * sd, 0), hi2 = pd + 3 * sd;
+    $('d_pred').textContent = f4(pd);
+    $('d_band').textContent = f4(lo2) + ' to ' + f4(hi2);
+    $('d_gate').textContent = f4(P.lam / 2);
+    if (!last) { $('d_run').textContent = ''; $('n1').className = 'note info'; $('n1').textContent = 'Press Run to take ' + n.toLocaleString() + ' shots. The band shows where a run lands 99.7% of the time.'; return; }
+    var dr = (last[1] + last[2]) / n;
+    $('d_run').textContent = f4(dr);
+    var msg, cls = 'note';
+    if (pd === 0) msg = dr === 0 ? 'No noise: an ideal Bell circuit never gives 01 or 10, whatever the number of shots. Add a CNOT error or a readout error.' : 'Unexpected.';
+    else if (dr >= lo2 && dr <= hi2) msg = 'This run is inside the 3σ band: the difference from the prediction is shot noise. Run again and it moves; more shots narrow the band.';
+    else { msg = 'This run is outside the 3σ band. That happens by chance only about 3 times in 1,000 runs.'; cls = 'note warn'; }
+    if (showIBM && custom) {
+      var pi = (IBM[1] + IBM[2]) / 1000;
+      msg += ' IBM\'s run had ' + f3(pi) + ' different results; the model predicts ' + f3(pd) + ' with a 3σ band up to ' + f3(hi2) + (pi <= hi2 ? ', so with 1,000 shots this data cannot show that the model is wrong.' : ', so the device was noisier than this model.');
+    } else if (showIBM) msg += ' Grey: IBM\'s run. Load the "ibm_pittsburgh model" to compare it with its own calibration data.';
+    $('n1').className = cls; $('n1').textContent = msg;
+  }
+  $('run1').onclick = function () { var P = params(); last = sample(applyRO(bellTrue(P.lam), P.a0, P.a1), P.n); draw1(); };
+  $('ideal').onclick = function () { custom = null; $('lam').value = 0; $('e0').value = 0; $('e1').value = 0; labels1(); last = null; draw1(); };
+  $('pitt').onclick = function () { custom = PITT.r; $('lam').value = 1.0; $('shots').value = '1000'; labels1(); last = null; draw1(); };
+  $('showibm').onchange = function () { if ($('showibm').checked) $('shots').value = '1000'; draw1(); };
+  labels1(); draw1();
+
+  // ---------------------------------------------------------------- tool 2
+  function mparams() {
+    var lam = +$('m_lam').value / 100, e0 = +$('m_e0').value / 100, e1 = +$('m_e1').value / 100;
+    return { lam: lam, a: A1(e0, e1), n: +$('m_shots').value };
+  }
+  function labels2() {
+    $('m_lamv').textContent = pct(+$('m_lam').value / 100);
+    $('m_e0v').textContent = pct(+$('m_e0').value / 100);
+    $('m_e1v').textContent = pct(+$('m_e1').value / 100);
+  }
+  ['m_lam', 'm_e0', 'm_e1'].forEach(function (id) { $(id).oninput = labels2; });
+  function mitigate(c, a) {
+    var n = c[0] + c[1] + c[2] + c[3], p = c.map(function (v) { return v / n; }), ai = inv2(a);
+    return applyRO(p, ai, ai);   // inverse of kron(A, A) is kron(A^-1, A^-1)
+  }
+  $('one').onclick = function () {
+    var P = mparams(), pt = bellTrue(P.lam), pr = applyRO(pt, P.a, P.a), c = sample(pr, P.n), m = mitigate(c, P.a);
+    var tb = $('mt'); tb.innerHTML = '';
+    for (var i = 0; i < 4; i++) {
+      var tr = document.createElement('tr');
+      tr.innerHTML = '<td class="mono">' + LABELS[i] + '</td><td class="num">' + f4(c[i] / P.n) + '</td><td class="num"' + (m[i] < 0 ? ' style="color:#B3261E"' : '') + '>' + f4(m[i]) + '</td><td class="num">' + f4(pt[i]) + '</td>';
+      tb.appendChild(tr);
+    }
+    var tr2 = document.createElement('tr');
+    tr2.innerHTML = '<th>different (01 + 10)</th><td class="num">' + f4((c[1] + c[2]) / P.n) + '</td><td class="num">' + f4(m[1] + m[2]) + '</td><td class="num">' + f4(pt[1] + pt[2]) + '</td>';
+    tb.appendChild(tr2);
+    var neg = m.some(function (v) { return v < 0; });
+    $('n2').className = 'note info';
+    $('n2').textContent = 'The measured fraction of different results includes readout errors; the mitigated one removes them and lands near the true value λ/2, give or take shot noise.' + (neg ? ' One mitigated value is negative: a quasi-probability. Keep it; clipping it to 0 would bias the result.' : '');
+  };
+  $('many').onclick = function () {
+    var P = mparams(), pt = bellTrue(P.lam), pr = applyRO(pt, P.a, P.a), raw = [], mit = [];
+    for (var k = 0; k < 200; k++) { var c = sample(pr, P.n), m = mitigate(c, P.a); raw.push((c[1] + c[2]) / P.n); mit.push(m[1] + m[2]); }
+    function stats(a) { var mu = a.reduce(function (s, v) { return s + v; }, 0) / a.length; var v = a.reduce(function (s, x) { return s + (x - mu) * (x - mu); }, 0) / a.length; return [mu, Math.sqrt(v)]; }
+    var sr = stats(raw), sm = stats(mit), truth = pt[1] + pt[2];
+    var all = raw.concat(mit).concat([truth]);
+    var lo = Math.min.apply(null, all), hi = Math.max.apply(null, all), span = Math.max(hi - lo, 1e-3);
+    lo -= span * 0.05; hi += span * 0.05;
+    var bins = 30, w = (hi - lo) / bins, hr = new Array(bins).fill(0), hm = new Array(bins).fill(0);
+    raw.forEach(function (v) { hr[Math.min(bins - 1, Math.floor((v - lo) / w))]++; });
+    mit.forEach(function (v) { hm[Math.min(bins - 1, Math.floor((v - lo) / w))]++; });
+    var top = Math.max(Math.max.apply(null, hr), Math.max.apply(null, hm));
+    var svg = $('hist2'); while (svg.firstChild) svg.removeChild(svg.firstChild);
+    var X0 = 40, W = 465, Y0 = 175, H = 150;
+    var x = function (v) { return X0 + W * (v - lo) / (hi - lo); };
+    sv(svg, 'line', { x1: X0, y1: Y0, x2: X0 + W, y2: Y0, stroke: '#24313D', 'stroke-width': 1 });
+    for (var b = 0; b < bins; b++) {
+      var hgt = H * hr[b] / top, hgm = H * hm[b] / top, xb = X0 + W * b / bins, bwid = W / bins;
+      if (hr[b]) sv(svg, 'rect', { x: xb + 1, y: Y0 - hgt, width: bwid - 2, height: hgt, fill: '#B9B6BF', opacity: 0.85 });
+      if (hm[b]) sv(svg, 'rect', { x: xb + 1, y: Y0 - hgm, width: bwid - 2, height: hgm, fill: '#99004C', opacity: 0.6 });
+    }
+    sv(svg, 'line', { x1: x(truth), y1: Y0 - H - 8, x2: x(truth), y2: Y0, stroke: '#2E7D4F', 'stroke-width': 2.5 });
+    for (var t = 0; t <= 4; t++) {
+      var v = lo + (hi - lo) * t / 4;
+      sv(svg, 'text', { x: X0 + W * t / 4, y: Y0 + 16, 'text-anchor': 'middle', 'font-size': 11, fill: '#6A626B' }, f3(v));
+    }
+    sv(svg, 'text', { x: X0 + W / 2, y: Y0 + 32, 'text-anchor': 'middle', 'font-size': 11.5, fill: '#6A626B' }, 'estimated fraction of different results, 200 experiments of ' + P.n.toLocaleString() + ' shots');
+    $('stats2').textContent = '200 experiments. raw: mean ' + f4(sr[0]) + ', spread (σ) ' + f4(sr[1]) + ' · mitigated: mean ' + f4(sm[0]) + ', spread (σ) ' + f4(sm[1]) + ' · true ' + f4(truth);
+    $('n2').className = 'note info';
+    $('n2').textContent = 'Raw estimates are biased: they sit above the true value because readout errors add different results. Mitigated estimates are centred on the true value, but their spread is ' + (sm[1] / sr[1]).toFixed(2) + ' times the raw spread. Mitigation removes a bias, not shot noise; with bigger readout errors it needs more shots for the same precision.';
+  };
+  labels2();
+})();
+</script>
+</body>
+</html>
