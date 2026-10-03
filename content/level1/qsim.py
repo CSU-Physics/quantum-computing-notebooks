@@ -12,6 +12,10 @@ Conventions follow Qiskit:
 
 Everything is exact linear algebra with NumPy. It is meant for small circuits (up to about
 10 qubits), which is all this course needs.
+
+Noise (version 1.3.0): NoiseModel, depolarizing_error, pauli_error, amplitude_damping_error,
+phase_damping_error, thermal_relaxation_error and ReadoutError work as in qiskit_aer.noise, and
+AerSimulator(noise_model=...) runs a circuit with them.
 """
 import math
 from collections import Counter
@@ -22,8 +26,10 @@ __all__ = [
     "CircuitError", "QuantumCircuit", "Statevector", "DensityMatrix", "AerSimulator",
     "transpile", "state_fidelity", "plot_histogram", "simulate_density_matrix",
     "plot_bloch_vector", "plot_bloch_multivector", "bloch_vectors", "Operator",
+    "NoiseModel", "QuantumError", "ReadoutError", "depolarizing_error", "pauli_error",
+    "amplitude_damping_error", "phase_damping_error", "thermal_relaxation_error",
 ]
-__version__ = "1.2.0"
+__version__ = "1.3.0"
 
 
 class CircuitError(Exception):
@@ -753,13 +759,16 @@ def _run_unitary(qc, initial=None):
     return psi * np.exp(1j * qc.global_phase)
 
 
-def simulate_density_matrix(qc):
+def simulate_density_matrix(qc, noise_model=None):
     """The state at the end of the circuit as a density matrix.
 
     Measurements are applied without looking at the result (the state becomes a mixture of the
     outcomes), and resets put the qubit back to |0>. This is what happens to the quantum state
-    when a circuit measures in the middle.
+    when a circuit measures in the middle. With a noise_model, its quantum errors are applied too
+    (readout errors change only the recorded results, so they do not appear here).
     """
+    if noise_model is not None and not noise_model.is_ideal():
+        return DensityMatrix(_noisy_rho(qc, noise_model, qc.data))
     n = qc.num_qubits
     rho = np.zeros((2 ** n, 2 ** n), dtype=complex)
     rho[0, 0] = 1
@@ -782,6 +791,295 @@ def simulate_density_matrix(qc):
         else:
             rho = _apply_unitary_rho(rho, inst.matrix(), list(inst.qubits), n)
     return DensityMatrix(rho)
+
+
+# ---------------------------------------------------------------- noise models (as in qiskit_aer.noise)
+class QuantumError:
+    """A noise channel on k qubits, stored as Kraus matrices (like qiskit_aer.noise.QuantumError).
+
+    The channel maps rho to sum_i K_i rho K_i^dagger. Qubit 0 of the error is the rightmost
+    tensor factor, as in Qiskit.
+    """
+
+    def __init__(self, kraus_ops):
+        ops = [np.asarray(k, dtype=complex) for k in kraus_ops]
+        if not ops:
+            raise ValueError("A QuantumError needs at least one Kraus matrix.")
+        dim = ops[0].shape[0]
+        n = int(round(math.log2(dim)))
+        if any(k.shape != (2 ** n, 2 ** n) for k in ops):
+            raise ValueError("All Kraus matrices must be square and the same size, 2^k x 2^k.")
+        total = sum(k.conj().T @ k for k in ops)
+        if not np.allclose(total, np.eye(dim), atol=1e-8):
+            raise ValueError("The Kraus matrices do not preserve probability (sum of K^dagger K is not the identity).")
+        keep = [k for k in ops if np.linalg.norm(k) > 1e-15]
+        self.kraus = keep or ops
+        self.num_qubits = n
+
+    def compose(self, other):
+        """This error, then the other one, on the same qubits."""
+        if other.num_qubits != self.num_qubits:
+            raise ValueError("compose() needs two errors on the same number of qubits.")
+        return QuantumError([b @ a for a in self.kraus for b in other.kraus])
+
+    def tensor(self, other):
+        """self on the higher qubits and other on the lower ones (self ⊗ other), as in Qiskit."""
+        return QuantumError([np.kron(a, b) for a in self.kraus for b in other.kraus])
+
+    def expand(self, other):
+        """other ⊗ self."""
+        return other.tensor(self)
+
+    def to_superop_matrix(self):
+        return sum(np.kron(k.conj(), k) for k in self.kraus)
+
+    def ideal(self):
+        d = self.kraus[0].shape[0]
+        return np.allclose(self.to_superop_matrix(), np.eye(d * d), atol=1e-12)
+
+    def __repr__(self):
+        return f"QuantumError on {self.num_qubits} qubit(s) with {len(self.kraus)} Kraus matrices"
+
+
+_PAULI_1 = {"I": _FIXED["id"], "X": _FIXED["x"], "Y": _FIXED["y"], "Z": _FIXED["z"]}
+
+
+def pauli_error(noise_ops):
+    """pauli_error([("X", 0.1), ("I", 0.9)]): apply each Pauli with its probability."""
+    labels = [str(lab).upper() for lab, _ in noise_ops]
+    probs = [float(p) for _, p in noise_ops]
+    if any(p < -1e-12 for p in probs) or abs(sum(probs) - 1) > 1e-8:
+        raise ValueError("The probabilities must be at least 0 and add up to 1.")
+    n = len(labels[0])
+    if any(len(lab) != n or set(lab) - set("IXYZ") for lab in labels):
+        raise ValueError("Use Pauli labels of equal length made of I, X, Y and Z.")
+    return QuantumError([math.sqrt(max(p, 0.0)) * _pauli_matrix(lab) for lab, p in zip(labels, probs)])
+
+
+def depolarizing_error(param, num_qubits):
+    """Depolarizing channel: rho -> (1 - param) rho + param * I / 2^n, as in qiskit_aer.noise."""
+    n = int(num_qubits)
+    lam = float(param)
+    num_terms = 4 ** n
+    if lam < 0 or lam > num_terms / (num_terms - 1) + 1e-12:
+        raise ValueError(f"Depolarizing parameter must be between 0 and {num_terms}/{num_terms - 1}.")
+    import itertools
+    ops = []
+    for letters in itertools.product("IXYZ", repeat=n):
+        lab = "".join(letters)
+        p = lam / num_terms + (1 - lam if lab == "I" * n else 0.0)
+        ops.append((lab, p))
+    return pauli_error(ops)
+
+
+def amplitude_damping_error(param_amp, excited_state_population=0):
+    """Energy loss: |1> decays to |0> with probability param_amp."""
+    g = float(param_amp)
+    if excited_state_population:
+        raise ValueError("This course's simulator supports excited_state_population = 0 only.")
+    if not 0 <= g <= 1:
+        raise ValueError("param_amp must be between 0 and 1.")
+    return QuantumError([np.array([[1, 0], [0, math.sqrt(1 - g)]]), np.array([[0, math.sqrt(g)], [0, 0]])])
+
+
+def phase_damping_error(param_phase):
+    """Loss of phase: the off-diagonal terms shrink by sqrt(1 - param_phase)."""
+    lam = float(param_phase)
+    if not 0 <= lam <= 1:
+        raise ValueError("param_phase must be between 0 and 1.")
+    return QuantumError([np.array([[1, 0], [0, math.sqrt(1 - lam)]]), np.array([[0, 0], [0, math.sqrt(lam)]])])
+
+
+def thermal_relaxation_error(t1, t2, time, excited_state_population=0):
+    """T1 and T2 relaxation during a time 'time' (same units as t1 and t2), as in qiskit_aer.noise.
+
+    Populations relax as exp(-time/T1) and coherences as exp(-time/T2). Needs T2 <= 2 T1.
+    """
+    t1, t2, time = float(t1), float(t2), float(time)
+    if excited_state_population:
+        raise ValueError("This course's simulator supports excited_state_population = 0 only.")
+    if t1 <= 0 or t2 <= 0 or time < 0:
+        raise ValueError("T1 and T2 must be positive and the time at least 0.")
+    if t2 - 2 * t1 > 1e-12 * t1:
+        raise ValueError("Invalid T2: it must be at most 2 T1.")
+    if time == 0:
+        return QuantumError([np.eye(2)])
+    gamma = 1 - math.exp(-time / t1)
+    lam = 1 - math.exp(-2 * time / t2 + time / t1)
+    return amplitude_damping_error(gamma).compose(phase_damping_error(min(max(lam, 0.0), 1.0)))
+
+
+class ReadoutError:
+    """Measurement error on one qubit: probabilities[i][j] = P(record j | the qubit was i)."""
+
+    def __init__(self, probabilities):
+        m = np.asarray(probabilities, dtype=float)
+        if m.shape != (2, 2):
+            raise ValueError("This course's simulator supports one-qubit readout errors: a 2 x 2 list.")
+        if np.any(m < -1e-12) or not np.allclose(m.sum(axis=1), 1, atol=1e-8):
+            raise ValueError("Each row of a ReadoutError must be probabilities that add up to 1.")
+        self.probabilities = m
+        self.number_of_qubits = 1
+
+    def __repr__(self):
+        return f"ReadoutError({self.probabilities.tolist()})"
+
+
+class NoiseModel:
+    """Which errors happen after which instructions, as in qiskit_aer.noise.NoiseModel.
+
+    A quantum error added for an instruction is applied right after that instruction (for
+    'measure', just before the measurement). A readout error changes the recorded bit.
+    An error added for particular qubits replaces the all-qubit error on those qubits.
+    """
+
+    def __init__(self, basis_gates=None):
+        self.basis_gates = list(basis_gates) if basis_gates else ["id", "rz", "sx", "cx"]
+        self._all = {}
+        self._local = {}
+        self._ro_all = None
+        self._ro_local = {}
+
+    @staticmethod
+    def _names(instructions):
+        return [instructions] if isinstance(instructions, str) else [str(i) for i in instructions]
+
+    def add_all_qubit_quantum_error(self, error, instructions):
+        for name in self._names(instructions):
+            self._all[name] = self._all[name].compose(error) if name in self._all else error
+
+    def add_quantum_error(self, error, instructions, qubits):
+        qs = tuple(int(q) for q in qubits)
+        if len(qs) != error.num_qubits:
+            raise ValueError(f"The error acts on {error.num_qubits} qubit(s) but {len(qs)} qubit(s) were given.")
+        for name in self._names(instructions):
+            key = (name, qs)
+            self._local[key] = self._local[key].compose(error) if key in self._local else error
+
+    def add_all_qubit_readout_error(self, error):
+        if not isinstance(error, ReadoutError):
+            error = ReadoutError(error)
+        self._ro_all = error
+
+    def add_readout_error(self, error, qubits):
+        if not isinstance(error, ReadoutError):
+            error = ReadoutError(error)
+        qs = tuple(int(q) for q in qubits)
+        if len(qs) != 1:
+            raise ValueError("Give one qubit for a one-qubit readout error.")
+        self._ro_local[qs[0]] = error
+
+    @property
+    def noise_instructions(self):
+        names = set(self._all) | {k[0] for k in self._local}
+        if self._ro_all is not None or self._ro_local:
+            names.add("measure")
+        return sorted(names)
+
+    @property
+    def noise_qubits(self):
+        qs = {q for _, t in self._local for q in t} | set(self._ro_local)
+        return sorted(qs)
+
+    def is_ideal(self):
+        return not (self._all or self._local or self._ro_all is not None or self._ro_local)
+
+    def _error_for(self, inst):
+        qs = tuple(inst.qubits)
+        err = self._local.get((inst.name, qs), self._all.get(inst.name))
+        if err is not None and err.num_qubits != len(qs):
+            raise CircuitError(f"The noise model has a {err.num_qubits}-qubit error for '{inst.name}', "
+                               f"which acts on {len(qs)} qubit(s).")
+        return err
+
+    def _readout_for(self, qubit):
+        return self._ro_local.get(int(qubit), self._ro_all)
+
+    def __repr__(self):
+        lines = ["NoiseModel:", f"  Basis gates: {self.basis_gates}"]
+        if self.is_ideal():
+            return "NoiseModel: Ideal"
+        lines.append(f"  Instructions with noise: {self.noise_instructions}")
+        if self._all:
+            lines.append(f"  All-qubits errors: {sorted(self._all)}")
+        if self._local:
+            lines.append("  Specific qubit errors: " + str(sorted((n, list(q)) for n, q in self._local)))
+        if self._ro_all is not None:
+            lines.append("  All-qubits readout error")
+        if self._ro_local:
+            lines.append(f"  Readout errors on qubits: {sorted(self._ro_local)}")
+        return "\n".join(lines)
+
+
+def _apply_kraus_rho(rho, error, qubits, n):
+    return sum(_apply_unitary_rho(rho, k, qubits, n) for k in error.kraus)
+
+
+def _noisy_rho(qc, noise_model, body):
+    """Density matrix after the instructions in 'body', with the noise model's quantum errors."""
+    n = qc.num_qubits
+    rho = np.zeros((2 ** n, 2 ** n), dtype=complex)
+    rho[0, 0] = 1
+    for inst in body:
+        if inst.name == "barrier":
+            continue
+        err = noise_model._error_for(inst) if noise_model is not None else None
+        if inst.name == "measure":
+            if err is not None:
+                rho = _apply_kraus_rho(rho, err, list(inst.qubits), n)
+            q = inst.qubits[0]
+            keep = _projector_diag(n, q, 0)
+            rho = np.where(np.equal.outer(keep, keep), rho, 0)
+            continue
+        if inst.name == "reset":
+            q = inst.qubits[0]
+            p0 = _projector_diag(n, q, 0)
+            idx = np.arange(2 ** n)
+            flip = idx ^ (1 << q)
+            new = np.where(np.outer(p0, p0), rho, 0)
+            moved = rho[np.ix_(flip, flip)]
+            rho = new + np.where(np.outer(p0, p0), moved, 0)
+        else:
+            rho = _apply_unitary_rho(rho, inst.matrix(), list(inst.qubits), n)
+        if err is not None:
+            rho = _apply_kraus_rho(rho, err, list(inst.qubits), n)
+    return rho
+
+
+def _noisy_distribution(qc, nm):
+    """Exact probabilities of the recorded results of a circuit whose measurements are all at the end.
+
+    Returns (dist, meas): dist[o] is the probability of outcome o, where bit j of o is the recorded
+    result of the measurement meas[j] = (qubit, clbit).
+    """
+    n = qc.num_qubits
+    final = qc._final_measure_indices()
+    body = [i for k, i in enumerate(qc.data) if k not in final]
+    meas_insts = [qc.data[k] for k in sorted(final)]
+    rho = _noisy_rho(qc, nm, body)
+    for inst in meas_insts:
+        err = nm._error_for(inst) if nm is not None else None
+        if err is not None:
+            rho = _apply_kraus_rho(rho, err, list(inst.qubits), n)
+    probs = np.real(np.diag(rho)).clip(min=0)
+    probs = probs / probs.sum()
+    meas = [(inst.qubits[0], inst.clbits[0]) for inst in meas_insts]
+    m = len(meas)
+    idx = np.arange(2 ** n)
+    code = np.zeros(2 ** n, dtype=int)
+    for j, (q, _) in enumerate(meas):
+        code |= ((idx >> q) & 1) << j
+    dist = np.zeros(2 ** m)
+    np.add.at(dist, code, probs)
+    t = dist.reshape([2] * m) if m else dist
+    for j, (q, _) in enumerate(meas):
+        ro = nm._readout_for(q) if nm is not None else None
+        if ro is None:
+            continue
+        ax = m - 1 - j
+        t = np.moveaxis(np.tensordot(t, ro.probabilities, axes=([ax], [0])), -1, ax)
+    dist = np.asarray(t).reshape(-1).clip(min=0)
+    return dist / dist.sum(), meas
 
 
 class _Result:
@@ -824,12 +1122,16 @@ def _format_key(bits, cregs):
 class AerSimulator:
     """Runs circuits and returns measurement counts, like Qiskit Aer's AerSimulator."""
 
-    def __init__(self, seed_simulator=None, method="automatic", **_):
+    def __init__(self, seed_simulator=None, method="automatic", noise_model=None, **_):
         self.seed_simulator = seed_simulator
         self.method = method
+        self.noise_model = noise_model
         self.name = "qsim_simulator"
 
-    def run(self, circuits, shots=1024, seed_simulator=None, memory=False, **_):
+    def __repr__(self):
+        return "AerSimulator('qsim_simulator'" + (", noise_model=<NoiseModel>)" if self.noise_model is not None else ")")
+
+    def run(self, circuits, shots=1024, seed_simulator=None, memory=False, noise_model=None, **_):
         if isinstance(circuits, (list, tuple)):
             if len(circuits) != 1:
                 raise CircuitError("Run one circuit at a time in this course.")
@@ -843,6 +1145,11 @@ class AerSimulator:
         seed = seed_simulator if seed_simulator is not None else self.seed_simulator
         rng = np.random.default_rng(seed)
         shots = int(shots)
+        nm = noise_model if noise_model is not None else self.noise_model
+        if nm is not None and not nm.is_ideal():
+            keys = self._run_noisy(qc, nm, rng, shots)
+            counts = Counter(keys)
+            return _Job(_Result(dict(sorted(counts.items())), shots, keys if memory else None))
         nc = qc.num_clbits
         final = qc._final_measure_indices()
         mid = any(i.name in ("measure", "reset") and k not in final for k, i in enumerate(qc.data))
@@ -868,6 +1175,68 @@ class AerSimulator:
         counts = Counter(keys)
         ordered = dict(sorted(counts.items()))
         return _Job(_Result(ordered, shots, keys if memory else None))
+
+    @staticmethod
+    def _run_noisy(qc, nm, rng, shots):
+        final = qc._final_measure_indices()
+        mid = any(i.name in ("measure", "reset") and k not in final for k, i in enumerate(qc.data))
+        if mid:
+            return [AerSimulator._one_shot_noisy(qc, nm, rng) for _ in range(shots)]
+        dist, meas = _noisy_distribution(qc, nm)
+        outcomes = rng.choice(len(dist), size=shots, p=dist)
+        cache, keys = {}, []
+        for o in outcomes:
+            if o not in cache:
+                bits = [0] * qc.num_clbits
+                for j, (q, c) in enumerate(meas):
+                    bits[c] = (int(o) >> j) & 1
+                cache[o] = _format_key(bits, qc._cregs)
+            keys.append(cache[o])
+        return keys
+
+    @staticmethod
+    def _one_shot_noisy(qc, nm, rng):
+        n = qc.num_qubits
+        psi = np.zeros(2 ** n, dtype=complex)
+        psi[0] = 1
+        bits = [0] * qc.num_clbits
+
+        def channel(psi, err, qubits):
+            outs = [_apply_unitary_vec(psi, k, qubits, n) for k in err.kraus]
+            ps = np.array([float(np.vdot(o, o).real) for o in outs])
+            i = rng.choice(len(outs), p=ps / ps.sum())
+            return outs[i] / np.linalg.norm(outs[i])
+
+        for inst in qc.data:
+            if inst.name == "barrier":
+                continue
+            err = nm._error_for(inst)
+            if inst.name in ("measure", "reset"):
+                q = inst.qubits[0]
+                if inst.name == "measure" and err is not None:
+                    psi = channel(psi, err, [q])
+                one = _projector_diag(n, q, 1)
+                p1 = float(np.sum(np.abs(psi[one]) ** 2))
+                outcome = 1 if rng.random() < p1 else 0
+                keep = one if outcome == 1 else ~one
+                psi = np.where(keep, psi, 0)
+                psi = psi / np.linalg.norm(psi)
+                if inst.name == "measure":
+                    ro = nm._readout_for(q)
+                    rec = outcome
+                    if ro is not None:
+                        rec = 1 if rng.random() < ro.probabilities[outcome][1] else 0
+                    bits[inst.clbits[0]] = rec
+                else:
+                    if outcome == 1:
+                        psi = _apply_unitary_vec(psi, _FIXED["x"], [q], n)
+                    if err is not None:
+                        psi = channel(psi, err, [q])
+            else:
+                psi = _apply_unitary_vec(psi, inst.matrix(), list(inst.qubits), n)
+                if err is not None:
+                    psi = channel(psi, err, list(inst.qubits))
+        return _format_key(bits, qc._cregs)
 
     @staticmethod
     def _one_shot(qc, rng):
