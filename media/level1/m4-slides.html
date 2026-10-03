@@ -1,0 +1,538 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Module 4 Slides: Two Qubits and Entanglement</title>
+<style>
+  :root { --maroon:#99004C; --ink:#24313D; --muted:#6A626B; --line:#E4DCE0; --tint:#F8F4F6; --gold:#C9A227; --ok:#2E7D4F; }
+  * { box-sizing:border-box; }
+  html, body { margin:0; height:100%; background:#2B2230; font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color:var(--ink); }
+  #viewport { position:absolute; inset:0 0 44px 0; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+  #stage { width:1280px; height:720px; flex-shrink:0; position:relative; transform-origin:center center; }
+  .slide { position:absolute; inset:0; background:#fff; padding:56px 72px 64px; display:none; flex-direction:column; border-top:10px solid var(--maroon); }
+  .slide.on { display:flex; }
+  .slide h1 { font-family: Georgia, serif; color:var(--maroon); font-size:56px; margin:0 0 18px; line-height:1.1; }
+  .slide h2 { font-family: Georgia, serif; color:var(--maroon); font-size:40px; margin:0 0 22px; line-height:1.15; }
+  .slide p, .slide li { font-size:27px; line-height:1.45; margin:0 0 14px; }
+  .slide ul { margin:0 0 10px 0; padding-left:34px; }
+  .kicker { font-size:20px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); margin-bottom:10px; }
+  .eq { background:var(--tint); border-left:6px solid var(--maroon); padding:16px 24px; font-size:34px; margin:10px 0 18px; font-family: Georgia, serif; }
+  .small { font-size:20px !important; color:var(--muted); }
+  .cols { display:flex; gap:40px; align-items:flex-start; flex:1; }
+  .cols > div { flex:1; }
+  .card { border:2px solid var(--line); border-radius:10px; padding:18px 22px; }
+  .card h3 { margin:0 0 8px; font-size:27px; color:var(--maroon); }
+  .card p { font-size:23px; margin:0; }
+  table { border-collapse:collapse; font-size:26px; }
+  th, td { border:1px solid var(--line); padding:10px 18px; text-align:left; }
+  th { background:var(--tint); }
+  .foot { position:absolute; left:72px; right:72px; bottom:20px; display:flex; justify-content:space-between; font-size:15px; color:var(--muted); }
+  .reveal { margin-top:10px; }
+  .reveal button { font-size:22px; padding:8px 18px; border:2px solid var(--maroon); background:#fff; color:var(--maroon); border-radius:6px; cursor:pointer; }
+  .reveal .ans { display:none; margin-top:14px; background:#EEF6F0; border-left:6px solid var(--ok); padding:12px 20px; font-size:25px; line-height:1.45; }
+  .reveal.open .ans { display:block; }
+  .reveal.open button { display:none; }
+  .title-slide { background: linear-gradient(135deg, #fff 0%, #fff 58%, var(--tint) 58%); }
+  #bar { position:absolute; left:0; right:0; bottom:0; height:44px; background:#1E1722; display:flex; align-items:center; justify-content:center; gap:10px; color:#fff; font-size:14px; }
+  #bar button { background:#3A2F40; color:#fff; border:0; border-radius:4px; padding:7px 14px; font-size:14px; cursor:pointer; }
+  #bar button:hover { background:var(--maroon); }
+  #count { min-width:70px; text-align:center; }
+  svg.bloch { overflow:visible; }
+  svg text { font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  @media print {
+    @page { size: 1280px 720px; margin:0; }
+    html, body { background:#fff; height:auto; }
+    #bar { display:none; }
+    #viewport { position:static; display:block; }
+    #stage { transform:none !important; width:1280px; height:auto; }
+    .slide { display:flex !important; position:relative; width:1280px; height:720px; page-break-after:always; break-after:page; }
+    .reveal .ans { display:block !important; }
+    .reveal button { display:none !important; }
+  }
+</style>
+</head>
+<body>
+<div id="viewport"><div id="stage">
+
+
+<!-- 1 -->
+<section class="slide title-slide">
+  <div class="kicker">Quantum Computing Foundations · Module 4</div>
+  <h1>Two qubits and entanglement</h1>
+  <p style="font-size:30px;max-width:560px">Tensor products, the CNOT gate, the four Bell states, and what entanglement does and does not allow.</p>
+  <svg style="position:absolute;right:70px;top:220px" width="420" height="240" viewBox="0 0 420 240" aria-label="The Bell circuit: H on qubit 0, then CNOT from qubit 0 to qubit 1">
+    <g font-size="24" fill="#24313D">
+      <text x="0" y="58">q1</text><text x="0" y="148">q0</text>
+      <line x1="44" y1="50" x2="400" y2="50" stroke="#24313D" stroke-width="3"/>
+      <line x1="44" y1="140" x2="400" y2="140" stroke="#24313D" stroke-width="3"/>
+      <rect x="90" y="110" width="60" height="60" rx="7" fill="#fff" stroke="#99004C" stroke-width="3"/>
+      <text x="120" y="150" text-anchor="middle" fill="#99004C" font-size="30">H</text>
+      <line x1="250" y1="140" x2="250" y2="32" stroke="#99004C" stroke-width="3"/>
+      <circle cx="250" cy="140" r="9" fill="#99004C"/>
+      <circle cx="250" cy="50" r="20" fill="#fff" stroke="#99004C" stroke-width="3"/>
+      <line x1="230" y1="50" x2="270" y2="50" stroke="#99004C" stroke-width="3"/><line x1="250" y1="30" x2="250" y2="70" stroke="#99004C" stroke-width="3"/>
+      <text x="210" y="222" font-size="26" text-anchor="middle" fill="#99004C">(|00⟩ + |11⟩)/√2</text>
+    </g>
+  </svg>
+  <div class="foot"><span>SemiAcademy · ISEP-CSU</span><span>CC BY 4.0</span></div>
+</section>
+
+<!-- 2 -->
+<section class="slide">
+  <h2>By the end of this module you can</h2>
+  <ul>
+    <li>write a two-qubit state as four amplitudes, in Qiskit's bit order, and build <strong>product states</strong> with the tensor product;</li>
+    <li>describe the <strong>CNOT</strong> gate by its truth table and its matrix;</li>
+    <li>build all four <strong>Bell states</strong> and measure their correlations in two bases;</li>
+    <li>tell a product state from an <strong>entangled</strong> state;</li>
+    <li>explain what entanglement does not allow: it cannot send a message.</li>
+  </ul>
+  <p class="small" style="margin-top:30px">This module completes course outcome 2 (single- and two-qubit gates as matrices) and covers outcome 3 (build and recognize entangled states, and explain what entanglement does and does not allow).</p>
+  <div class="foot"><span>Module 4 · Two qubits and entanglement</span><span>2</span></div>
+</section>
+
+<!-- 3 -->
+<section class="slide">
+  <h2>Two qubits, four amplitudes</h2>
+  <div class="cols">
+    <div style="flex:0 0 620px">
+      <p>Two qubits have four basis states. A two-qubit state is a list of four amplitudes:</p>
+      <div class="eq" style="font-size:27px">|ψ⟩ = a<sub>00</sub>|00⟩ + a<sub>01</sub>|01⟩ + a<sub>10</sub>|10⟩ + a<sub>11</sub>|11⟩</div>
+      <p>Measuring both qubits gives the result 01, say, with probability |a<sub>01</sub>|², and the four probabilities add up to 1.</p>
+      <p class="small">Each extra qubit doubles the list: n qubits have 2<sup>n</sup> amplitudes, so 50 qubits have more than a million billion.</p>
+    </div>
+    <div>
+      <table>
+        <tr><th>Qubits</th><th>Amplitudes</th></tr>
+        <tr><td>1</td><td>2</td></tr>
+        <tr><td>2</td><td>4</td></tr>
+        <tr><td>3</td><td>8</td></tr>
+        <tr><td>10</td><td>1,024</td></tr>
+        <tr><td>50</td><td>about 10<sup>15</sup></td></tr>
+      </table>
+    </div>
+  </div>
+  <div class="foot"><span>Module 4 · Two qubits and entanglement</span><span>3</span></div>
+</section>
+
+<!-- 4 -->
+<section class="slide">
+  <h2>Qiskit's bit order: qubit 0 on the right</h2>
+  <div class="cols">
+    <div style="flex:0 0 600px">
+      <p>In Qiskit, a label such as <strong>01</strong> is read <strong>q1 q0</strong>: qubit 0 is the <strong>rightmost</strong> bit.</p>
+      <ul>
+        <li><code>qc.x(0)</code> on |00⟩ gives |01⟩, not |10⟩.</li>
+        <li>A result <code>'10'</code> means qubit 1 gave 1 and qubit 0 gave 0.</li>
+        <li>The amplitudes are listed in the order |00⟩, |01⟩, |10⟩, |11⟩.</li>
+      </ul>
+      <p class="small">Many textbooks put qubit 0 on the left. Both work; just keep to one. This course follows Qiskit.</p>
+    </div>
+    <div>
+      <svg width="420" height="230" viewBox="0 0 420 230" aria-label="The label 01 read as qubit 1 equals 0 and qubit 0 equals 1">
+        <g font-family="Georgia" fill="#24313D">
+          <text x="210" y="110" font-size="96" text-anchor="middle">|01⟩</text>
+          <line x1="180" y1="130" x2="120" y2="185" stroke="#24313D" stroke-width="2.5"/>
+          <line x1="232" y1="130" x2="300" y2="185" stroke="#99004C" stroke-width="2.5"/>
+          <text x="100" y="215" font-size="24" text-anchor="middle">qubit 1 = 0</text>
+          <text x="320" y="215" font-size="24" text-anchor="middle" fill="#99004C">qubit 0 = 1</text>
+        </g>
+      </svg>
+    </div>
+  </div>
+  <div class="foot"><span>Module 4 · Two qubits and entanglement</span><span>4</span></div>
+</section>
+
+<!-- 5 -->
+<section class="slide">
+  <h2>Product states: the tensor product</h2>
+  <p>Prepare qubit 0 in [a, b] and qubit 1 in [c, d] separately. The two-qubit state is their <strong>tensor product</strong>:</p>
+  <div class="eq">[c, d] ⊗ [a, b] = [c·a, c·b, d·a, d·b] &nbsp; for |00⟩, |01⟩, |10⟩, |11⟩</div>
+  <div class="cols" style="margin-top:6px">
+    <div class="card"><h3>In code</h3><p><code>np.kron(q1, q0)</code><br>qubit 1 first, because it is the left bit of each label.</p></div>
+    <div class="card"><h3>Example</h3><p>q0 = [0.6, 0.8], q1 = |+⟩ = [0.707, 0.707]<br>state = [0.424, 0.566, 0.424, 0.566]<br>amplitude of |01⟩ = 0.707 × 0.8 = 0.566</p></div>
+  </div>
+  <div class="foot"><span>Module 4 · Two qubits and entanglement</span><span>5</span></div>
+</section>
+
+<!-- 6 -->
+<section class="slide">
+  <h2>Pause and predict</h2>
+  <p>Qubit 0 is |1⟩ and qubit 1 is |+⟩. Write the four amplitudes. What results can a measurement of both qubits give?</p>
+  <div class="reveal"><button type="button">Show the answer</button>
+    <div class="ans">[c, d] ⊗ [a, b] with [a, b] = [0, 1] and [c, d] = [0.707, 0.707]: the state is [0, 0.707, 0, 0.707] = (|01⟩ + |11⟩)/√2. Qubit 0 always gives 1; qubit 1 gives 0 or 1, half the time each. So the results are 01 and 11.</div></div>
+  <div class="foot"><span>Module 4 · Two qubits and entanglement</span><span>6</span></div>
+</section>
+
+<!-- 7 -->
+<section class="slide">
+  <h2>The CNOT gate</h2>
+  <div class="cols">
+    <div style="flex:0 0 360px">
+      <svg width="340" height="220" viewBox="0 0 340 220" aria-label="CNOT with control on qubit 0 and target on qubit 1">
+        <g font-size="22" fill="#24313D">
+          <text x="0" y="68">q1</text><text x="0" y="168">q0</text>
+          <line x1="40" y1="60" x2="320" y2="60" stroke="#24313D" stroke-width="3"/>
+          <line x1="40" y1="160" x2="320" y2="160" stroke="#24313D" stroke-width="3"/>
+          <line x1="180" y1="160" x2="180" y2="40" stroke="#99004C" stroke-width="3"/>
+          <circle cx="180" cy="160" r="9" fill="#99004C"/>
+          <circle cx="180" cy="60" r="20" fill="#fff" stroke="#99004C" stroke-width="3"/>
+          <line x1="160" y1="60" x2="200" y2="60" stroke="#99004C" stroke-width="3"/><line x1="180" y1="40" x2="180" y2="80" stroke="#99004C" stroke-width="3"/>
+          <text x="200" y="198" font-size="18" fill="#6A626B">control (dot)</text><text x="208" y="28" font-size="18" fill="#6A626B">target (⊕)</text>
+        </g>
+      </svg>
+      <p class="small"><code>qc.cx(0, 1)</code>: control qubit 0, target qubit 1.</p>
+    </div>
+    <div>
+      <p>Flip the target when the control is 1:</p>
+      <table>
+        <tr><th>Before</th><th>After cx(0, 1)</th></tr>
+        <tr><td>|00⟩</td><td>|00⟩</td></tr>
+        <tr><td>|01⟩</td><td>|11⟩</td></tr>
+        <tr><td>|10⟩</td><td>|10⟩</td></tr>
+        <tr><td>|11⟩</td><td>|01⟩</td></tr>
+      </table>
+      <p class="small" style="margin-top:10px">Matrix in the order |00⟩, |01⟩, |10⟩, |11⟩: [[1,0,0,0], [0,0,0,1], [0,0,1,0], [0,1,0,0]].</p>
+    </div>
+  </div>
+  <div class="foot"><span>Module 4 · Two qubits and entanglement</span><span>7</span></div>
+</section>
+
+<!-- 8 -->
+<section class="slide">
+  <h2>H, then CNOT: a Bell state</h2>
+  <div class="eq" style="font-size:28px">|00⟩ &nbsp;→ H on q0 →&nbsp; (|00⟩ + |01⟩)/√2 &nbsp;→ CNOT →&nbsp; (|00⟩ + |11⟩)/√2</div>
+  <ul>
+    <li>H puts qubit 0 in an equal superposition of 0 and 1.</li>
+    <li>CNOT copies "0 or 1" into qubit 1, in both parts of the superposition at once.</li>
+    <li>The result, <strong>phi+</strong> = (|00⟩ + |11⟩)/√2, cannot be written as one state for qubit 0 times one state for qubit 1.</li>
+  </ul>
+  <p class="small">This is the Module 4 Bell circuit. The final coding task extends it to three qubits.</p>
+  <div class="foot"><span>Module 4 · Two qubits and entanglement</span><span>8</span></div>
+</section>
+
+<!-- 9 -->
+<section class="slide">
+  <h2>The four Bell states</h2>
+  <table>
+    <tr><th>Name</th><th>State</th><th>Start from</th><th>Then</th><th>Results in Z</th></tr>
+    <tr><td><strong>phi+</strong></td><td>(|00⟩ + |11⟩)/√2</td><td>|00⟩</td><td>H on q0, cx(0, 1)</td><td>00 or 11</td></tr>
+    <tr><td><strong>phi−</strong></td><td>(|00⟩ − |11⟩)/√2</td><td>|01⟩: X on q0</td><td>H on q0, cx(0, 1)</td><td>00 or 11</td></tr>
+    <tr><td><strong>psi+</strong></td><td>(|01⟩ + |10⟩)/√2</td><td>|10⟩: X on q1</td><td>H on q0, cx(0, 1)</td><td>01 or 10</td></tr>
+    <tr><td><strong>psi−</strong></td><td>(|01⟩ − |10⟩)/√2</td><td>|11⟩: X on both</td><td>H on q0, cx(0, 1)</td><td>01 or 10</td></tr>
+  </table>
+  <p style="margin-top:16px">phi+ and phi− give the same counts in the Z basis; they differ by a relative phase. Measuring in the X basis tells them apart.</p>
+  <div class="foot"><span>Module 4 · Two qubits and entanglement</span><span>9</span></div>
+</section>
+
+<!-- 10 -->
+<section class="slide">
+  <h2>Product or entangled?</h2>
+  <div class="cols">
+    <div style="flex:0 0 640px">
+      <p>A state is a <strong>product state</strong> if it equals [c, d] ⊗ [a, b] for some single-qubit states. Otherwise it is <strong>entangled</strong>.</p>
+      <p>Write the amplitudes as a 2 × 2 table. For a product state the rows are c·[a, b] and d·[a, b], so</p>
+      <div class="eq">a<sub>00</sub>·a<sub>11</sub> − a<sub>01</sub>·a<sub>10</sub> = 0</div>
+      <p class="small">2 |a<sub>00</sub>a<sub>11</sub> − a<sub>01</sub>a<sub>10</sub>|, the <em>concurrence</em>, runs from 0 (product) to 1 (a Bell state).</p>
+    </div>
+    <div class="card" style="flex:0 0 400px"><h3>Examples</h3><p>(|00⟩ + |01⟩ + |10⟩ + |11⟩)/2: 1/4 − 1/4 = 0, a product, |+⟩|+⟩.<br><br>phi+ = (|00⟩ + |11⟩)/√2: 1/2 − 0 ≠ 0, entangled.<br><br>(|00⟩ + |01⟩ + |10⟩ − |11⟩)/2: −1/4 − 1/4 ≠ 0, entangled.</p></div>
+  </div>
+  <div class="foot"><span>Module 4 · Two qubits and entanglement</span><span>10</span></div>
+</section>
+
+<!-- 11 -->
+<section class="slide">
+  <h2>Pause and predict</h2>
+  <p>Is the state (|00⟩ + |01⟩)/√2 entangled?</p>
+  <div class="reveal"><button type="button">Show the answer</button>
+    <div class="ans">No. a<sub>00</sub>·a<sub>11</sub> − a<sub>01</sub>·a<sub>10</sub> = (1/√2)(0) − (1/√2)(0) = 0, so it is a product state: qubit 1 is |0⟩ and qubit 0 is |+⟩. Two terms in a sum do not make a state entangled; the test does.</div></div>
+  <div class="foot"><span>Module 4 · Two qubits and entanglement</span><span>11</span></div>
+</section>
+
+<!-- 12 -->
+<section class="slide">
+  <h2>Each qubit on its own</h2>
+  <p>Each qubit of a two-qubit state still has a Bloch vector of its own. Its length tells you how entangled the qubit is.</p>
+  <div class="cols" style="align-items:center">
+    <div style="text-align:center"><svg class="bloch" data-cfg='{"labels":false,"font":0.2,"pts":[{"v":[0.6,0,0.8],"dot":true,"c":"#24313D"}]}' width="250" height="240" aria-label="Qubit 1 of a product state: full-length arrow"></svg><svg class="bloch" data-cfg='{"labels":false,"font":0.2,"pts":[{"v":[1,0,0],"dot":true}]}' width="250" height="240" aria-label="Qubit 0 of a product state: full-length arrow"></svg><p class="small">product state: length 1 each</p></div>
+    <div style="text-align:center"><svg class="bloch" data-cfg='{"labels":false,"font":0.2,"pts":[{"v":[0,0,0],"dot":true,"c":"#24313D"}]}' width="250" height="240" aria-label="Qubit 1 of a Bell state: a dot at the center"></svg><svg class="bloch" data-cfg='{"labels":false,"font":0.2,"pts":[{"v":[0,0,0],"dot":true}]}' width="250" height="240" aria-label="Qubit 0 of a Bell state: a dot at the center"></svg><p class="small">Bell state: length 0 each</p></div>
+  </div>
+  <p style="font-size:24px">In a Bell state neither qubit has a direction of its own: each alone gives 50/50 in every basis. All the information is in how the two are correlated.</p>
+  <div class="foot"><span>Module 4 · Two qubits and entanglement</span><span>12</span></div>
+</section>
+
+<!-- 13 -->
+<section class="slide">
+  <h2>Measuring one qubit of a Bell state</h2>
+  <div class="cols">
+    <div style="flex:0 0 580px">
+      <p>Share phi+ between Alice (qubit 0) and Bob (qubit 1).</p>
+      <ul>
+        <li>Alice measures: she gets 0 or 1 at random, half the time each.</li>
+        <li>Afterwards Bob's qubit is in the same state as Alice's result: he gets the same result for certain.</li>
+        <li>This happens however far apart they are.</li>
+      </ul>
+      <p class="small">Neither result is decided in advance, yet the two always agree: the correlation is +1.</p>
+    </div>
+    <div class="card" style="flex:0 0 460px"><h3>Twenty shots of phi+</h3><p class="mono" style="font-size:20px;line-height:1.6;letter-spacing:1px;font-family:Consolas,monospace;white-space:nowrap">Alice 1 1 1 0 0 1 0 1 1 0<br>Bob&nbsp;&nbsp; 1 1 1 0 0 1 0 1 1 0<br><br>Alice 0 0 0 0 1 1 1 1 1 1<br>Bob&nbsp;&nbsp; 0 0 0 0 1 1 1 1 1 1</p><p class="small" style="margin-top:8px">qsim, seed 7.</p></div>
+  </div>
+  <div class="foot"><span>Module 4 · Two qubits and entanglement</span><span>13</span></div>
+</section>
+
+<!-- 14 -->
+<section class="slide">
+  <h2>Correlations in two bases</h2>
+  <div class="cols">
+    <div style="flex:0 0 520px">
+      <div class="eq" style="font-size:26px">correlation = (same − different) / total</div>
+      <p>Measure in Z, or in X (H on both qubits first). Each Bell state has its own pair of signs, so the two correlations tell all four apart.</p>
+      <p class="small">From the lab, Step 5: 1,000 shots per bar.</p>
+    </div>
+    <div>
+      <svg width="560" height="330" viewBox="0 0 560 330" aria-label="Z and X correlations of the four Bell states">
+        <g font-size="19" fill="#24313D">
+          <line x1="50" y1="160" x2="545" y2="160" stroke="#6A626B" stroke-width="1.5"/>
+          <text x="40" y="46" text-anchor="end">+1</text><text x="40" y="166" text-anchor="end">0</text><text x="40" y="286" text-anchor="end">−1</text>
+          <line x1="50" y1="40" x2="545" y2="40" stroke="#EFE9EC"/><line x1="50" y1="280" x2="545" y2="280" stroke="#EFE9EC"/>
+          <rect x="72" y="40" width="44" height="120" fill="#24313D"/><rect x="120" y="40" width="44" height="120" fill="#99004C"/>
+          <rect x="196" y="40" width="44" height="120" fill="#24313D"/><rect x="244" y="160" width="44" height="120" fill="#99004C"/>
+          <rect x="320" y="160" width="44" height="120" fill="#24313D"/><rect x="368" y="40" width="44" height="120" fill="#99004C"/>
+          <rect x="444" y="160" width="44" height="120" fill="#24313D"/><rect x="492" y="160" width="44" height="120" fill="#99004C"/>
+          <text x="118" y="312" text-anchor="middle">phi+</text><text x="242" y="312" text-anchor="middle">phi−</text>
+          <text x="366" y="312" text-anchor="middle">psi+</text><text x="490" y="312" text-anchor="middle">psi−</text>
+          <rect x="300" y="4" width="16" height="16" fill="#24313D"/><text x="322" y="18" font-size="16">Z basis</text>
+          <rect x="410" y="4" width="16" height="16" fill="#99004C"/><text x="432" y="18" font-size="16">X basis</text>
+        </g>
+      </svg>
+    </div>
+  </div>
+  <div class="foot"><span>Module 4 · Two qubits and entanglement</span><span>14</span></div>
+</section>
+
+<!-- 15 -->
+<section class="slide">
+  <h2>Could two classical coins do this?</h2>
+  <div class="cols">
+    <div style="flex:0 0 560px">
+      <p>Prepare 00 or 11 at random, half the time each: a <strong>classical mix</strong>. In the Z basis it looks just like phi+: correlation +1.</p>
+      <p>In the X basis the mix gives correlation <strong>0</strong>, while phi+ still gives <strong>+1</strong>.</p>
+      <p class="small">Perfect correlation in both bases is something no pair of separately prepared qubits can show. Entanglement is a property of the pair, not of each qubit.</p>
+    </div>
+    <div>
+      <svg width="500" height="300" viewBox="0 0 500 300" aria-label="Classical mix: +1 in Z and 0 in X; phi+: +1 in both">
+        <g font-size="19" fill="#24313D">
+          <line x1="50" y1="240" x2="480" y2="240" stroke="#6A626B" stroke-width="1.5"/>
+          <text x="40" y="50" text-anchor="end">+1</text><text x="40" y="246" text-anchor="end">0</text>
+          <line x1="50" y1="44" x2="480" y2="44" stroke="#EFE9EC"/>
+          <rect x="90" y="44" width="56" height="196" fill="#24313D"/><rect x="152" y="236" width="56" height="4" fill="#99004C"/>
+          <rect x="300" y="44" width="56" height="196" fill="#24313D"/><rect x="362" y="44" width="56" height="196" fill="#99004C"/>
+          <text x="150" y="272" text-anchor="middle">classical mix</text><text x="360" y="272" text-anchor="middle">phi+</text>
+          <text x="180" y="226" font-size="16" text-anchor="middle" fill="#99004C">0</text>
+          <rect x="250" y="2" width="16" height="16" fill="#24313D"/><text x="272" y="16" font-size="16">Z basis</text>
+          <rect x="360" y="2" width="16" height="16" fill="#99004C"/><text x="382" y="16" font-size="16">X basis</text>
+        </g>
+      </svg>
+    </div>
+  </div>
+  <div class="foot"><span>Module 4 · Two qubits and entanglement</span><span>15</span></div>
+</section>
+
+<!-- 16 -->
+<section class="slide">
+  <h2>What entanglement does not allow</h2>
+  <div class="cols">
+    <div style="flex:0 0 640px">
+      <p>Can Bob send Alice a message by choosing how to measure his half of phi+?</p>
+      <ul>
+        <li>Alice's own results stay 50/50 whatever Bob does: 502 zeros in 1,000 shots in the lab, with or without Bob's H.</li>
+        <li>Only the <strong>correlation</strong> changes, and Alice can see that only by comparing lists with Bob over an ordinary channel.</li>
+      </ul>
+      <p><strong>Entanglement cannot send information faster than light.</strong> Combined with ordinary communication, it powers protocols such as teleportation.</p>
+    </div>
+    <div class="card" style="flex:0 0 400px"><h3>Does and does not</h3><p><strong>Does:</strong> give correlations that no classical source can match, in every basis.<br><br><strong>Does not:</strong> let either side control or signal through the other side's results.</p></div>
+  </div>
+  <div class="foot"><span>Module 4 · Two qubits and entanglement</span><span>16</span></div>
+</section>
+
+<!-- 17 -->
+<section class="slide">
+  <h2>Pause and predict</h2>
+  <p>Alice and Bob share psi− = (|01⟩ − |10⟩)/√2 and both measure in the X basis. What correlation do they find? And what fraction of Alice's own results are 0?</p>
+  <div class="reveal"><button type="button">Show the answer</button>
+    <div class="ans">Correlation −1: their results are always different, in the X basis as in the Z basis (psi− is the one Bell state that is anti-correlated in every basis). Alice's own results are still 0 half the time: one qubit of a Bell state alone is completely random.</div></div>
+  <div class="foot"><span>Module 4 · Two qubits and entanglement</span><span>17</span></div>
+</section>
+
+<!-- 18 -->
+<section class="slide">
+  <h2>Summary</h2>
+  <ul>
+    <li style="font-size:25px">Two qubits: four amplitudes, labels read q1 q0 (qubit 0 on the right).</li>
+    <li style="font-size:25px">Product states: [c, d] ⊗ [a, b] = <code>np.kron(q1, q0)</code>.</li>
+    <li style="font-size:25px">CNOT flips the target when the control is 1. H then CNOT makes phi+.</li>
+    <li style="font-size:25px">Entangled: a<sub>00</sub>a<sub>11</sub> − a<sub>01</sub>a<sub>10</sub> ≠ 0. Each qubit alone has a shorter Bloch vector.</li>
+    <li style="font-size:25px">Bell states are correlated in both bases, but one side alone sees only 50/50: no messages.</li>
+  </ul>
+  <div class="eq" style="font-size:24px;margin-top:12px"><strong>Next:</strong> the Module 4 lab. You write <code>product_state()</code>, <code>bell_circuit()</code> and <code>correlation()</code>, measure all four Bell states in two bases, and test which states are entangled.</div>
+  <div class="foot"><span>Module 4 · Two qubits and entanglement</span><span>18</span></div>
+</section>
+
+<!-- 19 -->
+<section class="slide">
+  <h2>Credits and license</h2>
+  <p>These slides were written for SemiAcademy's <em>Quantum Computing Foundations</em> course, developed through the Intel Semiconductor Education Program at Central State University (ISEP-CSU).</p>
+  <p>License: <strong>Creative Commons Attribution 4.0 International (CC BY 4.0)</strong>, https://creativecommons.org/licenses/by/4.0/. You may copy, adapt and share them, with credit.</p>
+  <p>Suggested credit: "Module 4 slides, Quantum Computing Foundations, SemiAcademy / ISEP-CSU, CC BY 4.0."</p>
+  <p class="small">Source: github.com/CSU-Physics/quantum-computing-notebooks (media/level1/m4-slides.html). Print or save as PDF from your browser to get one slide per page.</p>
+  <div class="foot"><span>Module 4 · Two qubits and entanglement</span><span>19</span></div>
+</section>
+
+</div></div>
+<div id="bar">
+  <button type="button" id="prev" aria-label="Previous slide">◀ Prev</button>
+  <span id="count">1 / 19</span>
+  <button type="button" id="next" aria-label="Next slide">Next ▶</button>
+  <button type="button" id="full">Full screen</button>
+  <button type="button" id="print">Print / PDF</button>
+</div>
+<script>
+(function () {
+  // ---- Bloch sphere drawing (same view as qsim and Qiskit: +x out of the page to the lower left, +y right, |0> up)
+  var NS = 'http://www.w3.org/2000/svg', D2R = Math.PI / 180;
+  function blochView(az, el) {
+    var a = az * Math.PI / 180, e = el * Math.PI / 180;
+    var R = [-Math.sin(a), Math.cos(a), 0];
+    var U = [-Math.sin(e) * Math.cos(a), -Math.sin(e) * Math.sin(a), Math.cos(e)];
+    var C = [Math.cos(e) * Math.cos(a), Math.cos(e) * Math.sin(a), Math.sin(e)];
+    return function (p) {
+      return { x: p[0] * R[0] + p[1] * R[1] + p[2] * R[2], y: -(p[0] * U[0] + p[1] * U[1] + p[2] * U[2]), d: p[0] * C[0] + p[1] * C[1] + p[2] * C[2] };
+    };
+  }
+  function sv(svg, tag, attrs, text) {
+    var e = document.createElementNS(NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (text !== undefined) e.textContent = text;
+    svg.appendChild(e);
+    return e;
+  }
+  // cfg: {pts: [{v: [x, y, z], c: colour, l: label, dash: bool}], az, el, labels, font, angles: {theta, phi}}
+  function drawBloch(svg, cfg) {
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
+    svg.setAttribute('viewBox', '-1.55 -1.5 3.1 3.0');
+    var P = blochView(cfg.az === undefined ? 25 : cfg.az, cfg.el === undefined ? 20 : cfg.el);
+    var f = cfg.font || 0.13, id = 'ah' + Math.random().toString(36).slice(2, 8);
+    var defs = sv(svg, 'defs', {});
+    sv(svg, 'circle', { cx: 0, cy: 0, r: 1, fill: '#F8F4F6', stroke: '#6A626B', 'stroke-width': 0.012 });
+    function ring(fn) {
+      var prev = null;
+      for (var i = 0; i <= 120; i++) {
+        var u = i / 120 * 2 * Math.PI, q = P(fn(u));
+        if (prev) sv(svg, 'line', { x1: prev.x, y1: prev.y, x2: q.x, y2: q.y, stroke: '#B9AEB4', 'stroke-width': 0.01, 'stroke-dasharray': prev.d < 0 ? '0.03 0.03' : 'none' });
+        prev = q;
+      }
+    }
+    ring(function (u) { return [Math.cos(u), Math.sin(u), 0]; });
+    ring(function (u) { return [Math.sin(u), 0, Math.cos(u)]; });
+    ring(function (u) { return [0, Math.sin(u), Math.cos(u)]; });
+    var axes = [[[0, 0, 1], '|0⟩'], [[0, 0, -1], '|1⟩'], [[1, 0, 0], '|+⟩'], [[-1, 0, 0], '|−⟩'], [[0, 1, 0], '|+i⟩'], [[0, -1, 0], '|−i⟩']];
+    axes.forEach(function (ax) {
+      var p = P(ax[0]), q = P([1.25 * ax[0][0], 1.25 * ax[0][1], 1.25 * ax[0][2]]);
+      sv(svg, 'line', { x1: 0, y1: 0, x2: p.x, y2: p.y, stroke: '#B9AEB4', 'stroke-width': 0.01, 'stroke-dasharray': p.d < -0.01 ? '0.03 0.03' : 'none' });
+      if (cfg.labels !== false) sv(svg, 'text', { x: q.x, y: q.y + f * 0.35, 'font-size': f, 'text-anchor': 'middle', fill: '#24313D' }, ax[1]);
+    });
+    if (cfg.angles) {
+      var th = cfg.angles.theta, ph = cfg.angles.phi, k, pts = [], q;
+      for (k = 0; k <= 30; k++) { var t = th * k / 30; q = P([0.45 * Math.sin(t) * Math.cos(ph), 0.45 * Math.sin(t) * Math.sin(ph), 0.45 * Math.cos(t)]); pts.push(q.x + ',' + q.y); }
+      sv(svg, 'polyline', { points: pts.join(' '), fill: 'none', stroke: '#C9A227', 'stroke-width': 0.02 });
+      pts = [];
+      for (k = 0; k <= 30; k++) { var w = ph * k / 30; q = P([0.55 * Math.cos(w), 0.55 * Math.sin(w), 0]); pts.push(q.x + ',' + q.y); }
+      sv(svg, 'polyline', { points: pts.join(' '), fill: 'none', stroke: '#C9A227', 'stroke-width': 0.02 });
+      var foot = P([Math.sin(th) * Math.cos(ph), Math.sin(th) * Math.sin(ph), 0]);
+      var tip = P([Math.sin(th) * Math.cos(ph), Math.sin(th) * Math.sin(ph), Math.cos(th)]);
+      sv(svg, 'line', { x1: 0, y1: 0, x2: foot.x, y2: foot.y, stroke: '#C9A227', 'stroke-width': 0.012, 'stroke-dasharray': '0.04 0.03' });
+      sv(svg, 'line', { x1: foot.x, y1: foot.y, x2: tip.x, y2: tip.y, stroke: '#C9A227', 'stroke-width': 0.012, 'stroke-dasharray': '0.04 0.03' });
+      q = P([0.62 * Math.sin(th / 2) * Math.cos(ph), 0.62 * Math.sin(th / 2) * Math.sin(ph), 0.62 * Math.cos(th / 2)]);
+      sv(svg, 'text', { x: q.x + 0.05, y: q.y, 'font-size': f, fill: '#8A6D00', 'font-style': 'italic' }, 'θ');
+      q = P([0.7 * Math.cos(ph / 2), 0.7 * Math.sin(ph / 2), 0]);
+      sv(svg, 'text', { x: q.x, y: q.y + 0.12, 'font-size': f, fill: '#8A6D00', 'font-style': 'italic' }, 'φ');
+    }
+    // rotation arcs: {v: start point, n: axis (unit vector), a: angle in degrees (right-hand rule), c, l, axis: true}
+    (cfg.rots || []).forEach(function (r, j) {
+      var col = r.c || '#C9A227', n = r.n, L = Math.sqrt(n[0] * n[0] + n[1] * n[1] + n[2] * n[2]);
+      n = [n[0] / L, n[1] / L, n[2] / L];
+      if (r.axis) {
+        var a1 = P([1.18 * n[0], 1.18 * n[1], 1.18 * n[2]]), a2 = P([-1.18 * n[0], -1.18 * n[1], -1.18 * n[2]]);
+        sv(svg, 'line', { x1: a2.x, y1: a2.y, x2: a1.x, y2: a1.y, stroke: col, 'stroke-width': 0.014, 'stroke-dasharray': '0.05 0.035' });
+        if (r.al) sv(svg, 'text', { x: a1.x + 0.03, y: a1.y - 0.03, 'font-size': f * 0.95, fill: col, 'font-style': 'italic' }, r.al);
+      }
+      var steps = Math.max(8, Math.round(Math.abs(r.a) / 4)), prev = null, pts = [];
+      for (var k = 0; k <= steps; k++) {
+        var ang = r.a * D2R * k / steps, c = Math.cos(ang), s2 = Math.sin(ang), v = r.v;
+        var dot = n[0] * v[0] + n[1] * v[1] + n[2] * v[2];
+        var cr = [n[1] * v[2] - n[2] * v[1], n[2] * v[0] - n[0] * v[2], n[0] * v[1] - n[1] * v[0]];
+        var w = [v[0] * c + cr[0] * s2 + n[0] * dot * (1 - c), v[1] * c + cr[1] * s2 + n[1] * dot * (1 - c), v[2] * c + cr[2] * s2 + n[2] * dot * (1 - c)];
+        pts.push(P(w));
+      }
+      var mid2 = id + 'r' + j;
+      var mk = sv(defs, 'marker', { id: mid2, viewBox: '0 0 10 10', refX: 6, refY: 5, markerWidth: 4, markerHeight: 4, orient: 'auto' });
+      sv(mk, 'path', { d: 'M0,0 L10,5 L0,10 z', fill: col });
+      for (k = 1; k < pts.length; k++) {
+        var back = pts[k].d < -0.02 && pts[k - 1].d < -0.02;
+        var seg = { x1: pts[k - 1].x, y1: pts[k - 1].y, x2: pts[k].x, y2: pts[k].y, stroke: col, 'stroke-width': r.w || 0.026, 'stroke-linecap': 'round', opacity: back ? 0.55 : 1 };
+        if (back) seg['stroke-dasharray'] = '0.04 0.03';
+        if (k === pts.length - 1) seg['marker-end'] = 'url(#' + mid2 + ')';
+        sv(svg, 'line', seg);
+      }
+      if (r.l) {
+        var mpt = pts[Math.floor(pts.length / 2)];
+        sv(svg, 'text', { x: mpt.x + (r.dx || 0.05), y: mpt.y + (r.dy || -0.05), 'font-size': f, fill: col, 'font-weight': 600 }, r.l);
+      }
+    });
+    (cfg.pts || []).forEach(function (pt, j) {
+      var col = pt.c || '#99004C', mid = id + j;
+      var m = sv(defs, 'marker', { id: mid, viewBox: '0 0 10 10', refX: 8, refY: 5, markerWidth: 5, markerHeight: 5, orient: 'auto-start-reverse' });
+      sv(m, 'path', { d: 'M0,0 L10,5 L0,10 z', fill: col });
+      var q = P(pt.v), len = Math.sqrt(pt.v[0] * pt.v[0] + pt.v[1] * pt.v[1] + pt.v[2] * pt.v[2]);
+      if (pt.l === undefined || pt.arrow !== false) sv(svg, 'line', { x1: 0, y1: 0, x2: q.x, y2: q.y, stroke: col, 'stroke-width': 0.035, 'stroke-dasharray': pt.dash ? '0.06 0.04' : 'none', 'marker-end': len > 0.05 ? 'url(#' + mid + ')' : '' });
+      if (pt.dot) sv(svg, 'circle', { cx: q.x, cy: q.y, r: 0.045, fill: col });
+      if (pt.l) sv(svg, 'text', { x: q.x + (pt.dx || 0.06), y: q.y + (pt.dy || -0.06), 'font-size': f * 1.05, fill: col, 'font-weight': 600 }, pt.l);
+    });
+  }
+
+  document.querySelectorAll('svg.bloch').forEach(function (s) { drawBloch(s, JSON.parse(s.getAttribute('data-cfg'))); });
+
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide')), i = 0;
+  var m = /[#&]s=?(\d+)/.exec(location.hash); if (m) i = Math.min(slides.length - 1, Math.max(0, parseInt(m[1], 10) - 1));
+  function show(n) {
+    i = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach(function (s, j) { s.classList.toggle('on', j === i); });
+    document.getElementById('count').textContent = (i + 1) + ' / ' + slides.length;
+    try { history.replaceState(null, '', '#s' + (i + 1)); } catch (e) {}
+  }
+  function fit() {
+    var vp = document.getElementById('viewport'), st = document.getElementById('stage');
+    var sc = Math.min(vp.clientWidth / 1280, vp.clientHeight / 720);
+    st.style.transform = 'scale(' + sc + ')';
+  }
+  document.getElementById('prev').onclick = function () { show(i - 1); };
+  document.getElementById('next').onclick = function () { show(i + 1); };
+  document.getElementById('full').onclick = function () { var d = document.documentElement; if (!document.fullscreenElement && d.requestFullscreen) d.requestFullscreen(); else if (document.exitFullscreen) document.exitFullscreen(); };
+  document.getElementById('print').onclick = function () { window.print(); };
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { show(i + 1); e.preventDefault(); }
+    if (e.key === 'ArrowLeft' || e.key === 'PageUp') { show(i - 1); e.preventDefault(); }
+    if (e.key === 'Home') show(0); if (e.key === 'End') show(slides.length - 1);
+  });
+  var tx = null;
+  document.addEventListener('touchstart', function (e) { tx = e.touches[0].clientX; }, { passive: true });
+  document.addEventListener('touchend', function (e) { if (tx === null) return; var dx = e.changedTouches[0].clientX - tx; if (Math.abs(dx) > 50) show(i + (dx < 0 ? 1 : -1)); tx = null; });
+  document.getElementById('stage').addEventListener('click', function (e) {
+    var b = e.target.closest('.reveal button'); if (b) b.parentNode.classList.add('open');
+  });
+  window.addEventListener('resize', fit);
+  fit(); show(i);
+})();
+</script>
+</body>
+</html>

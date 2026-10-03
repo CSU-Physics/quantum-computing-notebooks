@@ -1,0 +1,411 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Module 4 Explorer: Two Qubits and Entanglement</title>
+<style>
+  :root { --maroon:#99004C; --ink:#24313D; --muted:#6A626B; --line:#E4DCE0; --tint:#F8F4F6; --gold:#C9A227; --ok:#2E7D4F; --bad:#B3261E; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:#fff; color:var(--ink); font-family:"Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size:15px; }
+  .tabs { display:flex; border-bottom:2px solid var(--line); background:var(--tint); }
+  .tabs button { flex:1; border:0; background:none; padding:10px 8px; font-size:15px; cursor:pointer; color:var(--muted); border-bottom:3px solid transparent; }
+  .tabs button.on { color:var(--maroon); border-bottom-color:var(--maroon); font-weight:600; background:#fff; }
+  .tool { display:none; padding:12px 16px; }
+  .tool.on { display:block; }
+  h2 { font-family:Georgia, serif; color:var(--maroon); font-size:19px; margin:0 0 4px; }
+  .hint { color:var(--muted); margin:0 0 10px; line-height:1.45; }
+  .grid { display:grid; grid-template-columns: 300px 1fr; gap:14px; align-items:start; }
+  @media (max-width: 660px) { .grid { grid-template-columns: 1fr; } }
+  .box { border:1px solid var(--line); border-radius:6px; padding:10px 12px; }
+  .box h3 { margin:0 0 6px; font-size:14.5px; color:var(--maroon); }
+  .spheres { display:flex; gap:6px; }
+  .spheres div { flex:1; text-align:center; font-size:12.5px; color:var(--muted); }
+  svg.sphere { width:100%; height:auto; display:block; overflow:visible; }
+  .row { display:flex; gap:5px; flex-wrap:wrap; margin-top:6px; align-items:center; }
+  .lab { font-size:14px; width:70px; }
+  button.g { min-width:34px; border:2px solid var(--maroon); background:#fff; color:var(--maroon); padding:3px 7px; border-radius:5px; font-size:14.5px; cursor:pointer; font-family:Georgia, serif; }
+  button.g:hover { background:var(--tint); }
+  button.act { border:2px solid var(--ink); background:#fff; color:var(--ink); padding:4px 9px; border-radius:5px; font-size:13.5px; cursor:pointer; }
+  button.act.fill { background:var(--maroon); border-color:var(--maroon); color:#fff; }
+  button.act.on { background:var(--ink); color:#fff; }
+  .mono { font-family: Consolas, "Courier New", monospace; }
+  table { border-collapse:collapse; width:100%; font-size:13.5px; margin-top:6px; }
+  td, th { border:1px solid var(--line); padding:4px 7px; text-align:left; }
+  th { background:var(--tint); font-weight:600; }
+  .bar { display:inline-block; height:12px; background:var(--maroon); vertical-align:middle; border-radius:2px; }
+  .note { margin-top:8px; padding:7px 10px; border-radius:4px; font-size:13.5px; background:#EEF6F0; color:var(--ok); line-height:1.4; }
+  .note.warn { background:#FFF7E0; color:#7A5C00; }
+  .note.info { background:var(--tint); color:var(--ink); }
+  .credit { color:var(--muted); font-size:12px; padding:8px 16px 12px; border-top:1px solid var(--line); }
+  select { font-size:14px; padding:2px; }
+  .stream { font-family:Consolas, monospace; font-size:13.5px; letter-spacing:1px; background:var(--tint); padding:6px 8px; border-radius:4px; line-height:1.6; word-break:break-all; }
+</style>
+</head>
+<body>
+<div class="tabs" role="tablist">
+  <button type="button" data-t="build" role="tab">1. Two-qubit circuit builder</button>
+  <button type="button" data-t="corr" role="tab">2. Correlations and messages</button>
+</div>
+
+<!-- TOOL 1: builder -->
+<section class="tool" id="t-build" role="tabpanel">
+  <h2>Two-qubit circuit builder</h2>
+  <p class="hint">Add gates to qubit 0 and qubit 1, and CNOT gates between them. Watch the four amplitudes, the verdict "product" or "entangled", and each qubit's own Bloch vector: a full-length arrow for a qubit in a state of its own, a shorter one when it is entangled.</p>
+  <div class="grid">
+    <div class="box">
+      <div class="spheres">
+        <div><svg class="sphere" id="sq1" aria-label="Bloch vector of qubit 1"></svg>qubit 1 · <span class="mono" id="l1"></span></div>
+        <div><svg class="sphere" id="sq0" aria-label="Bloch vector of qubit 0"></svg>qubit 0 · <span class="mono" id="l0"></span></div>
+      </div>
+      <p style="font-size:12.5px;color:var(--muted);margin:6px 0 0">Arrow length: 1 for a qubit with a state of its own, 0 for a maximally entangled qubit.</p>
+      <div class="note" id="verdict"></div>
+    </div>
+    <div class="box">
+      <div class="row"><span class="lab">qubit 0:</span>
+        <button type="button" class="g" data-q="0" data-g="X">X</button><button type="button" class="g" data-q="0" data-g="H">H</button>
+        <button type="button" class="g" data-q="0" data-g="Z">Z</button><button type="button" class="g" data-q="0" data-g="S">S</button>
+        <button type="button" class="g" data-q="0" data-g="RY">Ry(60°)</button></div>
+      <div class="row"><span class="lab">qubit 1:</span>
+        <button type="button" class="g" data-q="1" data-g="X">X</button><button type="button" class="g" data-q="1" data-g="H">H</button>
+        <button type="button" class="g" data-q="1" data-g="Z">Z</button><button type="button" class="g" data-q="1" data-g="S">S</button>
+        <button type="button" class="g" data-q="1" data-g="RY">Ry(60°)</button></div>
+      <div class="row"><span class="lab">two qubits:</span>
+        <button type="button" class="g" data-cx="01">CNOT 0 → 1</button><button type="button" class="g" data-cx="10">CNOT 1 → 0</button>
+        <button type="button" class="act" id="undo1">Undo</button><button type="button" class="act" id="clear1">Clear</button></div>
+      <div class="row"><span class="lab">presets:</span>
+        <button type="button" class="act" data-p="phi+">phi+</button><button type="button" class="act" data-p="phi-">phi−</button>
+        <button type="button" class="act" data-p="psi+">psi+</button><button type="button" class="act" data-p="psi-">psi−</button>
+        <button type="button" class="act" data-p="pp">|+⟩|+⟩</button><button type="button" class="act" data-p="part">partial</button></div>
+      <svg id="circ1" width="100%" viewBox="0 0 520 96" style="margin-top:8px" aria-label="The circuit"></svg>
+      <table>
+        <tr><th>Basis state</th><th>Amplitude</th><th style="width:44%">Probability</th></tr>
+        <tbody id="amps"></tbody>
+      </table>
+      <div class="note info" id="n1"></div>
+    </div>
+  </div>
+</section>
+
+<!-- TOOL 2: correlations -->
+<section class="tool" id="t-corr" role="tabpanel">
+  <h2>Correlations and messages</h2>
+  <p class="hint">Alice holds qubit 0 and Bob holds qubit 1. Each chooses to measure in the Z basis or the X basis. Run 1,000 shots and compare the correlation of their results, and Alice's own results, for entangled states, product states, and a classical mixture.</p>
+  <div class="grid">
+    <div class="box">
+      <h3>Shared state</h3>
+      <select id="st2" aria-label="shared state" style="width:100%">
+        <option value="phi+">phi+ = (|00⟩ + |11⟩)/√2</option>
+        <option value="phi-">phi− = (|00⟩ − |11⟩)/√2</option>
+        <option value="psi+">psi+ = (|01⟩ + |10⟩)/√2</option>
+        <option value="psi-">psi− = (|01⟩ − |10⟩)/√2</option>
+        <option value="mix">classical mix: 00 or 11, half the time each</option>
+        <option value="00">product |0⟩|0⟩</option>
+        <option value="pp">product |+⟩|+⟩</option>
+      </select>
+      <h3 style="margin-top:12px">Alice (qubit 0) measures in</h3>
+      <div class="row"><button type="button" class="act on" data-a="Z">Z basis</button><button type="button" class="act" data-a="X">X basis</button></div>
+      <h3 style="margin-top:12px">Bob (qubit 1) measures in</h3>
+      <div class="row"><button type="button" class="act on" data-b="Z">Z basis</button><button type="button" class="act" data-b="X">X basis</button></div>
+      <div class="row" style="margin-top:12px"><button type="button" class="act fill" id="run2">Run 1,000 shots</button></div>
+    </div>
+    <div class="box">
+      <h3>First 20 shots (Alice above, Bob below)</h3>
+      <div class="stream" id="stream">Press "Run 1,000 shots".</div>
+      <table>
+        <tr><th>Result (Bob, Alice)</th><th>00</th><th>01</th><th>10</th><th>11</th></tr>
+        <tr><td>Counts</td><td id="c00">–</td><td id="c01">–</td><td id="c10">–</td><td id="c11">–</td></tr>
+      </table>
+      <table>
+        <tr><th style="width:55%">Correlation (same − different)/total</th><td class="mono" id="cor">–</td></tr>
+        <tr><th>Alice's own results: fraction of 0</th><td class="mono" id="al">–</td></tr>
+        <tr><th>Bob's own results: fraction of 0</th><td class="mono" id="bo">–</td></tr>
+      </table>
+      <div class="note info" id="n2">Try phi+ with both in Z, then both in X. Then try the classical mix the same way.</div>
+    </div>
+  </div>
+</section>
+
+<div class="credit">Module 4 explorer · Quantum Computing Foundations · SemiAcademy / ISEP-CSU · CC BY 4.0. Bit order follows Qiskit: qubit 0 is the right bit of each label. Random numbers come from your browser, so your counts differ from other learners'. This is a practice tool: the graded values come from the lab notebook.</div>
+
+<script>
+(function () {
+  // ---- Bloch sphere drawing (same view as qsim and Qiskit: +x out of the page to the lower left, +y right, |0> up)
+  var NS = 'http://www.w3.org/2000/svg', D2R = Math.PI / 180;
+  function blochView(az, el) {
+    var a = az * Math.PI / 180, e = el * Math.PI / 180;
+    var R = [-Math.sin(a), Math.cos(a), 0];
+    var U = [-Math.sin(e) * Math.cos(a), -Math.sin(e) * Math.sin(a), Math.cos(e)];
+    var C = [Math.cos(e) * Math.cos(a), Math.cos(e) * Math.sin(a), Math.sin(e)];
+    return function (p) {
+      return { x: p[0] * R[0] + p[1] * R[1] + p[2] * R[2], y: -(p[0] * U[0] + p[1] * U[1] + p[2] * U[2]), d: p[0] * C[0] + p[1] * C[1] + p[2] * C[2] };
+    };
+  }
+  function sv(svg, tag, attrs, text) {
+    var e = document.createElementNS(NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (text !== undefined) e.textContent = text;
+    svg.appendChild(e);
+    return e;
+  }
+  // cfg: {pts: [{v: [x, y, z], c: colour, l: label, dash: bool}], az, el, labels, font, angles: {theta, phi}}
+  function drawBloch(svg, cfg) {
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
+    svg.setAttribute('viewBox', '-1.55 -1.5 3.1 3.0');
+    var P = blochView(cfg.az === undefined ? 25 : cfg.az, cfg.el === undefined ? 20 : cfg.el);
+    var f = cfg.font || 0.13, id = 'ah' + Math.random().toString(36).slice(2, 8);
+    var defs = sv(svg, 'defs', {});
+    sv(svg, 'circle', { cx: 0, cy: 0, r: 1, fill: '#F8F4F6', stroke: '#6A626B', 'stroke-width': 0.012 });
+    function ring(fn) {
+      var prev = null;
+      for (var i = 0; i <= 120; i++) {
+        var u = i / 120 * 2 * Math.PI, q = P(fn(u));
+        if (prev) sv(svg, 'line', { x1: prev.x, y1: prev.y, x2: q.x, y2: q.y, stroke: '#B9AEB4', 'stroke-width': 0.01, 'stroke-dasharray': prev.d < 0 ? '0.03 0.03' : 'none' });
+        prev = q;
+      }
+    }
+    ring(function (u) { return [Math.cos(u), Math.sin(u), 0]; });
+    ring(function (u) { return [Math.sin(u), 0, Math.cos(u)]; });
+    ring(function (u) { return [0, Math.sin(u), Math.cos(u)]; });
+    var axes = [[[0, 0, 1], '|0⟩'], [[0, 0, -1], '|1⟩'], [[1, 0, 0], '|+⟩'], [[-1, 0, 0], '|−⟩'], [[0, 1, 0], '|+i⟩'], [[0, -1, 0], '|−i⟩']];
+    axes.forEach(function (ax) {
+      var p = P(ax[0]), q = P([1.25 * ax[0][0], 1.25 * ax[0][1], 1.25 * ax[0][2]]);
+      sv(svg, 'line', { x1: 0, y1: 0, x2: p.x, y2: p.y, stroke: '#B9AEB4', 'stroke-width': 0.01, 'stroke-dasharray': p.d < -0.01 ? '0.03 0.03' : 'none' });
+      if (cfg.labels !== false) sv(svg, 'text', { x: q.x, y: q.y + f * 0.35, 'font-size': f, 'text-anchor': 'middle', fill: '#24313D' }, ax[1]);
+    });
+    if (cfg.angles) {
+      var th = cfg.angles.theta, ph = cfg.angles.phi, k, pts = [], q;
+      for (k = 0; k <= 30; k++) { var t = th * k / 30; q = P([0.45 * Math.sin(t) * Math.cos(ph), 0.45 * Math.sin(t) * Math.sin(ph), 0.45 * Math.cos(t)]); pts.push(q.x + ',' + q.y); }
+      sv(svg, 'polyline', { points: pts.join(' '), fill: 'none', stroke: '#C9A227', 'stroke-width': 0.02 });
+      pts = [];
+      for (k = 0; k <= 30; k++) { var w = ph * k / 30; q = P([0.55 * Math.cos(w), 0.55 * Math.sin(w), 0]); pts.push(q.x + ',' + q.y); }
+      sv(svg, 'polyline', { points: pts.join(' '), fill: 'none', stroke: '#C9A227', 'stroke-width': 0.02 });
+      var foot = P([Math.sin(th) * Math.cos(ph), Math.sin(th) * Math.sin(ph), 0]);
+      var tip = P([Math.sin(th) * Math.cos(ph), Math.sin(th) * Math.sin(ph), Math.cos(th)]);
+      sv(svg, 'line', { x1: 0, y1: 0, x2: foot.x, y2: foot.y, stroke: '#C9A227', 'stroke-width': 0.012, 'stroke-dasharray': '0.04 0.03' });
+      sv(svg, 'line', { x1: foot.x, y1: foot.y, x2: tip.x, y2: tip.y, stroke: '#C9A227', 'stroke-width': 0.012, 'stroke-dasharray': '0.04 0.03' });
+      q = P([0.62 * Math.sin(th / 2) * Math.cos(ph), 0.62 * Math.sin(th / 2) * Math.sin(ph), 0.62 * Math.cos(th / 2)]);
+      sv(svg, 'text', { x: q.x + 0.05, y: q.y, 'font-size': f, fill: '#8A6D00', 'font-style': 'italic' }, 'θ');
+      q = P([0.7 * Math.cos(ph / 2), 0.7 * Math.sin(ph / 2), 0]);
+      sv(svg, 'text', { x: q.x, y: q.y + 0.12, 'font-size': f, fill: '#8A6D00', 'font-style': 'italic' }, 'φ');
+    }
+    // rotation arcs: {v: start point, n: axis (unit vector), a: angle in degrees (right-hand rule), c, l, axis: true}
+    (cfg.rots || []).forEach(function (r, j) {
+      var col = r.c || '#C9A227', n = r.n, L = Math.sqrt(n[0] * n[0] + n[1] * n[1] + n[2] * n[2]);
+      n = [n[0] / L, n[1] / L, n[2] / L];
+      if (r.axis) {
+        var a1 = P([1.18 * n[0], 1.18 * n[1], 1.18 * n[2]]), a2 = P([-1.18 * n[0], -1.18 * n[1], -1.18 * n[2]]);
+        sv(svg, 'line', { x1: a2.x, y1: a2.y, x2: a1.x, y2: a1.y, stroke: col, 'stroke-width': 0.014, 'stroke-dasharray': '0.05 0.035' });
+        if (r.al) sv(svg, 'text', { x: a1.x + 0.03, y: a1.y - 0.03, 'font-size': f * 0.95, fill: col, 'font-style': 'italic' }, r.al);
+      }
+      var steps = Math.max(8, Math.round(Math.abs(r.a) / 4)), prev = null, pts = [];
+      for (var k = 0; k <= steps; k++) {
+        var ang = r.a * D2R * k / steps, c = Math.cos(ang), s2 = Math.sin(ang), v = r.v;
+        var dot = n[0] * v[0] + n[1] * v[1] + n[2] * v[2];
+        var cr = [n[1] * v[2] - n[2] * v[1], n[2] * v[0] - n[0] * v[2], n[0] * v[1] - n[1] * v[0]];
+        var w = [v[0] * c + cr[0] * s2 + n[0] * dot * (1 - c), v[1] * c + cr[1] * s2 + n[1] * dot * (1 - c), v[2] * c + cr[2] * s2 + n[2] * dot * (1 - c)];
+        pts.push(P(w));
+      }
+      var mid2 = id + 'r' + j;
+      var mk = sv(defs, 'marker', { id: mid2, viewBox: '0 0 10 10', refX: 6, refY: 5, markerWidth: 4, markerHeight: 4, orient: 'auto' });
+      sv(mk, 'path', { d: 'M0,0 L10,5 L0,10 z', fill: col });
+      for (k = 1; k < pts.length; k++) {
+        var back = pts[k].d < -0.02 && pts[k - 1].d < -0.02;
+        var seg = { x1: pts[k - 1].x, y1: pts[k - 1].y, x2: pts[k].x, y2: pts[k].y, stroke: col, 'stroke-width': r.w || 0.026, 'stroke-linecap': 'round', opacity: back ? 0.55 : 1 };
+        if (back) seg['stroke-dasharray'] = '0.04 0.03';
+        if (k === pts.length - 1) seg['marker-end'] = 'url(#' + mid2 + ')';
+        sv(svg, 'line', seg);
+      }
+      if (r.l) {
+        var mpt = pts[Math.floor(pts.length / 2)];
+        sv(svg, 'text', { x: mpt.x + (r.dx || 0.05), y: mpt.y + (r.dy || -0.05), 'font-size': f, fill: col, 'font-weight': 600 }, r.l);
+      }
+    });
+    (cfg.pts || []).forEach(function (pt, j) {
+      var col = pt.c || '#99004C', mid = id + j;
+      var m = sv(defs, 'marker', { id: mid, viewBox: '0 0 10 10', refX: 8, refY: 5, markerWidth: 5, markerHeight: 5, orient: 'auto-start-reverse' });
+      sv(m, 'path', { d: 'M0,0 L10,5 L0,10 z', fill: col });
+      var q = P(pt.v), len = Math.sqrt(pt.v[0] * pt.v[0] + pt.v[1] * pt.v[1] + pt.v[2] * pt.v[2]);
+      if (pt.l === undefined || pt.arrow !== false) sv(svg, 'line', { x1: 0, y1: 0, x2: q.x, y2: q.y, stroke: col, 'stroke-width': 0.035, 'stroke-dasharray': pt.dash ? '0.06 0.04' : 'none', 'marker-end': len > 0.05 ? 'url(#' + mid + ')' : '' });
+      if (pt.dot) sv(svg, 'circle', { cx: q.x, cy: q.y, r: 0.045, fill: col });
+      if (pt.l) sv(svg, 'text', { x: q.x + (pt.dx || 0.06), y: q.y + (pt.dy || -0.06), 'font-size': f * 1.05, fill: col, 'font-weight': 600 }, pt.l);
+    });
+  }
+
+  var $ = function (id) { return document.getElementById(id); };
+  var s2 = Math.SQRT1_2;
+  // ---------- complex numbers and 2-qubit states: amplitudes [a00, a01, a10, a11], label "q1 q0"
+  function C(re, im) { return [re, im || 0]; }
+  function cm(a, b) { return [a[0] * b[0] - a[1] * b[1], a[0] * b[1] + a[1] * b[0]]; }
+  function ca(a, b) { return [a[0] + b[0], a[1] + b[1]]; }
+  function cc(a) { return [a[0], -a[1]]; }
+  function ab2(a) { return a[0] * a[0] + a[1] * a[1]; }
+  var G1 = {
+    X: [[C(0), C(1)], [C(1), C(0)]], Z: [[C(1), C(0)], [C(0), C(-1)]], H: [[C(s2), C(s2)], [C(s2), C(-s2)]],
+    S: [[C(1), C(0)], [C(0), C(0, 1)]], RY: [[C(Math.cos(Math.PI / 6)), C(-Math.sin(Math.PI / 6))], [C(Math.sin(Math.PI / 6)), C(Math.cos(Math.PI / 6))]]
+  };
+  var LBL = { X: 'X', Z: 'Z', H: 'H', S: 'S', RY: 'Ry' };
+  function apply1(st, U, q) {           // one-qubit gate U on qubit q (0 = right bit)
+    var out = st.map(function () { return C(0); });
+    for (var i = 0; i < 4; i++) {
+      var bit = (i >> q) & 1;
+      for (var b = 0; b < 2; b++) {
+        var j = (i & ~(1 << q)) | (b << q);
+        out[i] = ca(out[i], cm(U[bit][b], st[j]));
+      }
+    }
+    return out;
+  }
+  function applyCX(st, c, t) {
+    var out = st.slice();
+    for (var i = 0; i < 4; i++) if ((i >> c) & 1) out[i] = st[i ^ (1 << t)];
+    return out;
+  }
+  function reduced(st, q) {             // Bloch vector of qubit q from the 2-qubit pure state
+    var o = 1 - q, r00 = 0, r11 = 0, r10 = C(0);
+    for (var k = 0; k < 2; k++) {
+      var i0 = (k << o), i1 = (k << o) | (1 << q);
+      r00 += ab2(st[i0]); r11 += ab2(st[i1]);
+      r10 = ca(r10, cm(st[i1], cc(st[i0])));
+    }
+    return [2 * r10[0], 2 * r10[1], r00 - r11];
+  }
+  function f3(x) { var r = Math.round(x * 1000) / 1000; return (Object.is(r, -0) ? 0 : r).toFixed(3).replace('-', '−'); }
+  function cx(z) {
+    var re = z[0], im = z[1];
+    if (Math.abs(im) < 5e-4) return f3(re);
+    if (Math.abs(re) < 5e-4) return f3(im) + 'i';
+    return f3(re) + (im < 0 ? ' − ' : ' + ') + f3(Math.abs(im)) + 'i';
+  }
+  // ---------- tabs
+  var tabs = document.querySelectorAll('.tabs button');
+  function openTab(t) {
+    tabs.forEach(function (b) { b.classList.toggle('on', b.dataset.t === t); });
+    document.querySelectorAll('.tool').forEach(function (s) { s.classList.toggle('on', s.id === 't-' + t); });
+  }
+  tabs.forEach(function (b) { b.onclick = function () { openTab(b.dataset.t); }; });
+  function fromHash() { openTab(location.hash.indexOf('corr') >= 0 ? 'corr' : 'build'); }
+  window.addEventListener('hashchange', fromHash);
+  fromHash();
+
+  // ---------- tool 1
+  var ops = [];
+  function state() {
+    var st = [C(1), C(0), C(0), C(0)];
+    ops.forEach(function (o) { st = o.cx ? applyCX(st, o.c, o.t) : apply1(st, G1[o.g], o.q); });
+    return st;
+  }
+  function drawCircuit() {
+    var svg = $('circ1'); while (svg.firstChild) svg.removeChild(svg.firstChild);
+    var y = { 0: 72, 1: 28 }, x0 = 54, step = 52;
+    sv(svg, 'text', { x: 2, y: 33, 'font-size': 13, fill: '#24313D' }, 'q1 |0⟩');
+    sv(svg, 'text', { x: 2, y: 77, 'font-size': 13, fill: '#24313D' }, 'q0 |0⟩');
+    var end = Math.max(x0 + 30, x0 + step * ops.length + 20);
+    [0, 1].forEach(function (q) { sv(svg, 'line', { x1: x0, y1: y[q], x2: Math.min(end, 515), y2: y[q], stroke: '#24313D', 'stroke-width': 1.6 }); });
+    ops.forEach(function (o, k) {
+      var x = x0 + 26 + step * k;
+      if (x > 500) return;
+      if (o.cx) {
+        sv(svg, 'line', { x1: x, y1: y[o.c], x2: x, y2: y[o.t], stroke: '#99004C', 'stroke-width': 2 });
+        sv(svg, 'circle', { cx: x, cy: y[o.c], r: 5, fill: '#99004C' });
+        sv(svg, 'circle', { cx: x, cy: y[o.t], r: 11, fill: '#fff', stroke: '#99004C', 'stroke-width': 2 });
+        sv(svg, 'line', { x1: x - 11, y1: y[o.t], x2: x + 11, y2: y[o.t], stroke: '#99004C', 'stroke-width': 2 });
+        sv(svg, 'line', { x1: x, y1: y[o.t] - 11, x2: x, y2: y[o.t] + 11, stroke: '#99004C', 'stroke-width': 2 });
+      } else {
+        sv(svg, 'rect', { x: x - 17, y: y[o.q] - 15, width: 34, height: 30, rx: 4, fill: '#fff', stroke: '#99004C', 'stroke-width': 2 });
+        sv(svg, 'text', { x: x, y: y[o.q] + 5, 'font-size': 14, 'text-anchor': 'middle', fill: '#99004C', 'font-family': 'Georgia' }, LBL[o.g]);
+      }
+    });
+    if (x0 + 26 + step * ops.length > 500) sv(svg, 'text', { x: 470, y: 94, 'font-size': 11, fill: '#6A626B' }, '…');
+  }
+  function show1(msg) {
+    var st = state(), rows = '', labels = ['00', '01', '10', '11'];
+    st.forEach(function (a, i) {
+      var p = ab2(a);
+      rows += '<tr><td class="mono">|' + labels[i] + '⟩</td><td class="mono">' + cx(a) + '</td><td><span class="bar" style="width:' + (p * 100).toFixed(1) + '%"></span> <span class="mono">' + p.toFixed(3) + '</span></td></tr>';
+    });
+    $('amps').innerHTML = rows;
+    var det = ca(cm(st[0], st[3]), cm([-st[1][0], -st[1][1]], st[2])), conc = 2 * Math.sqrt(ab2(det));
+    var v0 = reduced(st, 0), v1 = reduced(st, 1);
+    var L0 = Math.sqrt(v0[0] * v0[0] + v0[1] * v0[1] + v0[2] * v0[2]), L1 = Math.sqrt(v1[0] * v1[0] + v1[1] * v1[1] + v1[2] * v1[2]);
+    drawBloch($('sq0'), { font: 0.2, labels: false, pts: [{ v: v0, dot: true }] });
+    drawBloch($('sq1'), { font: 0.2, labels: false, pts: [{ v: v1, dot: true, c: '#24313D' }] });
+    $('l0').textContent = 'length ' + L0.toFixed(2); $('l1').textContent = 'length ' + L1.toFixed(2);
+    if (conc < 1e-6) { $('verdict').className = 'note'; $('verdict').textContent = 'Product state: a00·a11 − a01·a10 = 0. Each qubit has a state of its own.'; }
+    else { $('verdict').className = 'note warn'; $('verdict').textContent = 'Entangled: a00·a11 − a01·a10 ≠ 0 (concurrence ' + conc.toFixed(3) + (conc > 0.999 ? ', the maximum' : '') + '). Neither qubit has a state of its own.'; }
+    if (msg) $('n1').textContent = msg;
+    drawCircuit();
+  }
+  document.querySelectorAll('[data-g]').forEach(function (b) {
+    b.onclick = function () { ops.push({ g: b.dataset.g, q: +b.dataset.q }); show1(LBL[b.dataset.g] + ' on qubit ' + b.dataset.q + '. One-qubit gates never change "product" into "entangled" or back: only a two-qubit gate can.'); };
+  });
+  document.querySelectorAll('[data-cx]').forEach(function (b) {
+    b.onclick = function () {
+      var c = +b.dataset.cx[0], t = +b.dataset.cx[1];
+      var before = state(); ops.push({ cx: true, c: c, t: t }); var after = state();
+      var changed = before.some(function (a, i) { return Math.abs(a[0] - after[i][0]) > 1e-9 || Math.abs(a[1] - after[i][1]) > 1e-9; });
+      var p1 = before.reduce(function (acc, a, i) { return acc + (((i >> c) & 1) ? ab2(a) : 0); }, 0);
+      var why = p1 < 1e-9 ? ' Here it changed nothing: qubit ' + c + ' is 0 in every part of the state.'
+        : ' Here it changed nothing: flipping qubit ' + t + ' gives back the same state (for example when qubit ' + t + ' is |+⟩, which X does not change).';
+      show1('CNOT from qubit ' + c + ' to qubit ' + t + ': it flips qubit ' + t + ' in the part of the state where qubit ' + c + ' is 1.' + (changed ? '' : why));
+    };
+  });
+  var PRE = {
+    'phi+': [{ g: 'H', q: 0 }, { cx: true, c: 0, t: 1 }],
+    'phi-': [{ g: 'X', q: 0 }, { g: 'H', q: 0 }, { cx: true, c: 0, t: 1 }],
+    'psi+': [{ g: 'X', q: 1 }, { g: 'H', q: 0 }, { cx: true, c: 0, t: 1 }],
+    'psi-': [{ g: 'X', q: 0 }, { g: 'X', q: 1 }, { g: 'H', q: 0 }, { cx: true, c: 0, t: 1 }],
+    'pp': [{ g: 'H', q: 0 }, { g: 'H', q: 1 }],
+    'part': [{ g: 'RY', q: 0 }, { cx: true, c: 0, t: 1 }]
+  };
+  var PRE_SAY = {
+    'phi+': 'phi+: H then CNOT, the Module 4 Bell circuit. Both arrows have length 0.',
+    'phi-': 'phi−: X on qubit 0 first, then H and CNOT.',
+    'psi+': 'psi+: X on qubit 1 first, then H and CNOT.',
+    'psi-': 'psi−: X on both qubits first, then H and CNOT. The state may show as −1 times (|01⟩ − |10⟩)/√2: a global phase.',
+    'pp': '|+⟩|+⟩: all four amplitudes are 0.5, and it is still a product state. Now press CNOT 0 → 1: nothing changes, because X leaves the target |+⟩ alone. A CNOT entangles only some inputs.',
+    'part': 'Ry(60°) then CNOT: cos 30°|00⟩ + sin 30°|11⟩, partly entangled. The arrows are shorter than 1 but not 0.'
+  };
+  document.querySelectorAll('[data-p]').forEach(function (b) { b.onclick = function () { ops = PRE[b.dataset.p].slice(); show1(PRE_SAY[b.dataset.p]); }; });
+  $('undo1').onclick = function () { ops.pop(); show1('Undid the last gate.'); };
+  $('clear1').onclick = function () { ops = []; show1('Both qubits start in |0⟩: the state |00⟩, a product state. Try H on qubit 0, then CNOT 0 → 1.'); };
+  $('clear1').onclick();
+
+  // ---------- tool 2
+  var A = 'Z', B = 'Z';
+  var ST = {
+    'phi+': [C(s2), C(0), C(0), C(s2)], 'phi-': [C(s2), C(0), C(0), C(-s2)],
+    'psi+': [C(0), C(s2), C(s2), C(0)], 'psi-': [C(0), C(s2), C(-s2), C(0)],
+    '00': [C(1), C(0), C(0), C(0)], 'pp': [C(0.5), C(0.5), C(0.5), C(0.5)]
+  };
+  function probs(st) {
+    if (A === 'X') st = apply1(st, G1.H, 0);
+    if (B === 'X') st = apply1(st, G1.H, 1);
+    return st.map(ab2);
+  }
+  function pick(p) { var r = Math.random(), acc = 0; for (var i = 0; i < 4; i++) { acc += p[i]; if (r < acc) return i; } return 3; }
+  document.querySelectorAll('[data-a]').forEach(function (b) { b.onclick = function () { A = b.dataset.a; document.querySelectorAll('[data-a]').forEach(function (x) { x.classList.toggle('on', x === b); }); }; });
+  document.querySelectorAll('[data-b]').forEach(function (b) { b.onclick = function () { B = b.dataset.b; document.querySelectorAll('[data-b]').forEach(function (x) { x.classList.toggle('on', x === b); }); }; });
+  $('run2').onclick = function () {
+    var key = $('st2').value, n = 1000, c = [0, 0, 0, 0], seq = [];
+    var pFixed = key === 'mix' ? null : probs(ST[key]);
+    var pMix = [probs(ST['00']), probs([C(0), C(0), C(0), C(1)])];
+    for (var k = 0; k < n; k++) {
+      var p = pFixed || pMix[Math.random() < 0.5 ? 0 : 1];
+      var i = pick(p); c[i]++; if (seq.length < 20) seq.push(i);
+    }
+    ['00', '01', '10', '11'].forEach(function (l, i) { $('c' + l).textContent = c[i]; });
+    $('stream').innerHTML = 'Alice: ' + seq.map(function (i) { return i & 1; }).join(' ') + '<br>Bob:&nbsp;&nbsp; ' + seq.map(function (i) { return (i >> 1) & 1; }).join(' ');
+    var corr = (c[0] + c[3] - c[1] - c[2]) / n, al = (c[0] + c[2]) / n, bo = (c[0] + c[1]) / n;
+    $('cor').textContent = (corr >= 0 ? '+' : '−') + Math.abs(corr).toFixed(3);
+    $('al').textContent = al.toFixed(3); $('bo').textContent = bo.toFixed(3);
+    var msg;
+    if (key === 'mix') msg = A === B && A === 'Z' ? 'The classical mix also gives correlation +1 in Z. Now switch both to X: a mix cannot stay correlated in the X basis.' : 'The classical mix: in the X basis the correlation drops to about 0. Only an entangled state is correlated in both bases.';
+    else if (key === '00' || key === 'pp') msg = 'A product state: the correlation is ' + (Math.abs(corr) > 0.9 ? 'strong, but only because each qubit is certain on its own; there is nothing random to correlate.' : 'about 0: the qubits are independent, so one result tells you nothing about the other.');
+    else msg = (A === B ? 'Same basis for both: the correlation is ±1, perfect.' : 'Different bases: the correlation is about 0.') + ' Alice\'s own fraction of 0 stays near 0.5 whatever Bob chooses, so Bob cannot send her a message this way.';
+    $('n2').textContent = msg;
+  };
+})();
+</script>
+</body>
+</html>
