@@ -1,0 +1,529 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Module 3 Slides: Single-Qubit Gates</title>
+<style>
+  :root { --maroon:#99004C; --ink:#24313D; --muted:#6A626B; --line:#E4DCE0; --tint:#F8F4F6; --gold:#C9A227; --ok:#2E7D4F; }
+  * { box-sizing:border-box; }
+  html, body { margin:0; height:100%; background:#2B2230; font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color:var(--ink); }
+  #viewport { position:absolute; inset:0 0 44px 0; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+  #stage { width:1280px; height:720px; flex-shrink:0; position:relative; transform-origin:center center; }
+  .slide { position:absolute; inset:0; background:#fff; padding:56px 72px 64px; display:none; flex-direction:column; border-top:10px solid var(--maroon); }
+  .slide.on { display:flex; }
+  .slide h1 { font-family: Georgia, serif; color:var(--maroon); font-size:56px; margin:0 0 18px; line-height:1.1; }
+  .slide h2 { font-family: Georgia, serif; color:var(--maroon); font-size:40px; margin:0 0 22px; line-height:1.15; }
+  .slide p, .slide li { font-size:27px; line-height:1.45; margin:0 0 14px; }
+  .slide ul { margin:0 0 10px 0; padding-left:34px; }
+  .kicker { font-size:20px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); margin-bottom:10px; }
+  .eq { background:var(--tint); border-left:6px solid var(--maroon); padding:16px 24px; font-size:34px; margin:10px 0 18px; font-family: Georgia, serif; }
+  .small { font-size:20px !important; color:var(--muted); }
+  .cols { display:flex; gap:40px; align-items:flex-start; flex:1; }
+  .cols > div { flex:1; }
+  .card { border:2px solid var(--line); border-radius:10px; padding:18px 22px; }
+  .card h3 { margin:0 0 8px; font-size:27px; color:var(--maroon); }
+  .card p { font-size:23px; margin:0; }
+  table { border-collapse:collapse; font-size:26px; }
+  th, td { border:1px solid var(--line); padding:10px 18px; text-align:left; }
+  th { background:var(--tint); }
+  .foot { position:absolute; left:72px; right:72px; bottom:20px; display:flex; justify-content:space-between; font-size:15px; color:var(--muted); }
+  .reveal { margin-top:10px; }
+  .reveal button { font-size:22px; padding:8px 18px; border:2px solid var(--maroon); background:#fff; color:var(--maroon); border-radius:6px; cursor:pointer; }
+  .reveal .ans { display:none; margin-top:14px; background:#EEF6F0; border-left:6px solid var(--ok); padding:12px 20px; font-size:25px; line-height:1.45; }
+  .reveal.open .ans { display:block; }
+  .reveal.open button { display:none; }
+  .title-slide { background: linear-gradient(135deg, #fff 0%, #fff 58%, var(--tint) 58%); }
+  #bar { position:absolute; left:0; right:0; bottom:0; height:44px; background:#1E1722; display:flex; align-items:center; justify-content:center; gap:10px; color:#fff; font-size:14px; }
+  #bar button { background:#3A2F40; color:#fff; border:0; border-radius:4px; padding:7px 14px; font-size:14px; cursor:pointer; }
+  #bar button:hover { background:var(--maroon); }
+  #count { min-width:70px; text-align:center; }
+  svg.bloch { overflow:visible; }
+  svg text { font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  @media print {
+    @page { size: 1280px 720px; margin:0; }
+    html, body { background:#fff; height:auto; }
+    #bar { display:none; }
+    #viewport { position:static; display:block; }
+    #stage { transform:none !important; width:1280px; height:auto; }
+    .slide { display:flex !important; position:relative; width:1280px; height:720px; page-break-after:always; break-after:page; }
+    .reveal .ans { display:block !important; }
+    .reveal button { display:none !important; }
+  }
+</style>
+</head>
+<body>
+<div id="viewport"><div id="stage">
+
+
+<!-- 1 -->
+<section class="slide title-slide">
+  <div class="kicker">Quantum Computing Foundations · Module 3</div>
+  <h1>Single-qubit gates</h1>
+  <p style="font-size:30px;max-width:560px">Gates as matrices and as turns of the Bloch sphere: X, Y, Z, H, S, T and the rotation gates, why every gate can be undone, and how phases interfere.</p>
+  <svg class="bloch" data-cfg='{"font":0.15,"rots":[{"v":[0,0,1],"n":[0.7071,0,0.7071],"a":180,"c":"#C9A227","axis":true,"al":"H axis"}],"pts":[{"v":[1,0,0],"dot":true}]}' style="position:absolute;right:60px;top:170px;width:400px;height:390px" aria-label="A Bloch sphere: H turns the arrow from the top to the +x point"></svg>
+  <div class="foot"><span>SemiAcademy · ISEP-CSU</span><span>CC BY 4.0</span></div>
+</section>
+
+<!-- 2 -->
+<section class="slide">
+  <h2>By the end of this module you can</h2>
+  <ul>
+    <li>write the matrices of <strong>X, Y, Z, H, S and T</strong> and apply them to a state;</li>
+    <li>describe each gate as a <strong>turn of the Bloch sphere</strong>, and use the rotation gates Rx, Ry and Rz;</li>
+    <li>explain why every gate is <strong>reversible</strong>, and undo a sequence of gates;</li>
+    <li>find the single matrix of a <strong>sequence</strong> of gates, in the right order;</li>
+    <li>predict <strong>interference</strong> in the circuit H, phase, H.</li>
+  </ul>
+  <p class="small" style="margin-top:30px">This is the first half of course outcome 2: write single- and two-qubit gates as matrices and verify them in code. Module 4 adds two qubits.</p>
+  <div class="foot"><span>Module 3 · Single-qubit gates</span><span>2</span></div>
+</section>
+
+<!-- 3 -->
+<section class="slide">
+  <h2>A gate is a matrix</h2>
+  <div class="cols">
+    <div style="flex:0 0 610px">
+      <p>A one-qubit state is a column of two amplitudes. A one-qubit gate is a 2 × 2 matrix <strong>U</strong>, and applying it is a matrix product:</p>
+      <div class="eq">new state = U · state</div>
+      <p>The X gate swaps the two amplitudes:</p>
+      <div class="eq" style="font-size:27px">X = [[0, 1], [1, 0]], &nbsp; X·[α, β] = [β, α]</div>
+      <p class="small">So X|0⟩ = |1⟩ and X|1⟩ = |0⟩: the quantum NOT gate.</p>
+    </div>
+    <div>
+      <svg width="440" height="200" viewBox="0 0 440 200" aria-label="A circuit wire with an X gate: |0> goes in, |1> comes out">
+        <g font-size="26" fill="#24313D">
+          <text x="0" y="108">|0⟩</text>
+          <line x1="60" y1="100" x2="380" y2="100" stroke="#24313D" stroke-width="3"/>
+          <rect x="185" y="68" width="64" height="64" rx="7" fill="#fff" stroke="#99004C" stroke-width="3"/>
+          <text x="217" y="110" text-anchor="middle" fill="#99004C" font-size="30">X</text>
+          <text x="392" y="108">|1⟩</text>
+          <text x="40" y="180" font-size="19" fill="#6A626B">time runs left to right</text>
+        </g>
+      </svg>
+      <p class="small" style="margin-top:14px">In Qiskit and qsim: <code>qc.x(0)</code>. <code>Operator(qc)</code> gives the matrix of a whole circuit.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Module 3 · Single-qubit gates</span><span>3</span></div>
+</section>
+
+<!-- 4 -->
+<section class="slide">
+  <h2>The Pauli gates: half turns</h2>
+  <table style="font-size:23px">
+    <tr><th>Gate</th><th style="white-space:nowrap">Matrix</th><th>|0⟩ becomes</th><th>|1⟩ becomes</th><th>On the Bloch sphere</th></tr>
+    <tr><td><strong>X</strong></td><td style="white-space:nowrap">[[0, 1], [1, 0]]</td><td>|1⟩</td><td>|0⟩</td><td>half turn about x</td></tr>
+    <tr><td><strong>Y</strong></td><td style="white-space:nowrap">[[0, −i], [i, 0]]</td><td>i|1⟩</td><td>−i|0⟩</td><td>half turn about y</td></tr>
+    <tr><td><strong>Z</strong></td><td style="white-space:nowrap">[[1, 0], [0, −1]]</td><td>|0⟩</td><td>−|1⟩</td><td>half turn about z</td></tr>
+  </table>
+  <div class="cols" style="margin-top:10px">
+    <div><p style="font-size:23px">Z leaves |0⟩ and |1⟩ in place (the minus sign on |1⟩ alone is a global phase), but it flips the <strong>relative</strong> phase: Z|+⟩ = |−⟩.</p></div>
+    <div style="flex:0 0 230px"><svg class="bloch" data-cfg='{"font":0.17,"labels":true,"rots":[{"v":[1,0,0],"n":[0,0,1],"a":180,"c":"#C9A227","l":"Z","dx":0.02,"dy":-0.08}],"pts":[{"v":[-1,0,0],"dot":true}]}' width="230" height="200" aria-label="Z turns +x half way round the equator to -x"></svg></div>
+  </div>
+  <div class="foot"><span>Module 3 · Single-qubit gates</span><span>4</span></div>
+</section>
+
+<!-- 5 -->
+<section class="slide">
+  <h2>The Hadamard gate H</h2>
+  <div class="cols">
+    <div style="flex:1.2">
+      <div class="eq">H = (1/√2)·[[1, 1], [1, −1]]</div>
+      <ul>
+        <li>H|0⟩ = |+⟩ and H|1⟩ = |−⟩: it makes equal superpositions.</li>
+        <li>H|+⟩ = |0⟩ and H|−⟩ = |1⟩: it also undoes them.</li>
+        <li>On the sphere: a half turn about the axis <strong>halfway between x and z</strong>, so it swaps the x and z axes.</li>
+      </ul>
+      <p class="small">That swap is why measuring in the X basis is "H, then measure in Z" (Module 2).</p>
+    </div>
+    <div><svg class="bloch" data-cfg='{"font":0.15,"rots":[{"v":[0,0,1],"n":[0.7071,0,0.7071],"a":180,"c":"#C9A227","axis":true,"al":"H axis","l":"H","dx":0.05,"dy":-0.02}],"pts":[{"v":[0,0,1],"c":"#6A626B","dash":true},{"v":[1,0,0],"dot":true}]}' width="390" height="380" aria-label="H turns |0> to |+> about the diagonal axis"></svg></div>
+  </div>
+  <div class="foot"><span>Module 3 · Single-qubit gates</span><span>5</span></div>
+</section>
+
+<!-- 6 -->
+<section class="slide">
+  <h2>Phase gates S and T: turns about z</h2>
+  <div class="cols">
+    <div style="flex:1.2">
+      <div class="eq" style="font-size:27px;margin-bottom:8px">S = [[1, 0], [0, i]]</div>
+      <div class="eq" style="font-size:27px;margin-top:0">T = [[1, 0], [0, e<sup>iπ/4</sup>]]</div>
+      <ul>
+        <li>Only the phase of |1⟩ changes, so P(0) and P(1) never change.</li>
+        <li>S is a quarter turn about z (90°), T an eighth turn (45°).</li>
+        <li>So <strong>T·T = S</strong> and <strong>S·S = Z</strong>, and eight T gates make a full turn.</li>
+        <li>Their inverses S† and T† turn the other way.</li>
+      </ul>
+    </div>
+    <div><svg class="bloch" data-cfg='{"font":0.15,"rots":[{"v":[1,0,0],"n":[0,0,1],"a":45,"c":"#C9A227","l":"T","dx":0.04,"dy":0.18},{"v":[0.7071,0.7071,0],"n":[0,0,1],"a":45,"c":"#6E2C4F","l":"T","dx":0.04,"dy":0.16}],"pts":[{"v":[1,0,0],"c":"#6A626B","dash":true},{"v":[0,1,0],"dot":true}]}' width="390" height="380" aria-label="Two T gates turn +x by 45 degrees each, to +y: the same as one S"></svg></div>
+  </div>
+  <div class="foot"><span>Module 3 · Single-qubit gates</span><span>6</span></div>
+</section>
+
+<!-- 7 -->
+<section class="slide">
+  <h2>Pause and predict</h2>
+  <p>Start in |+⟩. Apply S. Then apply S again. Where is the state after each step, and what are P(0) and P(1) at the end?</p>
+  <div class="reveal"><button type="button">Show the answer</button>
+    <div class="ans">After one S: |+i⟩ (a quarter turn from +x to +y). After two: |−⟩, because S·S = Z and Z|+⟩ = |−⟩. P(0) = P(1) = ½ the whole time: phase gates move the arrow around the equator, never up or down. Only a measurement in another basis, or interference, shows the change.</div></div>
+  <div class="foot"><span>Module 3 · Single-qubit gates</span><span>7</span></div>
+</section>
+
+<!-- 8 -->
+<section class="slide">
+  <h2>Every gate can be undone</h2>
+  <div class="cols">
+    <div style="flex:1.25">
+      <p>Gate matrices are <strong>unitary</strong>:</p>
+      <div class="eq">U† U = I</div>
+      <p>U† ("U-dagger") is the conjugate transpose. It undoes U, so no information is lost. Unitary matrices also keep the total probability at 1.</p>
+      <ul>
+        <li>X, Y, Z and H are their own inverses: H·H = I.</li>
+        <li>S† = [[1, 0], [0, −i]] undoes S; T† undoes T.</li>
+      </ul>
+    </div>
+    <div class="card" style="flex:0 0 360px"><h3>Not reversible</h3><p>A <strong>measurement</strong> is not a gate. It picks one result and the rest of the state is gone, so it cannot be undone.</p></div>
+  </div>
+  <div class="foot"><span>Module 3 · Single-qubit gates</span><span>8</span></div>
+</section>
+
+<!-- 9 -->
+<section class="slide">
+  <h2>Undoing a sequence of gates</h2>
+  <p>Run the inverse gates in <strong>reverse order</strong>: to undo "A then B", undo B first, then A, like taking off shoes before socks.</p>
+  <svg width="100%" height="190" viewBox="0 0 1130 190" aria-label="The circuit H, T, S, H followed by its inverse H, S dagger, T dagger, H">
+    <g font-size="24" fill="#24313D">
+      <text x="0" y="98">|0⟩</text>
+      <line x1="50" y1="90" x2="1020" y2="90" stroke="#24313D" stroke-width="2.5"/>
+      <g fill="#fff" stroke="#99004C" stroke-width="3">
+        <rect x="80" y="62" width="58" height="56" rx="6"/><rect x="170" y="62" width="58" height="56" rx="6"/><rect x="260" y="62" width="58" height="56" rx="6"/><rect x="350" y="62" width="58" height="56" rx="6"/>
+      </g>
+      <g fill="#fff" stroke="#C9A227" stroke-width="3">
+        <rect x="520" y="62" width="58" height="56" rx="6"/><rect x="610" y="62" width="66" height="56" rx="6"/><rect x="708" y="62" width="66" height="56" rx="6"/><rect x="806" y="62" width="58" height="56" rx="6"/>
+      </g>
+      <g text-anchor="middle" fill="#99004C"><text x="109" y="99">H</text><text x="199" y="99">T</text><text x="289" y="99">S</text><text x="379" y="99">H</text></g>
+      <g text-anchor="middle" fill="#8A6D00"><text x="549" y="99">H</text><text x="643" y="99">S†</text><text x="741" y="99">T†</text><text x="835" y="99">H</text></g>
+      <line x1="465" y1="30" x2="465" y2="150" stroke="#6A626B" stroke-width="2" stroke-dasharray="6 5"/>
+      <text x="245" y="170" text-anchor="middle" font-size="20" fill="#99004C">forward</text>
+      <text x="692" y="170" text-anchor="middle" font-size="20" fill="#8A6D00">undo: reverse order, inverses</text>
+      <text x="1032" y="98">|0⟩</text>
+    </g>
+  </svg>
+  <p>Every shot then gives 0. In the lab, Step 7 has a version of this circuit with one wrong gate for you to find.</p>
+  <div class="foot"><span>Module 3 · Single-qubit gates</span><span>9</span></div>
+</section>
+
+<!-- 10 -->
+<section class="slide">
+  <h2>Rotation gates Rx, Ry, Rz</h2>
+  <div class="cols">
+    <div style="flex:0 0 680px">
+      <p>Turn the arrow by any angle θ about the x, y or z axis:</p>
+      <div class="eq" style="font-size:30px">R(θ) = cos(θ/2)·I − i sin(θ/2)·P</div>
+      <p style="font-size:24px">where P is X, Y or Z for the axis. For example</p>
+      <div class="eq" style="font-size:25px">Ry(θ) = [[cos θ/2, −sin θ/2], [sin θ/2, cos θ/2]]</div>
+      <p class="small">The matrix uses θ/2: a turn of θ on the sphere is half that in amplitude space, as with cos(θ/2) in Module 2.</p>
+    </div>
+    <div><svg class="bloch" data-cfg='{"font":0.15,"rots":[{"v":[0,0,1],"n":[0,1,0],"a":90,"c":"#C9A227","l":"Ry(90°)","dx":0.04,"dy":-0.12}],"pts":[{"v":[1,0,0],"dot":true}]}' width="330" height="320" aria-label="Ry of 90 degrees turns |0> to |+>"></svg></div>
+  </div>
+  <div class="foot"><span>Module 3 · Single-qubit gates</span><span>10</span></div>
+</section>
+
+<!-- 11 -->
+<section class="slide">
+  <h2>Rz and the phase gate: the same turn</h2>
+  <div class="cols">
+    <div style="flex:0 0 640px">
+      <div class="eq" style="font-size:26px">Rz(φ) = [[e<sup>−iφ/2</sup>, 0], [0, e<sup>iφ/2</sup>]]</div>
+      <div class="eq" style="font-size:26px">P(φ) = [[1, 0], [0, e<sup>iφ</sup>]] = e<sup>iφ/2</sup>·Rz(φ)</div>
+      <p>They differ by a <strong>global phase</strong>, so they are the same gate as far as any measurement can tell. For example Rz(π) = −i·Z.</p>
+    </div>
+    <div class="card" style="flex:0 0 420px"><h3>In code</h3><p><code>Operator(rz) == Operator(z)</code>: False, the matrices differ.<br><br><code>Operator(rz).equiv(z)</code>: True, equal up to a global phase.</p></div>
+  </div>
+  <div class="foot"><span>Module 3 · Single-qubit gates</span><span>11</span></div>
+</section>
+
+<!-- 12 -->
+<section class="slide">
+  <h2>Every gate is a turn of the Bloch sphere</h2>
+  <table>
+    <tr><th>Gate</th><th>Turn</th><th>The same as (up to a global phase)</th></tr>
+    <tr><td style="white-space:nowrap">X, Y, Z</td><td>180° about x, y, z</td><td>Rx(π), Ry(π), Rz(π)</td></tr>
+    <tr><td>S, S†</td><td>90° about z, either way</td><td>Rz(π/2), Rz(−π/2)</td></tr>
+    <tr><td>T, T†</td><td>45° about z, either way</td><td>Rz(π/4), Rz(−π/4)</td></tr>
+    <tr><td>H</td><td>180° about the axis halfway between x and z</td><td>Ry(π/2) then X</td></tr>
+  </table>
+  <p style="margin-top:18px">Any single-qubit gate turns the sphere about some axis by some angle. That is why the Bloch sphere is such a useful picture for one qubit.</p>
+  <div class="foot"><span>Module 3 · Single-qubit gates</span><span>12</span></div>
+</section>
+
+<!-- 13 -->
+<section class="slide">
+  <h2>Pause and predict</h2>
+  <p>Start in |0⟩. Apply Ry(π/2), then Rz(π/2). Where does the arrow end, and what is P(0) in the Z basis?</p>
+  <div class="reveal"><button type="button">Show the answer</button>
+    <div class="ans">Ry(π/2) turns the arrow from the north pole down to +x: the state |+⟩. Rz(π/2) then turns it a quarter turn about z, from +x to +y: the state |+i⟩ (up to a global phase). P(0) = (1 + z)/2 = ½, because the arrow is on the equator.</div></div>
+  <div class="foot"><span>Module 3 · Single-qubit gates</span><span>13</span></div>
+</section>
+
+<!-- 14 -->
+<section class="slide">
+  <h2>Gates in sequence: order matters</h2>
+  <div class="cols">
+    <div style="flex:0 0 640px">
+      <p>For the circuit <strong>H then S</strong>, H acts first, so its matrix goes on the <strong>right</strong>:</p>
+      <div class="eq">U = S · H</div>
+      <p>With gates G<sub>1</sub>, …, G<sub>k</sub> in time order:</p>
+      <div class="eq" style="font-size:28px">U = G<sub>k</sub> ··· G<sub>2</sub> · G<sub>1</sub></div>
+      <p>Matrices do not commute: S·H ≠ H·S.</p>
+    </div>
+    <div class="card" style="flex:0 0 400px"><h3>Two useful identities</h3><p>H · Z · H = X<br>H · X · H = Z<br><br>H swaps the roles of x and z, so it turns a Z turn into an X turn and back.</p></div>
+  </div>
+  <div class="foot"><span>Module 3 · Single-qubit gates</span><span>14</span></div>
+</section>
+
+<!-- 15 -->
+<section class="slide">
+  <h2>Interference: H, phase, H</h2>
+  <svg width="100%" height="120" viewBox="0 0 1130 120" aria-label="The circuit H, P of phi, H, measure">
+    <g font-size="24" fill="#24313D">
+      <text x="0" y="68">|0⟩</text>
+      <line x1="50" y1="60" x2="640" y2="60" stroke="#24313D" stroke-width="2.5"/>
+      <g fill="#fff" stroke="#99004C" stroke-width="3"><rect x="110" y="32" width="58" height="56" rx="6"/><rect x="250" y="32" width="96" height="56" rx="6"/><rect x="430" y="32" width="58" height="56" rx="6"/></g>
+      <g text-anchor="middle" fill="#99004C"><text x="139" y="69">H</text><text x="298" y="69">P(φ)</text><text x="459" y="69">H</text></g>
+      <rect x="560" y="32" width="60" height="56" rx="6" fill="#fff" stroke="#24313D" stroke-width="3"/><path d="M570 76 A 20 20 0 0 1 610 76" fill="none" stroke="#24313D" stroke-width="2.5"/><line x1="590" y1="78" x2="605" y2="48" stroke="#24313D" stroke-width="2.5"/>
+      <text x="680" y="52" font-size="22">two paths to each result,</text><text x="680" y="82" font-size="22">and they interfere:</text>
+      <text x="900" y="82" font-size="30" font-family="Georgia" fill="#99004C">P(0) = cos²(φ/2)</text>
+    </g>
+  </svg>
+  <div class="cols">
+    <div style="flex:0 0 480px">
+      <p style="font-size:23px">After H: (|0⟩ + |1⟩)/√2. After P(φ): (|0⟩ + e<sup>iφ</sup>|1⟩)/√2. After the second H, the amplitude of 0 is (1 + e<sup>iφ</sup>)/2: the two paths add for φ = 0 and cancel for φ = π.</p>
+    </div>
+    <div><svg id="fringe" width="540" height="309" viewBox="0 0 560 320" aria-label="P(0) against phi: the cosine-squared curve and measured fractions"></svg></div>
+  </div>
+  <div class="foot"><span>Module 3 · Single-qubit gates</span><span>15</span></div>
+</section>
+
+<!-- 16 -->
+<section class="slide">
+  <h2>The same story on the Bloch sphere</h2>
+  <div class="cols">
+    <div style="flex:0 0 660px">
+      <ol style="font-size:25px;line-height:1.5">
+        <li>H takes |0⟩ to +x.</li>
+        <li>P(φ) turns the arrow by φ around the equator.</li>
+        <li>H swaps x and z, so the x coordinate cos φ becomes the z coordinate.</li>
+      </ol>
+      <div class="eq" style="font-size:29px">P(0) = (1 + cos φ)/2 = cos²(φ/2)</div>
+      <p class="small">Without the second H, P(0) stays ½ for every φ: the phase is there, but nothing turns it into a different probability.</p>
+    </div>
+    <div><svg class="bloch" data-cfg='{"font":0.15,"rots":[{"v":[0,0,1],"n":[0.7071,0,0.7071],"a":180,"c":"#6A626B","l":"1","dx":0.06,"dy":-0.02},{"v":[1,0,0],"n":[0,0,1],"a":120,"c":"#C9A227","l":"2","dx":0.02,"dy":0.16},{"v":[-0.5,0.866,0],"n":[0.7071,0,0.7071],"a":180,"c":"#24313D","l":"3","dx":-0.16,"dy":0.02}],"pts":[{"v":[0,-0.866,-0.5],"dot":true}]}' width="380" height="370" aria-label="The arrow path for H, P of 120 degrees, H"></svg></div>
+  </div>
+  <div class="foot"><span>Module 3 · Single-qubit gates</span><span>16</span></div>
+</section>
+
+<!-- 17 -->
+<section class="slide">
+  <h2>Pause and predict</h2>
+  <p>The circuit is H, then T, then H, then a measurement. What fraction of shots give 0?</p>
+  <div class="reveal"><button type="button">Show the answer</button>
+    <div class="ans">T is the phase gate with φ = π/4. So P(0) = cos²(π/8) ≈ 0.854: about 854 zeros in 1,000 shots. With S (φ = π/2) it would be ½, and with Z (φ = π) it would be 0: every shot gives 1.</div></div>
+  <div class="foot"><span>Module 3 · Single-qubit gates</span><span>17</span></div>
+</section>
+
+<!-- 18 -->
+<section class="slide">
+  <h2>Summary</h2>
+  <ul>
+    <li style="font-size:25px">A gate is a unitary 2 × 2 matrix: a turn of the Bloch sphere.</li>
+    <li style="font-size:25px">X, Y, Z: half turns. H swaps x and z. S, T: 90° and 45° about z.</li>
+    <li style="font-size:25px">Rx, Ry, Rz turn by any angle θ; the matrix uses θ/2.</li>
+    <li style="font-size:25px">U† undoes U; undo a sequence in reverse order.</li>
+    <li style="font-size:25px">The first gate's matrix goes on the right. H, phase, H gives P(0) = cos²(φ/2).</li>
+  </ul>
+  <div class="eq" style="font-size:24px;margin-top:12px"><strong>Next:</strong> the Module 3 lab. You write <code>gate_matrix()</code>, <code>rotation()</code> and <code>sequence_matrix()</code>, check them against <code>Operator</code>, and fix a circuit with one wrong gate.</div>
+  <div class="foot"><span>Module 3 · Single-qubit gates</span><span>18</span></div>
+</section>
+
+<!-- 19 -->
+<section class="slide">
+  <h2>Credits and license</h2>
+  <p>These slides were written for SemiAcademy's <em>Quantum Computing Foundations</em> course, developed through the Intel Semiconductor Education Program at Central State University (ISEP-CSU).</p>
+  <p>License: <strong>Creative Commons Attribution 4.0 International (CC BY 4.0)</strong>, https://creativecommons.org/licenses/by/4.0/. You may copy, adapt and share them, with credit.</p>
+  <p>Suggested credit: "Module 3 slides, Quantum Computing Foundations, SemiAcademy / ISEP-CSU, CC BY 4.0."</p>
+  <p class="small">Source: github.com/CSU-Physics/quantum-computing-notebooks (media/level1/m3-slides.html). Print or save as PDF from your browser to get one slide per page.</p>
+  <div class="foot"><span>Module 3 · Single-qubit gates</span><span>19</span></div>
+</section>
+
+</div></div>
+<div id="bar">
+  <button type="button" id="prev" aria-label="Previous slide">◀ Prev</button>
+  <span id="count">1 / 19</span>
+  <button type="button" id="next" aria-label="Next slide">Next ▶</button>
+  <button type="button" id="full">Full screen</button>
+  <button type="button" id="print">Print / PDF</button>
+</div>
+<script>
+(function () {
+  // ---- Bloch sphere drawing (same view as qsim and Qiskit: +x out of the page to the lower left, +y right, |0> up)
+  var NS = 'http://www.w3.org/2000/svg', D2R = Math.PI / 180;
+  function blochView(az, el) {
+    var a = az * Math.PI / 180, e = el * Math.PI / 180;
+    var R = [-Math.sin(a), Math.cos(a), 0];
+    var U = [-Math.sin(e) * Math.cos(a), -Math.sin(e) * Math.sin(a), Math.cos(e)];
+    var C = [Math.cos(e) * Math.cos(a), Math.cos(e) * Math.sin(a), Math.sin(e)];
+    return function (p) {
+      return { x: p[0] * R[0] + p[1] * R[1] + p[2] * R[2], y: -(p[0] * U[0] + p[1] * U[1] + p[2] * U[2]), d: p[0] * C[0] + p[1] * C[1] + p[2] * C[2] };
+    };
+  }
+  function sv(svg, tag, attrs, text) {
+    var e = document.createElementNS(NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (text !== undefined) e.textContent = text;
+    svg.appendChild(e);
+    return e;
+  }
+  // cfg: {pts: [{v: [x, y, z], c: colour, l: label, dash: bool}], az, el, labels, font, angles: {theta, phi}}
+  function drawBloch(svg, cfg) {
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
+    svg.setAttribute('viewBox', '-1.55 -1.5 3.1 3.0');
+    var P = blochView(cfg.az === undefined ? 25 : cfg.az, cfg.el === undefined ? 20 : cfg.el);
+    var f = cfg.font || 0.13, id = 'ah' + Math.random().toString(36).slice(2, 8);
+    var defs = sv(svg, 'defs', {});
+    sv(svg, 'circle', { cx: 0, cy: 0, r: 1, fill: '#F8F4F6', stroke: '#6A626B', 'stroke-width': 0.012 });
+    function ring(fn) {
+      var prev = null;
+      for (var i = 0; i <= 120; i++) {
+        var u = i / 120 * 2 * Math.PI, q = P(fn(u));
+        if (prev) sv(svg, 'line', { x1: prev.x, y1: prev.y, x2: q.x, y2: q.y, stroke: '#B9AEB4', 'stroke-width': 0.01, 'stroke-dasharray': prev.d < 0 ? '0.03 0.03' : 'none' });
+        prev = q;
+      }
+    }
+    ring(function (u) { return [Math.cos(u), Math.sin(u), 0]; });
+    ring(function (u) { return [Math.sin(u), 0, Math.cos(u)]; });
+    ring(function (u) { return [0, Math.sin(u), Math.cos(u)]; });
+    var axes = [[[0, 0, 1], '|0⟩'], [[0, 0, -1], '|1⟩'], [[1, 0, 0], '|+⟩'], [[-1, 0, 0], '|−⟩'], [[0, 1, 0], '|+i⟩'], [[0, -1, 0], '|−i⟩']];
+    axes.forEach(function (ax) {
+      var p = P(ax[0]), q = P([1.25 * ax[0][0], 1.25 * ax[0][1], 1.25 * ax[0][2]]);
+      sv(svg, 'line', { x1: 0, y1: 0, x2: p.x, y2: p.y, stroke: '#B9AEB4', 'stroke-width': 0.01, 'stroke-dasharray': p.d < -0.01 ? '0.03 0.03' : 'none' });
+      if (cfg.labels !== false) sv(svg, 'text', { x: q.x, y: q.y + f * 0.35, 'font-size': f, 'text-anchor': 'middle', fill: '#24313D' }, ax[1]);
+    });
+    if (cfg.angles) {
+      var th = cfg.angles.theta, ph = cfg.angles.phi, k, pts = [], q;
+      for (k = 0; k <= 30; k++) { var t = th * k / 30; q = P([0.45 * Math.sin(t) * Math.cos(ph), 0.45 * Math.sin(t) * Math.sin(ph), 0.45 * Math.cos(t)]); pts.push(q.x + ',' + q.y); }
+      sv(svg, 'polyline', { points: pts.join(' '), fill: 'none', stroke: '#C9A227', 'stroke-width': 0.02 });
+      pts = [];
+      for (k = 0; k <= 30; k++) { var w = ph * k / 30; q = P([0.55 * Math.cos(w), 0.55 * Math.sin(w), 0]); pts.push(q.x + ',' + q.y); }
+      sv(svg, 'polyline', { points: pts.join(' '), fill: 'none', stroke: '#C9A227', 'stroke-width': 0.02 });
+      var foot = P([Math.sin(th) * Math.cos(ph), Math.sin(th) * Math.sin(ph), 0]);
+      var tip = P([Math.sin(th) * Math.cos(ph), Math.sin(th) * Math.sin(ph), Math.cos(th)]);
+      sv(svg, 'line', { x1: 0, y1: 0, x2: foot.x, y2: foot.y, stroke: '#C9A227', 'stroke-width': 0.012, 'stroke-dasharray': '0.04 0.03' });
+      sv(svg, 'line', { x1: foot.x, y1: foot.y, x2: tip.x, y2: tip.y, stroke: '#C9A227', 'stroke-width': 0.012, 'stroke-dasharray': '0.04 0.03' });
+      q = P([0.62 * Math.sin(th / 2) * Math.cos(ph), 0.62 * Math.sin(th / 2) * Math.sin(ph), 0.62 * Math.cos(th / 2)]);
+      sv(svg, 'text', { x: q.x + 0.05, y: q.y, 'font-size': f, fill: '#8A6D00', 'font-style': 'italic' }, 'θ');
+      q = P([0.7 * Math.cos(ph / 2), 0.7 * Math.sin(ph / 2), 0]);
+      sv(svg, 'text', { x: q.x, y: q.y + 0.12, 'font-size': f, fill: '#8A6D00', 'font-style': 'italic' }, 'φ');
+    }
+    // rotation arcs: {v: start point, n: axis (unit vector), a: angle in degrees (right-hand rule), c, l, axis: true}
+    (cfg.rots || []).forEach(function (r, j) {
+      var col = r.c || '#C9A227', n = r.n, L = Math.sqrt(n[0] * n[0] + n[1] * n[1] + n[2] * n[2]);
+      n = [n[0] / L, n[1] / L, n[2] / L];
+      if (r.axis) {
+        var a1 = P([1.18 * n[0], 1.18 * n[1], 1.18 * n[2]]), a2 = P([-1.18 * n[0], -1.18 * n[1], -1.18 * n[2]]);
+        sv(svg, 'line', { x1: a2.x, y1: a2.y, x2: a1.x, y2: a1.y, stroke: col, 'stroke-width': 0.014, 'stroke-dasharray': '0.05 0.035' });
+        if (r.al) sv(svg, 'text', { x: a1.x + 0.03, y: a1.y - 0.03, 'font-size': f * 0.95, fill: col, 'font-style': 'italic' }, r.al);
+      }
+      var steps = Math.max(8, Math.round(Math.abs(r.a) / 4)), prev = null, pts = [];
+      for (var k = 0; k <= steps; k++) {
+        var ang = r.a * D2R * k / steps, c = Math.cos(ang), s2 = Math.sin(ang), v = r.v;
+        var dot = n[0] * v[0] + n[1] * v[1] + n[2] * v[2];
+        var cr = [n[1] * v[2] - n[2] * v[1], n[2] * v[0] - n[0] * v[2], n[0] * v[1] - n[1] * v[0]];
+        var w = [v[0] * c + cr[0] * s2 + n[0] * dot * (1 - c), v[1] * c + cr[1] * s2 + n[1] * dot * (1 - c), v[2] * c + cr[2] * s2 + n[2] * dot * (1 - c)];
+        pts.push(P(w));
+      }
+      var mid2 = id + 'r' + j;
+      var mk = sv(defs, 'marker', { id: mid2, viewBox: '0 0 10 10', refX: 6, refY: 5, markerWidth: 4, markerHeight: 4, orient: 'auto' });
+      sv(mk, 'path', { d: 'M0,0 L10,5 L0,10 z', fill: col });
+      for (k = 1; k < pts.length; k++) {
+        var back = pts[k].d < -0.02 && pts[k - 1].d < -0.02;
+        var seg = { x1: pts[k - 1].x, y1: pts[k - 1].y, x2: pts[k].x, y2: pts[k].y, stroke: col, 'stroke-width': r.w || 0.026, 'stroke-linecap': 'round', opacity: back ? 0.55 : 1 };
+        if (back) seg['stroke-dasharray'] = '0.04 0.03';
+        if (k === pts.length - 1) seg['marker-end'] = 'url(#' + mid2 + ')';
+        sv(svg, 'line', seg);
+      }
+      if (r.l) {
+        var mpt = pts[Math.floor(pts.length / 2)];
+        sv(svg, 'text', { x: mpt.x + (r.dx || 0.05), y: mpt.y + (r.dy || -0.05), 'font-size': f, fill: col, 'font-weight': 600 }, r.l);
+      }
+    });
+    (cfg.pts || []).forEach(function (pt, j) {
+      var col = pt.c || '#99004C', mid = id + j;
+      var m = sv(defs, 'marker', { id: mid, viewBox: '0 0 10 10', refX: 8, refY: 5, markerWidth: 5, markerHeight: 5, orient: 'auto-start-reverse' });
+      sv(m, 'path', { d: 'M0,0 L10,5 L0,10 z', fill: col });
+      var q = P(pt.v), len = Math.sqrt(pt.v[0] * pt.v[0] + pt.v[1] * pt.v[1] + pt.v[2] * pt.v[2]);
+      if (pt.l === undefined || pt.arrow !== false) sv(svg, 'line', { x1: 0, y1: 0, x2: q.x, y2: q.y, stroke: col, 'stroke-width': 0.035, 'stroke-dasharray': pt.dash ? '0.06 0.04' : 'none', 'marker-end': len > 0.05 ? 'url(#' + mid + ')' : '' });
+      if (pt.dot) sv(svg, 'circle', { cx: q.x, cy: q.y, r: 0.045, fill: col });
+      if (pt.l) sv(svg, 'text', { x: q.x + (pt.dx || 0.06), y: q.y + (pt.dy || -0.06), 'font-size': f * 1.05, fill: col, 'font-weight': 600 }, pt.l);
+    });
+  }
+
+  (function () {
+    var svg = document.getElementById('fringe');
+    var zeros = [1000, 936, 747, 502, 257, 71, 0, 71, 257, 502, 747, 936, 1000];
+    var x0 = 70, x1 = 540, y0 = 270, y1 = 30;
+    function X(p) { return x0 + (x1 - x0) * p / (2 * Math.PI); }
+    function Y(v) { return y0 - (y0 - y1) * v; }
+    sv(svg, 'line', { x1: x0, y1: y0, x2: x1, y2: y0, stroke: '#24313D', 'stroke-width': 2 });
+    sv(svg, 'line', { x1: x0, y1: y0, x2: x0, y2: y1, stroke: '#24313D', 'stroke-width': 2 });
+    [[0, '0'], [0.5, '0.5'], [1, '1']].forEach(function (t) {
+      sv(svg, 'text', { x: x0 - 10, y: Y(t[0]) + 6, 'font-size': 18, 'text-anchor': 'end', fill: '#24313D' }, t[1]);
+    });
+    [[0, '0'], [Math.PI, 'π'], [2 * Math.PI, '2π']].forEach(function (t) {
+      sv(svg, 'text', { x: X(t[0]), y: y0 + 26, 'font-size': 19, 'text-anchor': 'middle', fill: '#24313D' }, t[1]);
+    });
+    sv(svg, 'text', { x: x1, y: y0 + 48, 'font-size': 17, 'text-anchor': 'end', fill: '#6A626B' }, 'phase φ');
+    sv(svg, 'text', { x: x0 + 8, y: y1 - 8, 'font-size': 17, fill: '#6A626B' }, 'P(0)');
+    var pts = [];
+    for (var k = 0; k <= 120; k++) { var p = 2 * Math.PI * k / 120; pts.push(X(p) + ',' + Y(Math.pow(Math.cos(p / 2), 2))); }
+    sv(svg, 'polyline', { points: pts.join(' '), fill: 'none', stroke: '#24313D', 'stroke-width': 3 });
+    zeros.forEach(function (z, i) { sv(svg, 'circle', { cx: X(2 * Math.PI * i / 12), cy: Y(z / 1000), r: 7, fill: '#99004C' }); });
+    sv(svg, 'circle', { cx: 330, cy: 18, r: 7, fill: '#99004C' });
+    sv(svg, 'text', { x: 344, y: 24, 'font-size': 16, fill: '#24313D' }, 'measured (1,000 shots)');
+  })();
+  document.querySelectorAll('svg.bloch').forEach(function (s) { drawBloch(s, JSON.parse(s.getAttribute('data-cfg'))); });
+
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide')), i = 0;
+  var m = /[#&]s=?(\d+)/.exec(location.hash); if (m) i = Math.min(slides.length - 1, Math.max(0, parseInt(m[1], 10) - 1));
+  function show(n) {
+    i = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach(function (s, j) { s.classList.toggle('on', j === i); });
+    document.getElementById('count').textContent = (i + 1) + ' / ' + slides.length;
+    try { history.replaceState(null, '', '#s' + (i + 1)); } catch (e) {}
+  }
+  function fit() {
+    var vp = document.getElementById('viewport'), st = document.getElementById('stage');
+    var sc = Math.min(vp.clientWidth / 1280, vp.clientHeight / 720);
+    st.style.transform = 'scale(' + sc + ')';
+  }
+  document.getElementById('prev').onclick = function () { show(i - 1); };
+  document.getElementById('next').onclick = function () { show(i + 1); };
+  document.getElementById('full').onclick = function () { var d = document.documentElement; if (!document.fullscreenElement && d.requestFullscreen) d.requestFullscreen(); else if (document.exitFullscreen) document.exitFullscreen(); };
+  document.getElementById('print').onclick = function () { window.print(); };
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { show(i + 1); e.preventDefault(); }
+    if (e.key === 'ArrowLeft' || e.key === 'PageUp') { show(i - 1); e.preventDefault(); }
+    if (e.key === 'Home') show(0); if (e.key === 'End') show(slides.length - 1);
+  });
+  var tx = null;
+  document.addEventListener('touchstart', function (e) { tx = e.touches[0].clientX; }, { passive: true });
+  document.addEventListener('touchend', function (e) { if (tx === null) return; var dx = e.changedTouches[0].clientX - tx; if (Math.abs(dx) > 50) show(i + (dx < 0 ? 1 : -1)); tx = null; });
+  document.getElementById('stage').addEventListener('click', function (e) {
+    var b = e.target.closest('.reveal button'); if (b) b.parentNode.classList.add('open');
+  });
+  window.addEventListener('resize', fit);
+  fit(); show(i);
+})();
+</script>
+</body>
+</html>
