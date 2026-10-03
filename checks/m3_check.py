@@ -1,8 +1,8 @@
 """Check cell logic for the Module 3 lab (single-qubit gates as matrices, rotations, sequences), on qsim.
 
-check_module3(gate_matrix, rotation, sequence_matrix, THETA_DEG, PHI_DEG, SEED)
+check_module3(gate_matrix, rotation, sequence_matrix, THETA_DEG, PHI_DEG, SEED, round_trip)
 returns (passed, messages, verification_value).
-The learner writes the three functions. The verification value is the number of 0 results in 1,000
+The learner writes the three functions and repairs round_trip() (Step 7), which Test 4 checks. The verification value is the number of 0 results in 1,000
 shots of the learner's personal circuit ry(THETA), rx(PHI), measure, on qsim's AerSimulator with seed
 SEED. It is printed only when every test passes, and it depends on the seeded draw, so it cannot be
 worked out by hand.
@@ -61,7 +61,7 @@ def personal_value(theta_deg, phi_deg, seed):
     return int(counts.get("0", 0))
 
 
-def check_module3(gate_matrix, rotation, sequence_matrix, THETA_DEG, PHI_DEG, SEED):
+def check_module3(gate_matrix, rotation, sequence_matrix, THETA_DEG, PHI_DEG, SEED, round_trip=None):
     msgs = []
 
     # Test 1: gate_matrix(name) for the six fixed gates, compared with Operator of a one-gate circuit.
@@ -140,6 +140,26 @@ def check_module3(gate_matrix, rotation, sequence_matrix, THETA_DEG, PHI_DEG, SE
             return False, [f"For the circuit {label}, sequence_matrix() gave {_fmt(got)}; "
                            f"Operator(qc) gives {_fmt(want)}. {hint}"], None
     msgs.append("Test 3, sequence_matrix(): passed on 11 circuits, including H then S and S then H")
+
+    # Test 4: the repaired round_trip() from Step 7. The forward part H, T, S, H must be unchanged, and the whole
+    # circuit without its final measurement must equal the identity up to a global phase (on every input state,
+    # not only on |0>).
+    if round_trip is None:
+        return False, msgs + ["Run the Step 7 cell (round_trip) first, then run this cell again."], None
+    try:
+        body = round_trip()
+        body = body.copy()
+        body.remove_final_measurements()
+    except Exception as exc:  # noqa: BLE001
+        return False, msgs + [f"round_trip() stopped with an error: {exc}"], None
+    names = [ins.name for ins in body.data]
+    if names[:4] != ["h", "t", "s", "h"]:
+        return False, msgs + ["round_trip() must keep the forward part H, T, S, H unchanged; fix only the undo part."], None
+    if not Operator(body).equiv(Operator(np.eye(2))):
+        return False, msgs + ["round_trip() does not undo the forward part yet. Undo a sequence with the inverse gates "
+                              "in reverse order: H, then S-dagger (sdg), then T-dagger (tdg), then H. Fix the wrong line "
+                              "in Step 7, run that cell, then run this cell again."], None
+    msgs.append("Test 4, round_trip(): passed: the whole circuit is the identity up to a global phase")
 
     # The personal value.
     if THETA_DEG is None or PHI_DEG is None or SEED is None:

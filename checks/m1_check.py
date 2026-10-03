@@ -4,6 +4,7 @@ check_module1(probabilities, normalize, simulate, A, B, SEED) returns (passed, m
 The learner writes the three functions. The verification value is the number of 1s in 1,000 simulated
 measurements of the learner's personal state (A|0> + iB|1>, normalized), drawn with
 numpy.random.default_rng(SEED).choice(2, size=1000, p=...). It is printed only when every test passes.
+Test 3 requires simulate() to reproduce rng.choice exactly for several states, shot counts and seeds.
 """
 import numpy as np
 
@@ -55,22 +56,43 @@ def check_module1(probabilities, normalize, simulate, A, B, SEED):
                            "for example: return state / np.linalg.norm(state)."], None
     msgs.append("Test 2, normalize(): passed")
 
-    # Test 3: simulate(state, shots, seed) returns one 0 or 1 per shot, in the right proportion.
-    state = np.array([0.6, 0.8j])
-    try:
-        out = np.asarray(simulate(state, 4000, 11))
-    except Exception as exc:  # noqa: BLE001
-        return False, [f"simulate() stopped with an error: {exc}"], None
-    if out.shape != (4000,) or not np.isin(out, [0, 1]).all():
-        return False, ["simulate(state, shots, seed) must return an array with one result, 0 or 1, for each shot. "
-                       "Use: rng = np.random.default_rng(seed), then rng.choice(2, size=shots, p=probabilities(state))."], None
-    frac = out.mean()
-    if abs(frac - 0.64) > 0.03:     # about 4 standard deviations at 4,000 shots
-        return False, [f"simulate() gave 1 in {frac:.1%} of 4,000 shots of [0.6, 0.8i]; it should be close to 64%."], None
-    again = np.asarray(simulate(state, 4000, 11))
-    if not np.array_equal(out, again):
-        return False, ["simulate() gave different results for the same seed. Make the generator from the seed "
-                       "inside the function: rng = np.random.default_rng(seed)."], None
+    # Test 3: simulate(state, shots, seed) returns one 0 or 1 per shot, drawn with rng.choice from the state's
+    # probabilities. Several states (including |0> and |1>), shot counts and seeds are tried, and every result must
+    # match numpy.random.default_rng(seed).choice(2, size=shots, p=...) exactly, so the lab check counts are the same
+    # for everyone and a function that ignores its inputs cannot pass.
+    cases = [
+        ([1, 0], 50, 3),
+        ([0, 1], 50, 4),
+        ([0.6, 0.8j], 4000, 11),
+        ([1 / np.sqrt(2), -1 / np.sqrt(2)], 1000, 5),
+        ([0.28, 0.96j], 37, 2026),
+        ([0.96, -0.28], 1, 8),
+    ]
+    for state, shots, seed in cases:
+        st = np.array(state, dtype=complex)
+        p = np.abs(st) ** 2
+        try:
+            out = np.asarray(simulate(st, shots, seed))
+        except Exception as exc:  # noqa: BLE001
+            return False, [f"simulate() stopped with an error: {exc}"], None
+        if out.shape != (shots,) or not np.isin(out, [0, 1]).all():
+            return False, [f"simulate(state, {shots}, {seed}) must return an array with one result, 0 or 1, for each of the "
+                           f"{shots} shots. Use: rng = np.random.default_rng(seed), then "
+                           "rng.choice(2, size=shots, p=probabilities(state))."], None
+        want = np.random.default_rng(seed).choice(2, size=shots, p=p)
+        if not np.array_equal(out, want):
+            frac, exp = out.mean(), p[1]
+            if shots >= 1000 and abs(frac - exp) <= 4 * np.sqrt(exp * (1 - exp) / shots) + 1e-12:
+                hint = ("The proportion of 1s looks right, but the individual shots differ from rng.choice. Other correct "
+                        "ways of sampling give different shots for the same seed, and the lab check needs everyone's "
+                        "counts to match, so use exactly: rng = np.random.default_rng(seed), then "
+                        "rng.choice(2, size=shots, p=probabilities(state)).")
+            else:
+                hint = (f"For the state {np.round(st, 3)} it gave 1 in {frac:.1%} of {shots} shots; it should be close to "
+                        f"{exp:.1%}. Make the generator from the seed inside the function, use the state you are given, "
+                        "and draw with rng.choice(2, size=shots, p=probabilities(state)).")
+            return False, [f"simulate() did not give the expected shots for state {np.round(st, 3)}, {shots} shots, seed {seed}. "
+                           + hint], None
     msgs.append("Test 3, simulate(): passed")
 
     # Your personal state, A|0> + iB|1>, normalized.

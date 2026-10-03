@@ -99,6 +99,28 @@ def seq_first_only(mats):                 # starts from the first matrix and ski
 def seq_sum(mats):                        # adds instead of multiplying
     return sum(mats, np.zeros((2, 2), dtype=complex)) if mats else np.eye(2)
 
+from qsim import QuantumCircuit
+
+
+def _rt(undo, forward=("h", "t", "s", "h")):
+    def f():
+        qc = QuantumCircuit(1, 1)
+        for g in forward:
+            getattr(qc, g)(0)
+        for g in undo:
+            getattr(qc, g)(0)
+        qc.measure(0, 0)
+        return qc
+    return f
+
+
+rt_good = _rt(("h", "sdg", "tdg", "h"))
+RT_BAD = {"undo left unfixed (T instead of T-dagger)": _rt(("h", "sdg", "t", "h")),
+          "undo uses S instead of S-dagger": _rt(("h", "s", "tdg", "h")),
+          "undo without the last H": _rt(("h", "sdg", "tdg")),
+          "forward part deleted": _rt((), forward=()),
+          "returns to |0> but is Z, not the identity": _rt(("h", "sdg", "tdg", "h", "z"))}
+
 GOOD = [(g, r, s) for g in (gm_a, gm_b) for r in (rot_a, rot_b) for s in (seq_a, seq_b)]
 BAD = [(gm_ysign, rot_a, seq_a), (gm_hnorm, rot_a, seq_a), (gm_t_is_s, rot_a, seq_a), (gm_s_conj, rot_a, seq_a),
        (gm_t_global, rot_a, seq_a), (gm_a, rot_full, seq_a), (gm_a, rot_plus, seq_a), (gm_a, rot_phase, seq_a),
@@ -110,19 +132,28 @@ wrong_verdicts = 0
 for theta, phi, seed in PARAMS:
     expected = personal_value(theta, phi, seed)
     for combo in GOOD:
-        ok, msgs, value = check_module3(*combo, theta, phi, seed)
+        ok, msgs, value = check_module3(*combo, theta, phi, seed, rt_good)
         if not ok or value != expected:
             wrong_verdicts += 1
             print("WRONG: correct code rejected", [f.__name__ for f in combo], msgs[-1])
     for combo in BAD:
-        ok, msgs, value = check_module3(*combo, theta, phi, seed)
+        ok, msgs, value = check_module3(*combo, theta, phi, seed, rt_good)
         if ok:
             wrong_verdicts += 1
             print("WRONG: wrong code accepted", [f.__name__ for f in combo])
         elif theta == 73:
             print(f"  rejected {[f.__name__ for f in combo]}: {msgs[-1][:110]}")
-ok, msgs, value = check_module3(gm_a, rot_a, seq_a, None, None, None)
+    for name, rt in RT_BAD.items():
+        ok, msgs, value = check_module3(gm_a, rot_a, seq_a, theta, phi, seed, rt)
+        if ok:
+            wrong_verdicts += 1
+            print("WRONG: broken round_trip accepted:", name)
+        elif theta == 73:
+            print(f"  rejected round_trip {name}: {msgs[-1][:100]}")
+ok, msgs, value = check_module3(gm_a, rot_a, seq_a, None, None, None, rt_good)
 assert not ok and value is None and "Enter THETA_DEG" in msgs[-1]
-print(f"{len(GOOD)} correct combinations x {len(PARAMS)} parameter sets, {len(BAD)} wrong implementations: "
+ok, msgs, value = check_module3(gm_a, rot_a, seq_a, 73, 141, 512)
+assert not ok and value is None and "Step 7" in msgs[-1]
+print(f"{len(GOOD)} correct combinations x {len(PARAMS)} parameter sets, {len(BAD)} wrong implementations, {len(RT_BAD)} broken round trips: "
       f"{wrong_verdicts} wrong verdicts. Value for (73, 141, 512): {personal_value(73, 141, 512)}")
 assert wrong_verdicts == 0

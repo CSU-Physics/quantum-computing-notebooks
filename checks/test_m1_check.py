@@ -8,7 +8,10 @@ def p_ok2(s): return (s * np.conj(s)).real
 def n_ok(s): return s / np.linalg.norm(s)
 def n_ok2(s): return s / np.sqrt(np.sum(np.abs(s) ** 2))
 def sim_ok(s, shots, seed): return np.random.default_rng(seed).choice(2, size=shots, p=p_ok(s))
-def sim_ok2(s, shots, seed): return (np.random.default_rng(seed).random(shots) < p_ok(s)[1]).astype(int)
+def sim_ok2(s, shots, seed): return np.random.default_rng(seed).choice([0, 1], size=shots, p=p_ok(s))
+def sim_bad6(s, shots, seed): return np.random.default_rng(0).choice(2, size=shots, p=[0.36, 0.64])   # ignores state and seed, right mix for one state
+def sim_bad7(s, shots, seed): return (np.random.default_rng(seed).random(shots) < p_ok(s)[1]).astype(int)   # valid sampler, but not rng.choice
+def sim_bad8(s, shots, seed): return np.random.default_rng(seed).choice(2, size=shots, p=[0.36, 0.64])   # ignores the state
 
 def p_bad1(s): return np.abs(s)                 # forgot to square
 def p_bad2(s): return s ** 2                    # squared the complex amplitude
@@ -50,6 +53,9 @@ def main():
         "simulate returns counts, not shots": (p_ok, n_ok, sim_bad3),
         "simulate swaps 0 and 1": (p_ok, n_ok, sim_bad4),
         "simulate returns half the shots": (p_ok, n_ok, sim_bad5),
+        "simulate ignores state and seed, fixed 64% mix": (p_ok, n_ok, sim_bad6),
+        "simulate uses a threshold sampler, not rng.choice": (p_ok, n_ok, sim_bad7),
+        "simulate ignores the state": (p_ok, n_ok, sim_bad8),
     }
     for name, (p, n, s) in wrong.items():
         ok, msgs, v = check_module1(p, n, s, 3, 4, 7)
