@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Module 0 Explorer: Dynamic Circuits and Teleportation</title>
+<style>
+  :root { --maroon:#99004C; --ink:#24313D; --muted:#6A626B; --line:#E4DCE0; --tint:#F8F4F6; --gold:#C9A227; --ok:#2E7D4F; --bad:#B3261E; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:#fff; color:var(--ink); font-family:"Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size:15px; }
+  .tabs { display:flex; border-bottom:2px solid var(--line); background:var(--tint); }
+  .tabs button { flex:1; border:0; background:none; padding:10px 8px; font-size:15px; cursor:pointer; color:var(--muted); border-bottom:3px solid transparent; }
+  .tabs button.on { color:var(--maroon); border-bottom-color:var(--maroon); font-weight:600; background:#fff; }
+  .tool { display:none; padding:12px 16px; }
+  .tool.on { display:block; }
+  h2 { font-family:Georgia, serif; color:var(--maroon); font-size:19px; margin:0 0 4px; }
+  .hint { color:var(--muted); margin:0 0 10px; line-height:1.45; }
+  .grid { display:grid; grid-template-columns: 300px 1fr; gap:14px; align-items:start; }
+  @media (max-width: 660px) { .grid { grid-template-columns: 1fr; } }
+  .box { border:1px solid var(--line); border-radius:6px; padding:10px 12px; }
+  .box h3 { margin:0 0 6px; font-size:14.5px; color:var(--maroon); }
+  svg.sphere { width:100%; height:auto; display:block; margin:0 auto; overflow:visible; }
+  .small { font-size:12.5px; color:var(--muted); text-align:center; margin:4px 0 0; }
+  label { display:flex; justify-content:space-between; align-items:center; margin:6px 0 2px; font-size:14px; gap:8px; }
+  input[type=range] { width:100%; }
+  .row { display:flex; gap:6px; flex-wrap:wrap; margin-top:6px; align-items:center; }
+  button.act { border:2px solid var(--ink); background:#fff; color:var(--ink); padding:4px 9px; border-radius:5px; font-size:13.5px; cursor:pointer; }
+  button.act.on, button.act.fill { background:var(--maroon); border-color:var(--maroon); color:#fff; }
+  .mono { font-family: Consolas, "Courier New", monospace; }
+  pre.circ { font-family: Consolas, "Courier New", monospace; font-size:13px; background:var(--tint); padding:8px 10px; border-radius:5px; overflow-x:auto; margin:6px 0; line-height:1.25; }
+  .pbar { display:flex; align-items:center; gap:8px; margin:5px 0; font-size:14px; }
+  .pbar .lab { width:42px; font-family:Consolas, monospace; }
+  .pbar .track { flex:1; height:15px; background:var(--tint); border:1px solid var(--line); border-radius:3px; overflow:hidden; display:block; position:relative; }
+  .pbar .fill { display:block; height:100%; background:var(--maroon); transition:width .2s; }
+  .pbar .mark { position:absolute; top:-2px; bottom:-2px; width:2px; background:var(--ink); }
+  .pbar .val { width:96px; text-align:right; font-family:Consolas, monospace; font-size:13px; }
+  .note { margin-top:8px; padding:7px 10px; border-radius:4px; font-size:13.5px; background:#EEF6F0; color:var(--ok); line-height:1.4; }
+  .note.warn { background:#FFF7E0; color:#7A5C00; }
+  .note.info { background:var(--tint); color:var(--ink); }
+  .four { display:grid; grid-template-columns: repeat(4, 1fr); gap:8px; }
+  @media (max-width: 660px) { .four { grid-template-columns: repeat(2, 1fr); } }
+  .cell { border:1px solid var(--line); border-radius:6px; padding:6px; text-align:center; font-size:13px; }
+  .cell b { font-family:Consolas, monospace; font-size:14px; }
+  .credit { color:var(--muted); font-size:12px; padding:8px 16px 12px; border-top:1px solid var(--line); }
+  .chk { display:flex; align-items:center; gap:6px; justify-content:flex-start; font-size:14px; margin-top:6px; }
+</style>
+</head>
+<body>
+<div class="tabs" role="tablist">
+  <button type="button" data-t="mid" role="tab">1. Measure in the middle</button>
+  <button type="button" data-t="teleport" role="tab">2. Teleportation</button>
+</div>
+
+<!-- TOOL 1: mid-circuit measurement and feedforward -->
+<section class="tool" id="t-mid" role="tabpanel">
+  <h2>Measure in the middle, then decide</h2>
+  <p class="hint">Pick a circuit and run it. The bars show the exact probability of each result (the black line) and your counts from 1,000 shots. Results are written like Qiskit's: c1 on the left, c0 on the right.</p>
+  <div class="grid">
+    <div class="box">
+      <h3>Circuit</h3>
+      <div class="row">
+        <button type="button" class="act" data-c="hh">H, H</button>
+        <button type="button" class="act" data-c="hmh">H, measure, H</button>
+        <button type="button" class="act" data-c="reset">Active reset</button>
+      </div>
+      <div id="thetaBox" style="display:none">
+        <label for="th1">Starting angle θ (ry) <span class="mono" id="th1v"></span></label>
+        <input type="range" id="th1" min="0" max="180" step="1" value="90">
+      </div>
+      <pre class="circ" id="circ1"></pre>
+      <div class="row"><button type="button" class="act fill" id="run1">Run 1,000 shots</button></div>
+    </div>
+    <div class="box">
+      <h3>Results</h3>
+      <div id="bars1"></div>
+      <div class="note info" id="msg1"></div>
+    </div>
+  </div>
+</section>
+
+<!-- TOOL 2: teleportation -->
+<section class="tool" id="t-teleport" role="tabpanel">
+  <h2>Teleportation, result by result</h2>
+  <p class="hint">Choose the state Alice sends. Below are Bob's qubit for each of Alice's four results, before and after his corrections, and what Bob holds before the two classical bits reach him.</p>
+  <div class="grid">
+    <div class="box">
+      <h3>The state Alice sends</h3>
+      <svg class="sphere" id="sphSent" style="max-width:220px" aria-label="Bloch sphere of the state Alice sends"></svg>
+      <label for="th2">θ <span class="mono" id="th2v"></span></label>
+      <input type="range" id="th2" min="0" max="180" step="1" value="60">
+      <label for="ph2">φ <span class="mono" id="ph2v"></span></label>
+      <input type="range" id="ph2" min="0" max="359" step="1" value="40">
+      <label class="chk"><input type="checkbox" id="fix2"> Bob applies the corrections (X if c1 = 1, then Z if c0 = 1)</label>
+      <div class="row"><button type="button" class="act fill" id="run2">Run 1,000 shots</button></div>
+    </div>
+    <div class="box">
+      <h3>Bob's qubit for each of Alice's results (c1 c0)</h3>
+      <div class="four" id="four"></div>
+      <div class="grid" style="grid-template-columns: 160px 1fr; margin-top:10px">
+        <div class="cell"><svg class="sphere" id="sphAvg" style="max-width:140px" aria-label="Bob's average state before the bits arrive"></svg><span>Before the bits arrive</span></div>
+        <div class="note info" id="msg2"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="credit">Module 0 explorer · Quantum Computing Intermediate · SemiAcademy / ISEP-CSU · CC BY 4.0. Conventions follow Qiskit (qubit 0 on the right). Random numbers come from your browser, so your counts differ from other learners'. This is a practice tool: the graded values come from the lab notebook.</div>
+
+<script>
+(function () {
+/*BLOCH*/
+  var $ = function (id) { return document.getElementById(id); };
+  var D = Math.PI / 180;
+
+  // ---------- tabs
+  var tabs = document.querySelectorAll('.tabs button');
+  function openTab(t) {
+    tabs.forEach(function (b) { b.classList.toggle('on', b.dataset.t === t); });
+    document.querySelectorAll('.tool').forEach(function (s) { s.classList.toggle('on', s.id === 't-' + t); });
+  }
+  tabs.forEach(function (b) { b.onclick = function () { openTab(b.dataset.t); }; });
+  function fromHash() { openTab(location.hash.indexOf('teleport') >= 0 ? 'teleport' : 'mid'); }
+  window.addEventListener('hashchange', fromHash);
+  fromHash();
+
+  function bars(el, keys, probs, counts) {
+    el.innerHTML = '';
+    keys.forEach(function (k, i) {
+      var p = probs[i], c = counts ? counts[k] || 0 : null;
+      var d = document.createElement('div'); d.className = 'pbar';
+      d.innerHTML = '<span class="lab">' + k + '</span><span class="track"><span class="fill" style="width:' +
+        (c === null ? 0 : c / 10) + '%"></span><span class="mark" style="left:' + (100 * p) + '%"></span></span>' +
+        '<span class="val">' + (c === null ? '' : c + ' · ') + 'p=' + p.toFixed(3) + '</span>';
+      el.appendChild(d);
+    });
+  }
+  function sample(keys, probs, shots) {
+    var counts = {};
+    for (var s = 0; s < shots; s++) {
+      var r = Math.random(), acc = 0, k = keys[keys.length - 1];
+      for (var i = 0; i < probs.length; i++) { acc += probs[i]; if (r < acc) { k = keys[i]; break; } }
+      counts[k] = (counts[k] || 0) + 1;
+    }
+    return counts;
+  }
+
+  // ---------- tool 1
+  var C1 = {
+    hh: { keys: ['0', '1'],
+      circ: 'q_0: ─[H]──[H]──[M]──\nc: 1/══════════════0══',
+      probs: function () { return [1, 0]; },
+      msg: function (c) { return 'H followed by H is the identity: the two ways to reach 1 cancel, so every shot gives 0. This is interference.'; } },
+    hmh: { keys: ['00', '01', '10', '11'],
+      circ: 'q_0: ─[H]──[M]──[H]──[M]──\nc: 2/═══════0═════════1═══',
+      probs: function () { return [0.25, 0.25, 0.25, 0.25]; },
+      msg: function (c) { return 'The middle measurement (c0) leaves the qubit in |0⟩ or |1⟩, not |+⟩. The second H makes an equal superposition again, so c1 is random too: all four results, about 250 each. No more interference.'; } },
+    reset: { keys: ['00', '01', '10', '11'],
+      circ: function (t) { return 'q_0: ─[RY(' + t + '°)]──[M]──[IF c0=1: X]──[M]──\nc: 2/════════════════0══════════════════1═══'; },
+      probs: function (t) { var p1 = Math.pow(Math.sin(t * D / 2), 2); return [1 - p1, p1, 0, 0]; },
+      msg: function (c, t) {
+        var p1 = Math.pow(Math.sin(t * D / 2), 2);
+        return 'The first result c0 is 1 with probability sin²(θ/2) = ' + p1.toFixed(3) + '. In those shots the if_test block applies X, so the second measurement c1 is 0 in every shot: results 10 and 11 never appear. A measurement plus feedforward has reset the qubit.'; } }
+  };
+  var cur1 = 'hmh', counts1 = null;
+  function draw1() {
+    var c = C1[cur1], t = +$('th1').value;
+    $('th1v').textContent = t + '°';
+    $('thetaBox').style.display = cur1 === 'reset' ? 'block' : 'none';
+    $('circ1').textContent = typeof c.circ === 'function' ? c.circ(t) : c.circ;
+    bars($('bars1'), c.keys, c.probs(t), counts1);
+    $('msg1').textContent = counts1 ? c.msg(counts1, t) : 'Press "Run 1,000 shots".';
+    document.querySelectorAll('[data-c]').forEach(function (b) { b.classList.toggle('on', b.dataset.c === cur1); });
+  }
+  document.querySelectorAll('[data-c]').forEach(function (b) { b.onclick = function () { cur1 = b.dataset.c; counts1 = null; draw1(); }; });
+  $('th1').oninput = function () { counts1 = null; draw1(); };
+  $('run1').onclick = function () { var c = C1[cur1]; counts1 = sample(c.keys, c.probs(+$('th1').value), 1000); draw1(); };
+  draw1();
+
+  // ---------- tool 2
+  var counts2 = null;
+  var NAMES = { '00': 'none', '01': 'Z', '10': 'X', '11': 'X, then Z' };
+  function bobBefore(r, key) {             // Bob holds X^c1 Z^c0 |psi>
+    var x = r[0], y = r[1], z = r[2], c1 = key[0] === '1', c0 = key[1] === '1';
+    if (c0) { x = -x; y = -y; }            // Z: (x, y, z) -> (-x, -y, z)
+    if (c1) { y = -y; z = -z; }            // X: (x, y, z) -> (x, -y, -z)
+    return [x, y, z];
+  }
+  function draw2() {
+    var th = +$('th2').value * D, ph = +$('ph2').value * D, fix = $('fix2').checked;
+    $('th2v').textContent = $('th2').value + '°'; $('ph2v').textContent = $('ph2').value + '°';
+    var r = [Math.sin(th) * Math.cos(ph), Math.sin(th) * Math.sin(ph), Math.cos(th)];
+    drawBloch($('sphSent'), { font: 0.15, pts: [{ v: r, c: '#99004C' }] });
+    var four = $('four'); four.innerHTML = '';
+    ['00', '01', '10', '11'].forEach(function (k) {
+      var v = fix ? r : bobBefore(r, k);
+      var same = Math.abs(v[0] - r[0]) + Math.abs(v[1] - r[1]) + Math.abs(v[2] - r[2]) < 1e-9;
+      var d = document.createElement('div'); d.className = 'cell';
+      d.innerHTML = '<b>' + k + '</b>' + (counts2 ? ' · ' + (counts2[k] || 0) + ' shots' : '') +
+        '<svg class="sphere" style="max-width:120px"></svg><span>' + (fix ? 'corrected: ' + NAMES[k] : 'needs: ' + NAMES[k]) +
+        '</span><br><span style="color:' + (same ? 'var(--ok)' : 'var(--bad)') + '">' + (same ? 'same as sent' : 'not the sent state') + '</span>';
+      four.appendChild(d);
+      drawBloch(d.querySelector('svg'), { font: 0.2, labels: false, pts: [{ v: v, c: same ? '#2E7D4F' : '#24313D' }, { v: r, c: '#99004C', dash: true }] });
+    });
+    drawBloch($('sphAvg'), { font: 0.2, pts: [] });
+    var svg = $('sphAvg'); var dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    dot.setAttribute('cx', 0); dot.setAttribute('cy', 0); dot.setAttribute('r', 0.09); dot.setAttribute('fill', '#24313D'); svg.appendChild(dot);
+    $('msg2').innerHTML = (fix
+      ? 'With the corrections, Bob\'s qubit is the sent state (dashed maroon arrow) for every result. '
+      : 'Without corrections, Bob\'s qubit is the sent state only for result 00; the others are turned by Z, X or both. ') +
+      'Each result has probability 1/4 for any state. Averaged over the four, before Bob knows the result, his Bloch vector is (0, 0, 0): the completely mixed state, which carries no information about what Alice sent. That is why nothing travels faster than light.' +
+      (counts2 ? '<br>Your run: 00 ' + (counts2['00'] || 0) + ', 01 ' + (counts2['01'] || 0) + ', 10 ' + (counts2['10'] || 0) + ', 11 ' + (counts2['11'] || 0) + ' (expected about 250 each).' : '');
+  }
+  ['th2', 'ph2'].forEach(function (id) { $(id).oninput = function () { counts2 = null; draw2(); }; });
+  $('fix2').onchange = draw2;
+  $('run2').onclick = function () { counts2 = sample(['00', '01', '10', '11'], [0.25, 0.25, 0.25, 0.25], 1000); draw2(); };
+  draw2();
+})();
+</script>
+</body>
+</html>

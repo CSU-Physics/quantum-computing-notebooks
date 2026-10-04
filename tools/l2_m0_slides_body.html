@@ -1,0 +1,306 @@
+
+<!-- 1 -->
+<section class="slide title-slide">
+  <div class="kicker">Quantum Computing Intermediate · Module 0</div>
+  <h1>Dynamic circuits and teleportation</h1>
+  <p style="font-size:30px;max-width:580px">Measure in the middle of a circuit, use the result straight away, and move an unknown qubit state with one Bell pair and two classical bits.</p>
+  <svg width="430" height="330" viewBox="0 0 430 330" style="position:absolute;right:60px;top:190px" aria-label="Alice and Bob share a Bell pair; Alice sends two classical bits to Bob">
+    <g font-size="24" fill="#24313D">
+      <rect x="10" y="40" width="150" height="110" rx="12" fill="#fff" stroke="#99004C" stroke-width="3"/>
+      <text x="85" y="80" text-anchor="middle" fill="#99004C" font-weight="600">Alice</text>
+      <text x="85" y="122" text-anchor="middle" font-size="21">|ψ⟩, ½ pair</text>
+      <rect x="270" y="40" width="150" height="110" rx="12" fill="#fff" stroke="#99004C" stroke-width="3"/>
+      <text x="345" y="80" text-anchor="middle" fill="#99004C" font-weight="600">Bob</text>
+      <text x="345" y="122" text-anchor="middle">½ pair</text>
+      <path d="M160 95 C 205 60, 225 130, 270 95" fill="none" stroke="#C9A227" stroke-width="4" stroke-dasharray="8 6"/>
+      <text x="215" y="40" text-anchor="middle" font-size="19" fill="#8A6D00">Bell pair</text>
+      <line x1="85" y1="150" x2="85" y2="240" stroke="#24313D" stroke-width="2"/>
+      <line x1="85" y1="240" x2="345" y2="240" stroke="#24313D" stroke-width="2"/>
+      <line x1="85" y1="246" x2="345" y2="246" stroke="#24313D" stroke-width="2"/>
+      <line x1="345" y1="246" x2="345" y2="158" stroke="#24313D" stroke-width="2"/>
+      <path d="M335 170 L345 152 L355 170 z" fill="#24313D"/>
+      <text x="215" y="282" text-anchor="middle" font-size="20" fill="#6A626B">two classical bits, c0 and c1</text>
+    </g>
+  </svg>
+  <div class="foot"><span>SemiAcademy · ISEP-CSU</span><span>CC BY 4.0</span></div>
+</section>
+
+<!-- 2 -->
+<section class="slide">
+  <h2>Welcome to Level 2</h2>
+  <p>Level 1 built the tools: qubits, gates, entanglement, measurement and noise. Level 2 uses them in the algorithms that made quantum computing famous.</p>
+  <table style="font-size:22px">
+    <tr><th>Module</th><th>Topic</th></tr>
+    <tr><td>0</td><td>Start here: dynamic circuits and teleportation</td></tr>
+    <tr><td>1</td><td>The quantum Fourier transform and phase estimation</td></tr>
+    <tr><td>2</td><td>Grover's search</td></tr>
+    <tr><td>3</td><td>Shor's algorithm, factoring 15</td></tr>
+    <tr><td>4</td><td>Running on real hardware (Colab; real hardware optional)</td></tr>
+    <tr><td>5</td><td>Variational algorithms: VQE and QAOA</td></tr>
+    <tr><td>6 and 7</td><td>Mini-project, then course completion</td></tr>
+  </table>
+  <div class="foot"><span>Module 0 · Dynamic circuits and teleportation</span><span>2</span></div>
+</section>
+
+<!-- 3 -->
+<section class="slide">
+  <h2>By the end of this module you can</h2>
+  <ul>
+    <li>explain what a <strong>measurement in the middle</strong> of a circuit does to a qubit;</li>
+    <li>write <strong>classical feedforward</strong> with <code>qc.if_test</code>, and build an <strong>active reset</strong> from a measurement;</li>
+    <li>describe the three steps of <strong>quantum teleportation</strong> and the correction for each of Alice's four results;</li>
+    <li>check that a teleported state arrived, with the fidelity and with an <strong>undo test</strong>;</li>
+    <li>explain why Bob's qubit carries <strong>no information</strong> until Alice's bits arrive.</li>
+  </ul>
+  <p class="small" style="margin-top:24px">Every lab in Level 2 runs in your browser with the course simulator qsim (version 1.5.0 adds <code>if_test</code> and <code>partial_trace</code>). Module 4 also uses Google Colab.</p>
+  <div class="foot"><span>Module 0 · Dynamic circuits and teleportation</span><span>3</span></div>
+</section>
+
+<!-- 4 -->
+<section class="slide">
+  <h2>What you need from Level 1</h2>
+  <div class="cols">
+    <div>
+      <ul>
+        <li style="font-size:25px">States as amplitudes, and the Bloch sphere.</li>
+        <li style="font-size:25px">The gates X, Z, H, ry, rz and CNOT.</li>
+        <li style="font-size:25px">The Bell state (|00⟩ + |11⟩)/√2.</li>
+        <li style="font-size:25px">Measurement: probabilities, shots and counts.</li>
+        <li style="font-size:25px">Qiskit's bit order: in "10", c1 = 1 and c0 = 0.</li>
+        <li style="font-size:25px">Fidelity, and density matrices for mixed states.</li>
+      </ul>
+    </div>
+    <div style="flex:0 0 420px">
+      <div class="card"><h3>Not sure about one of these?</h3><p>The readiness check in this module tells you which Level 1 module to revisit. It is not graded.</p></div>
+    </div>
+  </div>
+  <div class="foot"><span>Module 0 · Dynamic circuits and teleportation</span><span>4</span></div>
+</section>
+
+<!-- 5 -->
+<section class="slide">
+  <h2>A measurement in the middle of a circuit</h2>
+  <div class="cols">
+    <div style="flex:0 0 620px">
+      <pre class="code">q_0: ─[H]──[H]──[M]──
+c: 1/══════════════0══</pre>
+      <p style="font-size:24px">H·H = I: the two paths to |1⟩ cancel. <strong>1,000 of 1,000 shots give 0.</strong></p>
+      <pre class="code">q_0: ─[H]──[M]──[H]──[M]──
+c: 2/═══════0═════════1═══</pre>
+      <p style="font-size:24px">The middle measurement leaves |0⟩ or |1⟩, not |+⟩. The second H makes a new superposition.</p>
+    </div>
+    <div>
+      <table style="font-size:24px">
+        <tr><th>c1 c0</th><th>counts</th></tr>
+        <tr><td>00</td><td>238</td></tr><tr><td>01</td><td>259</td></tr><tr><td>10</td><td>252</td></tr><tr><td>11</td><td>251</td></tr>
+      </table>
+      <p class="small" style="margin-top:12px">qsim, 1,000 shots, seed 7 (lab Step 1). All four results, about 250 each: the interference is gone.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Module 0 · Dynamic circuits and teleportation</span><span>5</span></div>
+</section>
+
+<!-- 6 -->
+<section class="slide">
+  <h2>Pause and predict</h2>
+  <p>A qubit starts in |0⟩. The circuit is H, measure into c0, H, H, measure into c1. In what fraction of shots is c1 different from c0?</p>
+  <div class="reveal"><button type="button">Show the answer</button>
+    <div class="ans">None. After the middle measurement the qubit is |0⟩ or |1⟩, matching c0, and H·H = I leaves it there. So 00 and 11 each come up about half the time, and 01 and 10 never appear.</div></div>
+  <div class="foot"><span>Module 0 · Dynamic circuits and teleportation</span><span>6</span></div>
+</section>
+
+<!-- 7 -->
+<section class="slide">
+  <h2>Classical feedforward</h2>
+  <p>A <strong>dynamic circuit</strong> uses a measurement result <strong>during</strong> the circuit to choose the next gates. In Qiskit 2, and in qsim, this is a block:</p>
+  <pre class="code" style="font-size:25px">qc.measure(0, 0)
+with qc.if_test((0, 1)):    # only in shots where c0 == 1
+    qc.x(0)</pre>
+  <ul>
+    <li style="font-size:24px">The gates inside run only in the shots where the bit has that value.</li>
+    <li style="font-size:24px">An <code>else</code> block is possible too: <code>with qc.if_test((0, 1)) as else_:</code> ... <code>with else_:</code> ...</li>
+    <li style="font-size:24px">qsim's drawer shows the block as a box, <code>[IF c0=1]</code>; these slides also write the gate inside it: <code>[IF c0=1: X]</code>.</li>
+  </ul>
+  <div class="foot"><span>Module 0 · Dynamic circuits and teleportation</span><span>7</span></div>
+</section>
+
+<!-- 8 -->
+<section class="slide">
+  <h2>An active reset</h2>
+  <div class="cols">
+    <div style="flex:0 0 640px">
+      <pre class="code">q_0: ─[RY(θ)]──[M]──[IF c0=1: X]──[M]──
+c: 2/═══════════0══════════════════1═══</pre>
+      <ul>
+        <li style="font-size:24px">Measure: the qubit is now |0⟩ (c0 = 0) or |1⟩ (c0 = 1).</li>
+        <li style="font-size:24px">If c0 = 1, apply X: |1⟩ becomes |0⟩.</li>
+        <li style="font-size:24px">Either way the qubit ends in |0⟩, so c1 = 0 in every shot.</li>
+      </ul>
+    </div>
+    <div>
+      <div class="card"><h3>Why it is useful</h3><p>Real computers reuse qubits within one circuit. Waiting for a qubit to relax to |0⟩ by itself is slow; measure-and-flip is fast. You write this as <code>active_reset()</code> in the lab.</p></div>
+    </div>
+  </div>
+  <div class="foot"><span>Module 0 · Dynamic circuits and teleportation</span><span>8</span></div>
+</section>
+
+<!-- 9 -->
+<section class="slide">
+  <h2>Where feedforward is used</h2>
+  <div class="cols" style="flex:0 0 auto">
+    <div class="card"><h3>Teleportation</h3><p>Two measured bits choose Bob's corrections. This module.</p></div>
+    <div class="card"><h3>Phase estimation</h3><p>Iterative phase estimation reuses one qubit: it measures a bit, then adjusts the next rotation. Module 1.</p></div>
+    <div class="card"><h3>Error correction</h3><p>Measured syndromes choose which qubit to fix, while the computation continues. Level 3.</p></div>
+  </div>
+  <p style="margin-top:28px">IBM's current processors run dynamic circuits: the control electronics read the measurement and choose the next gates while the circuit is still running, before the other qubits lose their state.</p>
+  <div class="foot"><span>Module 0 · Dynamic circuits and teleportation</span><span>9</span></div>
+</section>
+
+<!-- 10 -->
+<section class="slide">
+  <h2>The problem teleportation solves</h2>
+  <p>Alice holds a qubit in a state |ψ⟩ = α|0⟩ + β|1⟩ that she does not know. Bob is somewhere else. Only classical bits can travel between them.</p>
+  <ul>
+    <li><strong>Measure and send the result?</strong> One measurement gives one bit and destroys α and β.</li>
+    <li><strong>Copy the qubit?</strong> Impossible: the <strong>no-cloning theorem</strong> says no circuit copies an unknown state.</li>
+    <li><strong>Teleport it.</strong> Use one shared <strong>Bell pair</strong> and send <strong>two classical bits</strong>. The state appears at Bob's qubit and is destroyed at Alice's, so nothing is copied.</li>
+  </ul>
+  <div class="foot"><span>Module 0 · Dynamic circuits and teleportation</span><span>10</span></div>
+</section>
+
+<!-- 11 -->
+<section class="slide">
+  <h2>The teleportation circuit</h2>
+  <svg width="1130" height="400" viewBox="0 0 1130 400" aria-label="Teleportation circuit: H and CNOT make the Bell pair on qubits 1 and 2; CNOT and H on qubits 0 and 1 then measurements into c0 and c1; X on qubit 2 if c1 is 1, then Z on qubit 2 if c0 is 1">
+    <g font-size="24" fill="#24313D" stroke-width="3">
+      <text x="140" y="34" font-size="20" fill="#8A6D00">1. share a Bell pair</text>
+      <text x="400" y="34" font-size="20" fill="#8A6D00">2. Alice's Bell measurement</text>
+      <text x="790" y="34" font-size="20" fill="#8A6D00">3. Bob's corrections</text>
+      <text x="0" y="98">q0 |ψ⟩</text><text x="0" y="178">q1 |0⟩</text><text x="0" y="258">q2 |0⟩</text>
+      <line x1="90" y1="90" x2="640" y2="90" stroke="#24313D"/>
+      <line x1="90" y1="170" x2="700" y2="170" stroke="#24313D"/>
+      <line x1="90" y1="250" x2="1060" y2="250" stroke="#24313D"/>
+      <line x1="90" y1="337" x2="1000" y2="337" stroke="#24313D" stroke-width="2"/>
+      <line x1="90" y1="343" x2="1000" y2="343" stroke="#24313D" stroke-width="2"/>
+      <text x="40" y="348">c</text>
+      <rect x="140" y="146" width="48" height="48" rx="5" fill="#fff" stroke="#99004C"/><text x="164" y="179" text-anchor="middle" fill="#99004C">H</text>
+      <circle cx="250" cy="170" r="8" fill="#24313D"/><line x1="250" y1="170" x2="250" y2="268" stroke="#24313D"/>
+      <circle cx="250" cy="250" r="18" fill="#fff" stroke="#24313D"/><line x1="232" y1="250" x2="268" y2="250" stroke="#24313D"/>
+      <line x1="320" y1="60" x2="320" y2="280" stroke="#B9AEB4" stroke-dasharray="6 6"/>
+      <circle cx="390" cy="90" r="8" fill="#24313D"/><line x1="390" y1="90" x2="390" y2="188" stroke="#24313D"/>
+      <circle cx="390" cy="170" r="18" fill="#fff" stroke="#24313D"/><line x1="372" y1="170" x2="408" y2="170" stroke="#24313D"/>
+      <rect x="440" y="66" width="48" height="48" rx="5" fill="#fff" stroke="#99004C"/><text x="464" y="99" text-anchor="middle" fill="#99004C">H</text>
+      <rect x="540" y="66" width="52" height="48" rx="5" fill="#fff" stroke="#24313D"/><text x="566" y="99" text-anchor="middle">M</text>
+      <line x1="563" y1="114" x2="563" y2="334" stroke="#24313D" stroke-width="2"/><line x1="569" y1="114" x2="569" y2="334" stroke="#24313D" stroke-width="2"/>
+      <text x="580" y="328" font-size="19">c0</text>
+      <rect x="620" y="146" width="52" height="48" rx="5" fill="#fff" stroke="#24313D"/><text x="646" y="179" text-anchor="middle">M</text>
+      <line x1="643" y1="194" x2="643" y2="334" stroke="#24313D" stroke-width="2"/><line x1="649" y1="194" x2="649" y2="334" stroke="#24313D" stroke-width="2"/>
+      <text x="660" y="328" font-size="19">c1</text>
+      <line x1="740" y1="60" x2="740" y2="280" stroke="#B9AEB4" stroke-dasharray="6 6"/>
+      <rect x="790" y="226" width="48" height="48" rx="5" fill="#fff" stroke="#99004C"/><text x="814" y="259" text-anchor="middle" fill="#99004C">X</text>
+      <line x1="811" y1="274" x2="811" y2="337" stroke="#24313D" stroke-width="2"/><line x1="817" y1="274" x2="817" y2="337" stroke="#24313D" stroke-width="2"/>
+      <text x="826" y="318" font-size="18">if c1 = 1</text>
+      <rect x="920" y="226" width="48" height="48" rx="5" fill="#fff" stroke="#99004C"/><text x="944" y="259" text-anchor="middle" fill="#99004C">Z</text>
+      <line x1="941" y1="274" x2="941" y2="337" stroke="#24313D" stroke-width="2"/><line x1="947" y1="274" x2="947" y2="337" stroke="#24313D" stroke-width="2"/>
+      <text x="956" y="318" font-size="18">if c0 = 1</text>
+      <text x="1070" y="258" fill="#2E7D4F" font-weight="600">|ψ⟩</text>
+    </g>
+  </svg>
+  <div class="foot"><span>Module 0 · Dynamic circuits and teleportation</span><span>11</span></div>
+</section>
+
+<!-- 12 -->
+<section class="slide">
+  <h2>What Bob holds after Alice measures</h2>
+  <p style="font-size:25px">After step 2 the three-qubit state can be rewritten as four equal terms, one for each of Alice's results:</p>
+  <div class="eq" style="font-size:27px">½ Σ |c1 c0⟩ ⊗ X<sup>c1</sup> Z<sup>c0</sup> |ψ⟩</div>
+  <table style="font-size:24px">
+    <tr><th>Alice's result (c1 c0)</th><th>probability</th><th>Bob's qubit</th><th>Bob applies</th></tr>
+    <tr><td>00</td><td>1/4</td><td>α|0⟩ + β|1⟩ = |ψ⟩</td><td>nothing</td></tr>
+    <tr><td>01</td><td>1/4</td><td>α|0⟩ − β|1⟩ = Z|ψ⟩</td><td>Z</td></tr>
+    <tr><td>10</td><td>1/4</td><td>β|0⟩ + α|1⟩ = X|ψ⟩</td><td>X</td></tr>
+    <tr><td>11</td><td>1/4</td><td>−β|0⟩ + α|1⟩ = XZ|ψ⟩</td><td>X, then Z</td></tr>
+  </table>
+  <p class="small" style="margin-top:10px">The probabilities are 1/4 whatever α and β are: Alice's results say nothing about |ψ⟩.</p>
+  <div class="foot"><span>Module 0 · Dynamic circuits and teleportation</span><span>12</span></div>
+</section>
+
+<!-- 13 -->
+<section class="slide">
+  <h2>Bob's corrections</h2>
+  <div class="cols">
+    <div style="flex:0 0 640px">
+      <p>Each error is undone by the same gate, because X·X = I and Z·Z = I. The order matters for result 11: the last error made is undone first.</p>
+      <pre class="code" style="font-size:25px">with qc.if_test((1, 1)):    # c1 == 1
+    qc.x(2)
+with qc.if_test((0, 1)):    # c0 == 1
+    qc.z(2)</pre>
+      <p class="small">Check for 11: Z·X·(X·Z|ψ⟩) = Z·Z|ψ⟩ = |ψ⟩.</p>
+    </div>
+    <div>
+      <div class="card"><h3>Which bit controls which gate?</h3><p>c1 comes from Alice's half of the Bell pair: it controls <strong>X</strong>. c0 comes from the qubit that held |ψ⟩: it controls <strong>Z</strong>. Mixing them up is the most common mistake, and the lab's check cell catches it.</p></div>
+    </div>
+  </div>
+  <div class="foot"><span>Module 0 · Dynamic circuits and teleportation</span><span>13</span></div>
+</section>
+
+<!-- 14 -->
+<section class="slide">
+  <h2>Pause and predict</h2>
+  <p>Alice's result is 01. Bob mixes up the two bits and applies X instead of Z. What does he hold?</p>
+  <div class="reveal"><button type="button">Show the answer</button>
+    <div class="ans">X·Z|ψ⟩ = −β|0⟩ + α|1⟩, which is not |ψ⟩ (unless the state is special). On the Bloch sphere, Z then X is a half turn about the y axis: (x, y, z) becomes (−x, y, −z). The fidelity with |ψ⟩ is y², where y is the Bloch y component: 0 for every state with real α and β, such as ry(θ)|0⟩.</div></div>
+  <div class="foot"><span>Module 0 · Dynamic circuits and teleportation</span><span>14</span></div>
+</section>
+
+<!-- 15 -->
+<section class="slide">
+  <h2>Bob learns nothing until the bits arrive</h2>
+  <div class="cols">
+    <div style="flex:0 0 640px">
+      <p style="font-size:25px">Before Alice's bits reach him, Bob does not know which of the four states he holds. Each has probability 1/4, and the four Bloch vectors add up to zero:</p>
+      <div class="eq" style="font-size:27px">ρ<sub>Bob</sub> = ¼(ψ + ZψZ + XψX + XZψZX) = I/2</div>
+      <p style="font-size:25px">That is the completely mixed state, Bloch vector (0, 0, 0), for <strong>every</strong> |ψ⟩. So no information travels until the classical bits do, and they travel no faster than light.</p>
+    </div>
+    <div style="flex:0 0 340px">
+      <svg class="bloch" data-cfg='{"font":0.17,"labels":false,"pts":[{"v":[0.663,0.557,0.5],"c":"#99004C","l":"00","dx":0.04,"dy":-0.08},{"v":[-0.663,-0.557,0.5],"c":"#24313D","l":"01","dx":-0.2,"dy":-0.04},{"v":[0.663,-0.557,-0.5],"c":"#24313D","l":"10","dx":-0.28,"dy":0.1},{"v":[-0.663,0.557,-0.5],"c":"#24313D","l":"11","dx":0.06,"dy":0.12},{"v":[0,0,0],"dot":true,"c":"#2E7D4F"}]}' width="340" height="330" aria-label="Bloch sphere with Bob's four possible states, which average to the centre"></svg>
+      <p class="small" style="text-align:center">θ = 60°, φ = 40°. The four possible states average to the green dot at the centre.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Module 0 · Dynamic circuits and teleportation</span><span>15</span></div>
+</section>
+
+<!-- 16 -->
+<section class="slide">
+  <h2>Checking that the state arrived</h2>
+  <div class="cols" style="flex:0 0 auto">
+    <div class="card"><h3>In a simulator</h3><p>Take Bob's qubit out of the three-qubit density matrix with <code>partial_trace</code> and compare it with |ψ⟩: the fidelity is 1.000000 and the Bloch vectors are equal.</p></div>
+    <div class="card"><h3>On real hardware: the undo test</h3><p>The state cannot be looked at. Instead Bob applies the <strong>inverse</strong> of Alice's preparation and measures. If |ψ⟩ arrived, he gets 0 in every shot: 1,000 of 1,000 in the simulator.</p></div>
+  </div>
+  <p class="small" style="margin-top:24px">On a noisy computer the undo test gives fewer zeros. The fraction of zeros is a simple measure of how well teleportation worked. Module 4 runs circuits like this with a realistic noise model.</p>
+  <div class="foot"><span>Module 0 · Dynamic circuits and teleportation</span><span>16</span></div>
+</section>
+
+<!-- 17 -->
+<section class="slide">
+  <h2>Summary</h2>
+  <ul>
+    <li style="font-size:25px">A measurement in the middle of a circuit gives a usable bit and leaves |0⟩ or |1⟩: interference after it is lost.</li>
+    <li style="font-size:25px"><code>qc.if_test((clbit, value))</code> runs gates only in matching shots. Measure plus feedforward rebuilds a reset.</li>
+    <li style="font-size:25px">Teleportation: Bell pair, Alice's Bell measurement, then X if c1 = 1 and Z if c0 = 1.</li>
+    <li style="font-size:25px">Each of Alice's results has probability 1/4, and Bob's qubit is I/2 until the bits arrive.</li>
+    <li style="font-size:25px">Check with the fidelity in a simulator, or with the undo test on hardware.</li>
+  </ul>
+  <div class="eq" style="font-size:24px;margin-top:12px"><strong>Next:</strong> the Module 0 lab. You write <code>active_reset()</code> and <code>bob_corrections()</code>, run the undo test, and get your verification value.</div>
+  <div class="foot"><span>Module 0 · Dynamic circuits and teleportation</span><span>17</span></div>
+</section>
+
+<!-- 18 -->
+<section class="slide">
+  <h2>Credits and license</h2>
+  <p>These slides were written for SemiAcademy's <em>Quantum Computing Intermediate</em> course, developed through the Intel Semiconductor Education Program at Central State University (ISEP-CSU).</p>
+  <p>License: <strong>Creative Commons Attribution 4.0 International (CC BY 4.0)</strong>, https://creativecommons.org/licenses/by/4.0/. You may copy, adapt and share them, with credit.</p>
+  <p>Suggested credit: "Module 0 slides, Quantum Computing Intermediate, SemiAcademy / ISEP-CSU, CC BY 4.0."</p>
+  <p class="small">Source: github.com/CSU-Physics/quantum-computing-notebooks (media/level2/m0-slides.html). Print or save as PDF from your browser to get one slide per page.</p>
+  <div class="foot"><span>Module 0 · Dynamic circuits and teleportation</span><span>18</span></div>
+</section>
