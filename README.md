@@ -75,7 +75,12 @@ Run them with `PYTHONPATH=content/level1:checks python checks/test_ghz_check.py`
 1. Edit `tools/make_notebooks.py` (Module 0 and the GHZ task), `tools/make_m1.py` (Module 1), `tools/make_m2.py` (Module 2), `tools/make_m3.py` (Module 3), `tools/make_m4.py` (Module 4) or `tools/make_m5.py` (Module 5; `tools/make_m5_colab.py` writes its Colab notebook) or `tools/make_m6.py` (Module 6; `tools/make_m6_colab.py` writes its optional Colab notebook), or the check files, then run the script. It writes the notebooks into `content/level1/` with outputs cleared.
 2. Commit. The workflow in `.github/workflows/deploy.yml` rebuilds the site and deploys it to GitHub Pages in about a minute.
 
-Learners keep their own edited copy in their browser's storage. A learner who has already changed and saved a notebook keeps that copy after an update, until they clear this site's data in their browser. So fix problems before a cohort starts, not during it.
+Learners keep their own copy of each notebook in their browser's storage (IndexedDB), from the first save; JupyterLab also saves automatically every two minutes. That copy takes precedence over the file on the site, so a learner who has opened a lab keeps the old version after an update. This was tested on 4 October 2026 with a persistent browser profile: after an update, a returning learner still saw the old notebook and a new learner saw the new one. So fix problems before a cohort starts, not during it.
+
+When a notebook must change anyway:
+
+1. Update the date in its first cell ("notebook version YYYY-MM-DD") in the generator, and the same date in the Canvas lab page's sentence "This lab is notebook version ...".
+2. Learners whose notebook shows an older version, or none, follow **When a lab is updated** on the Canvas page Set Up Your Tools: in the lab's file browser, right-click the notebook, choose **Rename**, add `-old` before `.ipynb`, press Enter, and reload the Canvas page. The lab then opens the new version, and the old copy, with their work, stays in the file browser. (Tested: rename or delete in the file browser both bring back the site's version; rename keeps the learner's work. **Clear Browser Data** in the same menu also works but removes the saved work of every lab.)
 
 ## Rules for this repository
 
