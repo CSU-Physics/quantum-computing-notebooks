@@ -17,7 +17,7 @@ def code(s): return nbf.v4.new_code_cell(s)
 cells = [
 md("""# Module 6 lab: a first quantum algorithm, Bernstein-Vazirani
 
-**Quantum Computing Foundations · Module 6 · about 75 minutes**
+**Quantum Computing Foundations · Module 6 · about 75 minutes** · notebook version 2026-10-04
 
 A box hides a string of bits s. You may ask it questions: give it a string x, and it answers one bit, s·x mod 2. A classical computer needs one question per bit of s. The Bernstein-Vazirani algorithm finds all of s with **one** question. In this lab you write three functions:
 

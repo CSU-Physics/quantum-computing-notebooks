@@ -19,7 +19,7 @@ def code(s): return nbf.v4.new_code_cell(s)
 cells = [
 md("""# Module 5 lab: simulators, noise and real hardware
 
-**Quantum Computing Foundations · Module 5 · about 75 minutes**
+**Quantum Computing Foundations · Module 5 · about 75 minutes** · notebook version 2026-10-04
 
 An ideal simulator gives the Bell circuit's results exactly as the theory says: only 00 and 11. A real quantum computer also gives a few 01 and 10. In this lab you find out where those come from. You write three functions:
 

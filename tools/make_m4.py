@@ -17,7 +17,7 @@ def code(s): return nbf.v4.new_code_cell(s)
 cells = [
 md("""# Module 4 lab: two qubits, CNOT and the Bell states
 
-**Quantum Computing Foundations · Module 4 · about 85 minutes**
+**Quantum Computing Foundations · Module 4 · about 85 minutes** · notebook version 2026-10-04
 
 Two qubits have four amplitudes, one for each of |00⟩, |01⟩, |10⟩ and |11⟩. In this lab you write three functions:
 

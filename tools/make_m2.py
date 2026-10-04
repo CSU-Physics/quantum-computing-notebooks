@@ -16,7 +16,7 @@ def code(s): return nbf.v4.new_code_cell(s)
 cells = [
 md("""# Module 2 lab: the Bloch sphere and measurement bases
 
-**Quantum Computing Foundations · Module 2 · about 75 minutes**
+**Quantum Computing Foundations · Module 2 · about 75 minutes** · notebook version 2026-10-04
 
 In this lab you write three functions:
 

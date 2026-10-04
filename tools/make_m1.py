@@ -16,7 +16,7 @@ def code(s): return nbf.v4.new_code_cell(s)
 cells = [
 md("""# Module 1 lab: state vectors and measurement
 
-**Quantum Computing Foundations · Module 1 · about 75 minutes**
+**Quantum Computing Foundations · Module 1 · about 75 minutes** · notebook version 2026-10-04
 
 In this lab you write three small functions that every later module uses:
 

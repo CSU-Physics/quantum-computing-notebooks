@@ -17,7 +17,7 @@ def code(s): return nbf.v4.new_code_cell(s)
 cells = [
 md("""# Module 3 lab: single-qubit gates
 
-**Quantum Computing Foundations · Module 3 · about 85 minutes**
+**Quantum Computing Foundations · Module 3 · about 85 minutes** · notebook version 2026-10-04
 
 A gate is a 2 × 2 matrix, and running a circuit multiplies matrices. In this lab you write three functions:
 

@@ -34,7 +34,7 @@ SAVE = """Your notebook is saved in this browser as you work. It is not saved an
 m0 = [
 md("""# Module 0 lab: notebooks, NumPy and your first qubit
 
-**Quantum Computing Foundations · Module 0 · about 40 minutes**
+**Quantum Computing Foundations · Module 0 · about 40 minutes** · notebook version 2026-10-04
 
 In this lab you will:
 
@@ -155,7 +155,7 @@ md("""## Finish
 ghz = [
 md("""# Level 1 final coding task: a three-qubit GHZ state
 
-**Quantum Computing Foundations · Course completion · about 40 minutes**
+**Quantum Computing Foundations · Course completion · about 40 minutes** · notebook version 2026-10-04
 
 In Module 4 you built a Bell state, which entangles two qubits. Here you extend that circuit to three qubits and make the **GHZ state**
 
