@@ -15,6 +15,10 @@ Everything is exact linear algebra with NumPy. It is meant for small circuits (u
 
 QuantumCircuit.compose (version 1.4.0) joins circuits as in Qiskit.
 
+Dynamic circuits (version 1.5.0): `with qc.if_test((clbit, value)):` applies the gates inside the
+block only when that classical bit holds that value, as in Qiskit 2. An `else` block works too:
+`with qc.if_test((0, 1)) as else_: ...` then `with else_: ...`.
+
 Noise (version 1.3.0): NoiseModel, depolarizing_error, pauli_error, amplitude_damping_error,
 phase_damping_error, thermal_relaxation_error and ReadoutError work as in qiskit_aer.noise, and
 AerSimulator(noise_model=...) runs a circuit with them.
@@ -29,9 +33,9 @@ __all__ = [
     "transpile", "state_fidelity", "plot_histogram", "simulate_density_matrix",
     "plot_bloch_vector", "plot_bloch_multivector", "bloch_vectors", "Operator",
     "NoiseModel", "QuantumError", "ReadoutError", "depolarizing_error", "pauli_error",
-    "amplitude_damping_error", "phase_damping_error", "thermal_relaxation_error",
+    "amplitude_damping_error", "phase_damping_error", "thermal_relaxation_error", "partial_trace",
 ]
-__version__ = "1.4.0"
+__version__ = "1.5.0"
 
 
 class CircuitError(Exception):
@@ -133,6 +137,73 @@ class Instruction:
         p = f", params={list(self.params)}" if self.params else ""
         c = f", clbits={list(self.clbits)}" if self.clbits else ""
         return f"Instruction({self.name!r}, qubits={list(self.qubits)}{c}{p})"
+
+
+class IfElseOp(Instruction):
+    """A classically controlled block (Qiskit's if_else): true_body runs when clbit == value, else false_body."""
+
+    __slots__ = ("condition", "true_body", "false_body")
+
+    def __init__(self, condition, true_body, false_body=None):
+        qs = sorted({q for i in list(true_body) + list(false_body or []) for q in i.qubits})
+        cs = sorted({condition[0]} | {c for i in list(true_body) + list(false_body or []) for c in i.clbits})
+        super().__init__("if_else", qs, cs, ())
+        self.condition = (int(condition[0]), int(condition[1]))
+        self.true_body = list(true_body)
+        self.false_body = list(false_body) if false_body else []
+
+    def matrix(self):
+        raise CircuitError("An if_test block depends on a measurement result, so it has no fixed matrix.")
+
+    def remap(self, qmap, cmap):
+        def m(insts):
+            return [i.remap(qmap, cmap) if isinstance(i, IfElseOp) else
+                    Instruction(i.name, [qmap[q] for q in i.qubits], [cmap[c] for c in i.clbits], i.params)
+                    for i in insts]
+        return IfElseOp((cmap[self.condition[0]], self.condition[1]), m(self.true_body), m(self.false_body))
+
+    def __repr__(self):
+        e = f", else={len(self.false_body)} ops" if self.false_body else ""
+        return f"IfElseOp(c{self.condition[0]} == {self.condition[1]}: {len(self.true_body)} ops{e})"
+
+
+class _ElseContext:
+    def __init__(self, qc):
+        self.qc = qc
+
+    def __enter__(self):
+        last = self.qc.data[-1] if self.qc.data else None
+        if not isinstance(last, IfElseOp) or last.false_body:
+            raise CircuitError("An else block must come straight after its if_test block.")
+        self._start = len(self.qc.data)
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        if exc_type is not None:
+            return False
+        body = self.qc.data[self._start:]
+        del self.qc.data[self._start:]
+        op = self.qc.data.pop()
+        self.qc.data.append(IfElseOp(op.condition, op.true_body, body))
+        return False
+
+
+class _IfContext:
+    def __init__(self, qc, condition):
+        self.qc = qc
+        self.condition = condition
+
+    def __enter__(self):
+        self._start = len(self.qc.data)
+        return _ElseContext(self.qc)
+
+    def __exit__(self, exc_type, exc, tb):
+        if exc_type is not None:
+            return False
+        body = self.qc.data[self._start:]
+        del self.qc.data[self._start:]
+        self.qc.data.append(IfElseOp(self.condition, body))
+        return False
 
 
 def _as_list(x):
@@ -258,6 +329,19 @@ class QuantumCircuit:
             self.data.append(Instruction("measure", [q], [start + q]))
         return self
 
+    def if_test(self, condition):
+        """Classical feedforward, as in Qiskit 2: `with qc.if_test((clbit, value)):` runs the block's
+        gates only in shots where that classical bit was measured as value (0 or 1)."""
+        if not (isinstance(condition, tuple) and len(condition) == 2):
+            raise CircuitError("if_test needs a condition (clbit, value), for example qc.if_test((0, 1)).")
+        clbit, value = condition
+        if not isinstance(clbit, (int, np.integer)):
+            raise CircuitError("In this course the condition is one classical bit: qc.if_test((clbit, value)).")
+        self._check_clbits([int(clbit)])
+        if int(value) not in (0, 1):
+            raise CircuitError("A single classical bit can only be compared with 0 or 1.")
+        return _IfContext(self, (int(clbit), int(value)))
+
     # ------------------------------------------------------------ circuit tools
     def append(self, inst):
         self.data.append(inst)
@@ -321,8 +405,8 @@ class QuantumCircuit:
         inv = {"s": "sdg", "sdg": "s", "t": "tdg", "tdg": "t"}
         new = self.copy_empty_like()
         for i in reversed(self.data):
-            if i.name in ("measure", "reset"):
-                raise CircuitError("A circuit with measurements or resets has no inverse.")
+            if i.name in ("measure", "reset", "if_else"):
+                raise CircuitError("A circuit with measurements, resets or if_test blocks has no inverse.")
             if i.name in _PARAM or i.name in ("cp", "crz"):
                 new.data.append(Instruction(i.name, i.qubits, (), (-i.params[0],)))
             elif i.name == "sx":
@@ -354,7 +438,8 @@ class QuantumCircuit:
                                f"clbits in the circuit ({other.num_clbits}).")
         if cmap:
             self._check_clbits(cmap)
-        added = [Instruction(i.name, [qmap[q] for q in i.qubits], [cmap[c] for c in i.clbits], i.params)
+        added = [i.remap(qmap, cmap) if isinstance(i, IfElseOp) else
+                 Instruction(i.name, [qmap[q] for q in i.qubits], [cmap[c] for c in i.clbits], i.params)
                  for i in other.data]
         target = self if inplace else self.copy()
         target.data = added + list(target.data) if front else list(target.data) + added
@@ -398,6 +483,9 @@ class _TextDrawing:
         def label(inst):
             if inst.name in _PARAM:
                 return f"{inst.name.upper()}({inst.params[0]:.3g})"
+            if inst.name == "if_else":
+                c, v = inst.condition
+                return f"IF c{c}={v}" + (" / ELSE" if inst.false_body else "")
             return {"measure": "M", "reset": "|0>", "sdg": "Sdg", "tdg": "Tdg", "sx": "√X"}.get(
                 inst.name, inst.name.upper())
 
@@ -746,6 +834,36 @@ def _fmt_complex(a):
     return f"{re:g}{im:+g}j"
 
 
+def partial_trace(state, qargs):
+    """The reduced state after tracing out the qubits in qargs, as qiskit.quantum_info.partial_trace.
+
+    state is a Statevector or DensityMatrix (or its array); the result is a DensityMatrix on the
+    qubits that remain, in their original order (qubit 0 still the least significant).
+    """
+    rho = np.asarray(state, dtype=complex)
+    if rho.ndim == 1:
+        rho = np.outer(rho, rho.conj())
+    n = int(round(math.log2(rho.shape[0])))
+    out = sorted({int(q) for q in _as_list(qargs)})
+    for q in out:
+        if not 0 <= q < n:
+            raise CircuitError(f"Index {q} out of range for a state of {n} qubits.")
+    keep = [q for q in range(n) if q not in out]
+    t = rho.reshape([2] * (2 * n))          # axes: row bits n-1..0, then column bits n-1..0
+    row = {q: n - 1 - q for q in range(n)}
+    letters = "abcdefghijklmnopqrstuvwxyz"
+    rl = [letters[i] for i in range(n)]
+    cl = [letters[n + i] for i in range(n)]
+    for q in out:
+        cl[row[q]] = rl[row[q]]
+    kept_rows = [rl[row[q]] for q in sorted(keep, reverse=True)]
+    kept_cols = [cl[row[q]] for q in sorted(keep, reverse=True)]
+    expr = "".join(rl) + "".join(cl) + "->" + "".join(kept_rows) + "".join(kept_cols)
+    m = len(keep)
+    red = np.einsum(expr, t).reshape(2 ** m, 2 ** m) if m else np.array([[np.trace(rho)]])
+    return DensityMatrix(red)
+
+
 def state_fidelity(a, b):
     """Fidelity between two states (pure or mixed): 1 means identical up to a global phase."""
     def as_rho(x):
@@ -782,9 +900,9 @@ def _run_unitary(qc, initial=None):
     for inst in qc.data:
         if inst.name == "barrier":
             continue
-        if inst.name in ("measure", "reset"):
+        if inst.name in ("measure", "reset", "if_else"):
             raise CircuitError(
-                "Cannot make a Statevector from a circuit with measurements or resets. "
+                "Cannot make a Statevector from a circuit with measurements, resets or if_test blocks. "
                 "Remove them first, for example with qc.remove_final_measurements().")
         psi = _apply_unitary_vec(psi, inst.matrix(), list(inst.qubits), n)
     return psi * np.exp(1j * qc.global_phase)
@@ -798,6 +916,9 @@ def simulate_density_matrix(qc, noise_model=None):
     when a circuit measures in the middle. With a noise_model, its quantum errors are applied too
     (readout errors change only the recorded results, so they do not appear here).
     """
+    if any(i.name == "if_else" for i in qc.data):
+        nm = noise_model if noise_model is not None and not noise_model.is_ideal() else None
+        return DensityMatrix(_branch_rho(qc, nm))
     if noise_model is not None and not noise_model.is_ideal():
         return DensityMatrix(_noisy_rho(qc, noise_model, qc.data))
     n = qc.num_qubits
@@ -1077,6 +1198,82 @@ def _noisy_rho(qc, noise_model, body):
     return rho
 
 
+def _branch_rho(qc, nm=None):
+    """Exact final density matrix of a circuit with if_test blocks (the sum of _branch_states)."""
+    final = _branch_states(qc, nm)
+    total = sum(r for r, _ in final)
+    return total / np.real(np.trace(total))
+
+
+def _branch_states(qc, nm=None):
+    """Branches (unnormalized density matrix, classical bits) at the end of a circuit.
+
+    Each measurement splits the state into branches, one per recorded result (with readout errors
+    if the noise model has them); an if_test block then acts on each branch according to that
+    branch's classical bits. The result is the sum over branches, weighted by their probabilities.
+    """
+    n = qc.num_qubits
+    rho = np.zeros((2 ** n, 2 ** n), dtype=complex)
+    rho[0, 0] = 1
+    branches = [(rho, (0,) * qc.num_clbits)]
+
+    def step(branches, insts):
+        for inst in insts:
+            if inst.name == "barrier":
+                continue
+            if inst.name == "if_else":
+                out = []
+                for r, bits in branches:
+                    c, v = inst.condition
+                    body = inst.true_body if bits[c] == v else inst.false_body
+                    out.extend(step([(r, bits)], body))
+                branches = out
+                continue
+            err = nm._error_for(inst) if nm is not None else None
+            out = []
+            for r, bits in branches:
+                if inst.name == "measure":
+                    q = inst.qubits[0]
+                    if err is not None:
+                        r = _apply_kraus_rho(r, err, [q], n)
+                    ro = nm._readout_for(q) if nm is not None else None
+                    for o in (0, 1):
+                        keep = _projector_diag(n, q, o)
+                        ro_ = np.where(np.outer(keep, keep), r, 0)
+                        w = float(np.real(np.trace(ro_)))
+                        if w < 1e-15:
+                            continue
+                        for rec in (0, 1):
+                            pr = (ro.probabilities[o][rec] if ro is not None else float(rec == o))
+                            if pr <= 0:
+                                continue
+                            nb = list(bits)
+                            nb[inst.clbits[0]] = rec
+                            out.append((ro_ * pr, tuple(nb)))
+                    continue
+                if inst.name == "reset":
+                    q = inst.qubits[0]
+                    p0 = _projector_diag(n, q, 0)
+                    idx = np.arange(2 ** n)
+                    flip = idx ^ (1 << q)
+                    moved = r[np.ix_(flip, flip)]
+                    r = np.where(np.outer(p0, p0), r, 0) + np.where(np.outer(p0, p0), moved, 0)
+                else:
+                    r = _apply_unitary_rho(r, inst.matrix(), list(inst.qubits), n)
+                if err is not None:
+                    r = _apply_kraus_rho(r, err, list(inst.qubits), n)
+                out.append((r, bits))
+            # merge branches with the same classical bits to keep the list short
+            merged = {}
+            for r, bits in out:
+                merged[bits] = merged[bits] + r if bits in merged else r
+            branches = list(merged.items())
+            branches = [(r, b) for b, r in branches]
+        return branches
+
+    return step(branches, qc.data)
+
+
 def _noisy_distribution(qc, nm):
     """Exact probabilities of the recorded results of a circuit whose measurements are all at the end.
 
@@ -1183,7 +1380,8 @@ class AerSimulator:
             return _Job(_Result(dict(sorted(counts.items())), shots, keys if memory else None))
         nc = qc.num_clbits
         final = qc._final_measure_indices()
-        mid = any(i.name in ("measure", "reset") and k not in final for k, i in enumerate(qc.data))
+        mid = any((i.name in ("measure", "reset") and k not in final) or i.name == "if_else"
+                  for k, i in enumerate(qc.data))
         if not mid:
             body = [i for k, i in enumerate(qc.data) if k not in final]
             tmp = qc.copy_empty_like()
@@ -1210,7 +1408,8 @@ class AerSimulator:
     @staticmethod
     def _run_noisy(qc, nm, rng, shots):
         final = qc._final_measure_indices()
-        mid = any(i.name in ("measure", "reset") and k not in final for k, i in enumerate(qc.data))
+        mid = any((i.name in ("measure", "reset") and k not in final) or i.name == "if_else"
+                  for k, i in enumerate(qc.data))
         if mid:
             return [AerSimulator._one_shot_noisy(qc, nm, rng) for _ in range(shots)]
         dist, meas = _noisy_distribution(qc, nm)
@@ -1238,35 +1437,43 @@ class AerSimulator:
             i = rng.choice(len(outs), p=ps / ps.sum())
             return outs[i] / np.linalg.norm(outs[i])
 
-        for inst in qc.data:
-            if inst.name == "barrier":
-                continue
-            err = nm._error_for(inst)
-            if inst.name in ("measure", "reset"):
-                q = inst.qubits[0]
-                if inst.name == "measure" and err is not None:
-                    psi = channel(psi, err, [q])
-                one = _projector_diag(n, q, 1)
-                p1 = float(np.sum(np.abs(psi[one]) ** 2))
-                outcome = 1 if rng.random() < p1 else 0
-                keep = one if outcome == 1 else ~one
-                psi = np.where(keep, psi, 0)
-                psi = psi / np.linalg.norm(psi)
-                if inst.name == "measure":
-                    ro = nm._readout_for(q)
-                    rec = outcome
-                    if ro is not None:
-                        rec = 1 if rng.random() < ro.probabilities[outcome][1] else 0
-                    bits[inst.clbits[0]] = rec
-                else:
-                    if outcome == 1:
-                        psi = _apply_unitary_vec(psi, _FIXED["x"], [q], n)
-                    if err is not None:
+        def run(psi, insts):
+            for inst in insts:
+                if inst.name == "barrier":
+                    continue
+                if inst.name == "if_else":
+                    c, v = inst.condition
+                    psi = run(psi, inst.true_body if bits[c] == v else inst.false_body)
+                    continue
+                err = nm._error_for(inst)
+                if inst.name in ("measure", "reset"):
+                    q = inst.qubits[0]
+                    if inst.name == "measure" and err is not None:
                         psi = channel(psi, err, [q])
-            else:
-                psi = _apply_unitary_vec(psi, inst.matrix(), list(inst.qubits), n)
-                if err is not None:
-                    psi = channel(psi, err, list(inst.qubits))
+                    one = _projector_diag(n, q, 1)
+                    p1 = float(np.sum(np.abs(psi[one]) ** 2))
+                    outcome = 1 if rng.random() < p1 else 0
+                    keep = one if outcome == 1 else ~one
+                    psi = np.where(keep, psi, 0)
+                    psi = psi / np.linalg.norm(psi)
+                    if inst.name == "measure":
+                        ro = nm._readout_for(q)
+                        rec = outcome
+                        if ro is not None:
+                            rec = 1 if rng.random() < ro.probabilities[outcome][1] else 0
+                        bits[inst.clbits[0]] = rec
+                    else:
+                        if outcome == 1:
+                            psi = _apply_unitary_vec(psi, _FIXED["x"], [q], n)
+                        if err is not None:
+                            psi = channel(psi, err, [q])
+                else:
+                    psi = _apply_unitary_vec(psi, inst.matrix(), list(inst.qubits), n)
+                    if err is not None:
+                        psi = channel(psi, err, list(inst.qubits))
+            return psi
+
+        run(psi, qc.data)
         return _format_key(bits, qc._cregs)
 
     @staticmethod
@@ -1275,23 +1482,32 @@ class AerSimulator:
         psi = np.zeros(2 ** n, dtype=complex)
         psi[0] = 1
         bits = [0] * qc.num_clbits
-        for inst in qc.data:
-            if inst.name == "barrier":
-                continue
-            if inst.name in ("measure", "reset"):
-                q = inst.qubits[0]
-                one = _projector_diag(n, q, 1)
-                p1 = float(np.sum(np.abs(psi[one]) ** 2))
-                outcome = 1 if rng.random() < p1 else 0
-                keep = one if outcome == 1 else ~one
-                psi = np.where(keep, psi, 0)
-                psi = psi / np.linalg.norm(psi)
-                if inst.name == "measure":
-                    bits[inst.clbits[0]] = outcome
-                elif outcome == 1:
-                    psi = _apply_unitary_vec(psi, _FIXED["x"], [q], n)
-            else:
-                psi = _apply_unitary_vec(psi, inst.matrix(), list(inst.qubits), n)
+
+        def run(psi, insts):
+            for inst in insts:
+                if inst.name == "barrier":
+                    continue
+                if inst.name == "if_else":
+                    c, v = inst.condition
+                    psi = run(psi, inst.true_body if bits[c] == v else inst.false_body)
+                    continue
+                if inst.name in ("measure", "reset"):
+                    q = inst.qubits[0]
+                    one = _projector_diag(n, q, 1)
+                    p1 = float(np.sum(np.abs(psi[one]) ** 2))
+                    outcome = 1 if rng.random() < p1 else 0
+                    keep = one if outcome == 1 else ~one
+                    psi = np.where(keep, psi, 0)
+                    psi = psi / np.linalg.norm(psi)
+                    if inst.name == "measure":
+                        bits[inst.clbits[0]] = outcome
+                    elif outcome == 1:
+                        psi = _apply_unitary_vec(psi, _FIXED["x"], [q], n)
+                else:
+                    psi = _apply_unitary_vec(psi, inst.matrix(), list(inst.qubits), n)
+            return psi
+
+        run(psi, qc.data)
         return _format_key(bits, qc._cregs)
 
 
