@@ -4,7 +4,7 @@ Lab notebooks for the SemiAcademy quantum computing micro-credentials. The labs 
 
 Site: https://csu-physics.github.io/quantum-computing-notebooks/
 
-| Level | Notebook | Canvas page (course 51) | Lab address |
+| Level | Notebook | Canvas page (course 51 for Level 1, course 53 for Level 2) | Lab address |
 |---|---|---|---|
 | 1 | `content/level1/QC-L1-M0-lab-first-qubit.ipynb` | Module 0 Lab: Notebooks, NumPy and Your First Qubit | `lab/index.html?path=level1/QC-L1-M0-lab-first-qubit.ipynb` |
 | 1 | `content/level1/QC-L1-M1-lab-state-vectors.ipynb` | Module 1 Lab: State Vectors and Measurement | `lab/index.html?path=level1/QC-L1-M1-lab-state-vectors.ipynb` |
@@ -14,12 +14,15 @@ Site: https://csu-physics.github.io/quantum-computing-notebooks/
 | 1 | `content/level1/QC-L1-M5-lab-noise-and-hardware.ipynb` | Module 5 Lab: Simulators, Noise and Real Hardware | `lab/index.html?path=level1/QC-L1-M5-lab-noise-and-hardware.ipynb` |
 | 1 | `content/level1/QC-L1-M6-lab-bernstein-vazirani.ipynb` | Module 6 Lab: A First Quantum Algorithm, Bernstein-Vazirani | `lab/index.html?path=level1/QC-L1-M6-lab-bernstein-vazirani.ipynb` |
 | 1 | `content/level1/QC-L1-final-coding-task-GHZ.ipynb` | Final Coding Task: GHZ State | `lab/index.html?path=level1/QC-L1-final-coding-task-GHZ.ipynb` |
+| 2 | `content/level2/QC-L2-M0-lab-dynamic-circuits-teleportation.ipynb` | Module 0 Lab: Dynamic Circuits and Teleportation | `lab/index.html?path=level2/QC-L2-M0-lab-dynamic-circuits-teleportation.ipynb` |
+
+Level 1 is *Quantum Computing Foundations*; Level 2 is *Quantum Computing Intermediate*. Each level's folder has its own copy of `qsim.py`, so a notebook imports the simulator from its own folder.
 
 ## Course media (slides and explorers)
 
 The folder `media/` holds self-contained HTML pages that Canvas embeds next to the readings. The workflow copies it into the site, so each file is served at `https://csu-physics.github.io/quantum-computing-notebooks/media/...`.
 
-| File | What it is | Canvas page (course 51) |
+| File | What it is | Canvas page (course 51, or course 53 for Level 2) |
 |---|---|---|
 | `media/level1/m1-slides.html` | Module 1 slide deck, 19 slides. Arrow keys or the buttons move between slides; **Print / PDF** gives one slide per page. `#s7` opens slide 7. | Module 1: From Bits to Qubits |
 | `media/level1/m1-explore.html` | Module 1 explorer: a state builder (`#state`) and a shot simulator (`#shots`). | Module 1: From Bits to Qubits |
@@ -33,12 +36,14 @@ The folder `media/` holds self-contained HTML pages that Canvas embeds next to t
 | `media/level1/m5-explore.html` | Module 5 explorer: noise on the Bell circuit with a 3σ band and IBM's published run (`#noise`), and readout mitigation over 200 repeated experiments (`#mitigate`). | Module 5: Simulators and Real Hardware |
 | `media/level1/m6-slides.html` | Module 6 slide deck, 19 slides: the query model, the Bernstein-Vazirani problem, the oracle and phase kickback, the circuit and why it works, Deutsch-Jozsa, query counts, and noise. | Module 6: A First Quantum Algorithm |
 | `media/level1/m6-explore.html` | Module 6 explorer: find a hidden string classically or with one quantum query (`#classical`), the amplitudes through the Bernstein-Vazirani circuit (`#bv`), and Deutsch-Jozsa for eight functions, one of which breaks the promise (`#dj`). | Module 6: A First Quantum Algorithm |
+| `media/level2/m0-slides.html` | Level 2 Module 0 slide deck, 18 slides: measurement in the middle of a circuit, classical feedforward with `if_test`, an active reset, teleportation step by step, why Bob learns nothing before the bits arrive, and the undo test. | Level 2, Module 0: Dynamic Circuits and Teleportation |
+| `media/level2/m0-explore.html` | Level 2 Module 0 explorer: H, H against H, measure, H, and an active reset (`#mid`); Bob's qubit for each of Alice's four results, with and without corrections, and its average (`#teleport`). | Level 2, Module 0: Dynamic Circuits and Teleportation |
 
 They use no outside libraries and no network calls, and they are licensed CC BY 4.0 (see each page's credit line). To change one, edit the HTML and commit; the site updates in about a minute. The Module 2 to 6 pages are assembled by `tools/build_m2_slides.py` to `tools/build_m6_slides.py` from `tools/mK_slides_body.html`, `tools/mK_explore_src.html` and the shared Bloch-sphere drawing code `tools/bloch.js` (rotation arcs were added for Module 3; the Module 2 files built before that are unchanged); edit those and run the script.
 
 ## Why qsim and not Qiskit
 
-Qiskit and Qiskit Aer have no build for the browser (they need compiled Rust and C++ code). The labs therefore use **qsim** (`content/level1/qsim.py`), a small NumPy simulator written for the course. It keeps Qiskit's names (`QuantumCircuit`, `h`, `cx`, `ry`, `measure`, `measure_all`, `AerSimulator`, `transpile`, `Statevector`, `Operator`, `state_fidelity`, `plot_histogram`, `plot_bloch_vector`, `plot_bloch_multivector`), its bit order and its error messages, so learner code carries over to Qiskit by changing the import lines. Version 1.4.0 (Module 6) adds `QuantumCircuit.compose`, tested against Qiskit on 400 random cases (`tests/test_compose_vs_qiskit.py`). Version 1.3.0 (Module 5) adds noise models with Qiskit Aer's names: `NoiseModel`, `depolarizing_error`, `pauli_error`, `amplitude_damping_error`, `phase_damping_error`, `thermal_relaxation_error`, `ReadoutError` and `AerSimulator(noise_model=...)`.
+Qiskit and Qiskit Aer have no build for the browser (they need compiled Rust and C++ code). The labs therefore use **qsim** (`content/level1/qsim.py`), a small NumPy simulator written for the course. It keeps Qiskit's names (`QuantumCircuit`, `h`, `cx`, `ry`, `measure`, `measure_all`, `AerSimulator`, `transpile`, `Statevector`, `Operator`, `state_fidelity`, `plot_histogram`, `plot_bloch_vector`, `plot_bloch_multivector`), its bit order and its error messages, so learner code carries over to Qiskit by changing the import lines. Version 1.5.0 (Level 2, Module 0) adds classical feedforward, `QuantumCircuit.if_test((clbit, value))` with an optional `else` block, and `partial_trace`; it is tested against Qiskit 2.5.2 and Aer 0.17.2 on 40 random dynamic circuits, 200 teleportations and a noisy teleportation with readout errors (`tests/test_dynamic_vs_aer.py`), and on 300 states for `partial_trace` (`tests/test_partial_trace_vs_qiskit.py`). Seeded counts of circuits without `if_test` are unchanged; the stored answers of every Level 1 lab check were re-verified with it. Version 1.4.0 (Module 6) adds `QuantumCircuit.compose`, tested against Qiskit on 400 random cases (`tests/test_compose_vs_qiskit.py`). Version 1.3.0 (Module 5) adds noise models with Qiskit Aer's names: `NoiseModel`, `depolarizing_error`, `pauli_error`, `amplitude_damping_error`, `phase_damping_error`, `thermal_relaxation_error`, `ReadoutError` and `AerSimulator(noise_model=...)`.
 
 Checked against Qiskit 2.5.2 and Qiskit Aer 0.17.2 (`tests/test_qsim_vs_qiskit.py`):
 
@@ -68,11 +73,13 @@ Each graded lab ends with a check cell. It tests the learner's circuit and, only
 - `checks/test_m5_check.py`: 8 correct combinations of `shot_noise()`, `two_qubit_readout()` and `mitigate()` at three parameter sets, and 12 wrong ones (the variance instead of σ, the spread of the count, √(p/N), dividing by N outside the root, qubits in the wrong order, the transposed matrix, a matrix product, multiplying by A instead of solving, not dividing by the shots, clipping negative quasi-probabilities, failing on a missing key, solving with A transposed). 0 wrong verdicts. The Module 5 verification value is a seeded count of different results from `AerSimulator` with a noise model, so its Canvas answers are also precomputed (200 sets); do not regenerate them in the Canvas editor.
 - `checks/test_m6_check.py`: 8 correct combinations of `bv_oracle()`, `bv_circuit()` and `classical_bv()` at three parameter sets, and 13 wrong ones (the bits reversed, CZ instead of CNOT, control and target swapped, an uncontrolled X, no final H, the answer qubit not in |−⟩, measuring the answer qubit, reversed measurement, using the oracle twice, no first H, a reversed classical answer, 2^n classical queries, the wrong position). `bv_circuit()` is tested on hidden oracles it is not told about, including one written with CZ gates, and must use each oracle exactly once. 0 wrong verdicts. The Module 6 verification value is a seeded count from `AerSimulator` with a noise model, so its Canvas answers are also precomputed (200 sets); do not regenerate them in the Canvas editor.
 
+- `checks/test_l2_m0_check.py` (Level 2, Module 0): 9 correct combinations of `active_reset()` and `bob_corrections()` at three parameter sets, and 14 wrong ones (for `active_reset()`: using `reset`, an X without a condition, flipping when the result is 0, no measurement, no `if_test`, not written; for `bob_corrections()`: the two bits swapped, no Z, no X, gates without a condition, the wrong qubit, correcting when a bit is 0, measuring Bob's qubit, not written). Z before X also passes, because the two orders differ only by a global phase. `active_reset()` is tested on six states, some entangled; the corrections on twelve random states, which must arrive with fidelity 1. 0 wrong verdicts. The verification value is a seeded count from `AerSimulator`, so its Canvas answers are precomputed (200 sets); do not regenerate them in the Canvas editor.
+
 Run them with `PYTHONPATH=content/level1:checks python checks/test_ghz_check.py`.
 
 ## Editing a notebook
 
-1. Edit `tools/make_notebooks.py` (Module 0 and the GHZ task), `tools/make_m1.py` (Module 1), `tools/make_m2.py` (Module 2), `tools/make_m3.py` (Module 3), `tools/make_m4.py` (Module 4) or `tools/make_m5.py` (Module 5; `tools/make_m5_colab.py` writes its Colab notebook) or `tools/make_m6.py` (Module 6; `tools/make_m6_colab.py` writes its optional Colab notebook), or the check files, then run the script. It writes the notebooks into `content/level1/` with outputs cleared.
+1. Edit `tools/make_notebooks.py` (Module 0 and the GHZ task), `tools/make_m1.py` (Module 1), `tools/make_m2.py` (Module 2), `tools/make_m3.py` (Module 3), `tools/make_m4.py` (Module 4) or `tools/make_m5.py` (Module 5; `tools/make_m5_colab.py` writes its Colab notebook) or `tools/make_m6.py` (Module 6; `tools/make_m6_colab.py` writes its optional Colab notebook), or `tools/make_l2_m0.py` (Level 2, Module 0), or the check files, then run the script. It writes the notebooks into `content/level1/` or `content/level2/` with outputs cleared. The Level 2 media are built with `tools/build_l2_m0.py`.
 2. Commit. The workflow in `.github/workflows/deploy.yml` rebuilds the site and deploys it to GitHub Pages in about a minute.
 
 Learners keep their own copy of each notebook in their browser's storage (IndexedDB), from the first save; JupyterLab also saves automatically every two minutes. That copy takes precedence over the file on the site, so a learner who has opened a lab keeps the old version after an update. This was tested on 4 October 2026 with a persistent browser profile: after an update, a returning learner still saw the old notebook and a new learner saw the new one. So fix problems before a cohort starts, not during it.
