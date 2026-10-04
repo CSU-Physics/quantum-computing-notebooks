@@ -96,8 +96,8 @@
 <section class="slide">
   <h2>Three ways to run a circuit</h2>
   <div class="cols">
-    <div class="card" style="flex:1"><h3>Ideal simulator</h3><p>Exact quantum mechanics on a classical computer. The only randomness is <strong>shot noise</strong>. Bell circuit: only 00 and 11.</p><p class="small">qsim in the Canvas labs; AerSimulator() in Qiskit. Fast up to about 30 qubits, then impossible.</p></div>
-    <div class="card" style="flex:1"><h3>Noisy simulator</h3><p>The same, plus a <strong>noise model</strong>: errors after gates, wrong readouts, relaxation. Gives a few 01 and 10.</p><p class="small">qsim 1.3.0 NoiseModel; AerSimulator.from_backend(...) builds one from a device's calibration data.</p></div>
+    <div class="card" style="flex:1"><h3>Ideal simulator</h3><p>Computes the circuit's quantum state exactly, up to rounding. The only randomness is <strong>shot noise</strong>. Bell circuit: only 00 and 11.</p><p class="small">qsim in the Canvas labs; AerSimulator() in Qiskit. Storing the full state doubles the memory with each qubit: about 30 qubits on a laptop.</p></div>
+    <div class="card" style="flex:1"><h3>Noisy simulator</h3><p>The same, plus a <strong>noise model</strong>: errors after gates, wrong readouts, relaxation. Gives a few 01 and 10. It is a model of the device, not the device.</p><p class="small">qsim 1.3.0 NoiseModel; AerSimulator.from_backend(...) builds one from a device's calibration data.</p></div>
     <div class="card" style="flex:1"><h3>Real quantum computer</h3><p>Physical qubits in a refrigerator. Noise is real and drifts. Jobs wait in a <strong>queue</strong>, and time is limited.</p><p class="small">IBM's free Open Plan: up to 10 minutes of quantum time per 28 days.</p></div>
   </div>
   <div class="foot"><span>Module 5 · Simulators and real hardware</span><span>3</span></div>
