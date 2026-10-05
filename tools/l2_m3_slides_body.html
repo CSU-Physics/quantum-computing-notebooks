@@ -1,0 +1,214 @@
+
+<!-- 1 -->
+<section class="slide title-slide">
+  <div class="kicker">Quantum Computing Intermediate · Module 3</div>
+  <h1>Shor's algorithm and period finding</h1>
+  <p style="font-size:30px;max-width:560px">Factoring reduces to finding a period. Phase estimation finds it, continued fractions read it, and a few gcds finish the job.</p>
+  <div style="position:absolute;right:80px;top:180px;width:380px">/*CYCLE_TITLE*/</div>
+  <div class="foot"><span>SemiAcademy · ISEP-CSU</span><span>CC BY 4.0</span></div>
+</section>
+
+<!-- 2 -->
+<section class="slide">
+  <h2>By the end of this module you can</h2>
+  <ul>
+    <li>find the <strong>order</strong> r of a mod N, and turn an even order into the <strong>factors</strong> of N with gcds;</li>
+    <li>explain why <strong>phase estimation</strong> of "multiply by a mod N" reveals r;</li>
+    <li>build the <strong>order-finding circuit</strong> for N = 15 from a prepared modular multiplication;</li>
+    <li>read r from measured results with <strong>continued fractions</strong>;</li>
+    <li>explain why Shor's algorithm threatens RSA, and what <strong>post-quantum cryptography</strong> changes.</li>
+  </ul>
+  <p class="small" style="margin-top:24px">Course outcomes 1 (use order finding in prepared circuits) and 2 (why Shor's algorithm threatens RSA, and what post-quantum cryptography changes).</p>
+  <div class="foot"><span>Module 3 · Shor's algorithm</span><span>2</span></div>
+</section>
+
+<!-- 3 -->
+<section class="slide">
+  <h2>Why factoring matters</h2>
+  <div class="cols">
+    <div style="flex:0 0 620px">
+      <p style="font-size:25px">RSA encryption and signatures are safe only if nobody can factor the public modulus N, a product of two large primes (2,048 bits is common).</p>
+      <p style="font-size:25px">The best known classical algorithms take time that grows faster than any power of the number of digits. Shor's algorithm (1994) needs time that grows only like a power: polynomial time on a large fault-tolerant quantum computer.</p>
+    </div>
+    <div>
+      <div class="card"><h3>The plan</h3><p>1. Pick a random a.<br>2. Find its order r (quantum).<br>3. Get factors with gcds (classical).<br>4. If it fails, pick another a.</p></div>
+    </div>
+  </div>
+  <div class="foot"><span>Module 3 · Shor's algorithm</span><span>3</span></div>
+</section>
+
+<!-- 4 -->
+<section class="slide">
+  <h2>The order of a mod N</h2>
+  <p>For a with no factor in common with N, the powers a, a², a³, ... mod N repeat. The <strong>order</strong> r is the smallest r &gt; 0 with</p>
+  <div class="eq">a<sup>r</sup> mod N = 1</div>
+  <table style="font-size:24px">
+    <tr><th>k</th><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>6</td></tr>
+    <tr><th>7<sup>k</sup> mod 15</th><td>7</td><td>4</td><td>13</td><td><strong>1</strong></td><td>7</td><td>4</td></tr>
+  </table>
+  <p class="small" style="margin-top:10px">So the order of 7 mod 15 is r = 4. Classical search needs about r steps, and r can be nearly as large as N.</p>
+  <div class="foot"><span>Module 3 · Shor's algorithm</span><span>4</span></div>
+</section>
+
+<!-- 5 -->
+<section class="slide">
+  <h2>From the order to the factors</h2>
+  <p style="font-size:25px">If r is even, let h = a<sup>r/2</sup> mod N. Then h² mod N = 1, so</p>
+  <div class="eq">(h − 1)(h + 1) is a multiple of N</div>
+  <p style="font-size:25px">If also h ≠ N − 1, neither factor is a multiple of N, so each shares a factor with N: <strong>gcd(h − 1, N)</strong> and <strong>gcd(h + 1, N)</strong>.</p>
+  <p class="small">a = 7, N = 15, r = 4: h = 7² mod 15 = 4, gcd(3, 15) = 3 and gcd(5, 15) = 5. If r is odd or h = N − 1, try another a; for N with two or more different odd prime factors, at least half of the possible a work.</p>
+  <div class="foot"><span>Module 3 · Shor's algorithm</span><span>5</span></div>
+</section>
+
+<!-- 6 -->
+<section class="slide">
+  <h2>Pause and predict</h2>
+  <p>N = 15. What do a = 2 and a = 14 give?</p>
+  <div class="reveal"><button type="button">Show the answer</button>
+    <div class="ans">a = 2: the powers are 2, 4, 8, 1, so r = 4 and h = 2² = 4: gcd(3, 15) = 3 and gcd(5, 15) = 5. a = 14: 14² = 196 = 13·15 + 1, so r = 2, but h = 14 = N − 1, and the gcds are the useless 15 and 1. Pick another a.</div></div>
+  <div class="foot"><span>Module 3 · Shor's algorithm</span><span>6</span></div>
+</section>
+
+<!-- 7 -->
+<section class="slide">
+  <h2>The quantum step: a phase estimation</h2>
+  <p style="font-size:25px">Let U multiply a register by a mod N: U|x⟩ = |a·x mod N⟩. Since a<sup>r</sup> = 1 mod N, U<sup>r</sup> = I, so every eigenvalue is e<sup>2πi·s/r</sup>.</p>
+  <ul>
+    <li style="font-size:25px">Eigenvectors: |u<sub>s</sub>⟩ = (1/√r) Σ<sub>k</sub> e<sup>−2πi·sk/r</sup> |a<sup>k</sup> mod N⟩, with eigenphase s/r, for s = 0, ..., r − 1.</li>
+    <li style="font-size:25px">We cannot prepare one |u<sub>s</sub>⟩ without knowing r, but their equal superposition is easy: (1/√r) Σ<sub>s</sub> |u<sub>s</sub>⟩ = <strong>|1⟩</strong>.</li>
+    <li style="font-size:25px">Phase estimation started on |1⟩ returns m/2ᵗ ≈ s/r for a <strong>random</strong> s.</li>
+  </ul>
+  <div class="foot"><span>Module 3 · Shor's algorithm</span><span>7</span></div>
+</section>
+
+<!-- 8 -->
+<section class="slide">
+  <h2>The order-finding circuit</h2>
+  <div>/*CIRCUIT*/</div>
+  <p class="small">Counting qubit k controls U<sup>2ᵏ</sup>, the multiplication by a<sup>2ᵏ</sup> mod N. In the lab: <code>qc.compose(c_amod15(a, 2**k), qubits=[k] + list(range(t, t + 4)), inplace=True)</code>, then <code>qft_dagger(t)</code>.</p>
+  <div class="foot"><span>Module 3 · Shor's algorithm</span><span>8</span></div>
+</section>
+
+<!-- 9 -->
+<section class="slide">
+  <h2>A prepared circuit, hard-coded for N = 15</h2>
+  <div class="cols">
+    <div style="flex:0 0 600px">
+      <p style="font-size:25px">The lab's <code>c_amod15(a, power)</code> multiplies by a mod 15 with a fixed pattern of controlled swaps (<code>cswap</code>) and controlled X gates, one pattern for each a in 2, 4, 7, 8, 11, 13.</p>
+      <p style="font-size:25px">It is <strong>not</strong> a general method. For a real N, modular multiplication is built from quantum adders using only a and N, and that arithmetic, run with error correction, is the main cost of Shor's algorithm.</p>
+    </div>
+    <div class="card"><h3>a = 7</h3><p>controlled swaps of register bits (0, 1), (1, 2) and (2, 3), then a controlled X on each register bit: x becomes 7x mod 15.</p></div>
+  </div>
+  <div class="foot"><span>Module 3 · Shor's algorithm</span><span>9</span></div>
+</section>
+
+<!-- 10 -->
+<section class="slide">
+  <h2>Results for a = 7, 8 counting qubits</h2>
+  <div class="cols">
+    <div style="flex:0 0 520px">
+      <p style="font-size:25px">256 is a multiple of r = 4, so each phase s/4 is exact: only four results appear, each about a quarter of the time.</p>
+      <p style="font-size:25px">m/256 = 0, 1/4, 1/2, 3/4.</p>
+      <p class="small">qsim, 1,000 shots, seed 7 (lab Step 5).</p>
+    </div>
+    <div>/*HIST7*/</div>
+  </div>
+  <div class="foot"><span>Module 3 · Shor's algorithm</span><span>10</span></div>
+</section>
+
+<!-- 11 -->
+<section class="slide">
+  <h2>Reading r with continued fractions</h2>
+  <p style="font-size:25px"><code>Fraction(m, 2**t).limit_denominator(N)</code> gives the closest fraction with denominator at most N: s/r in lowest terms.</p>
+  <table style="font-size:23px">
+    <tr><th>m</th><th>m/256</th><th>fraction</th><th>candidate r</th><th>7<sup>r</sup> mod 15</th><th></th></tr>
+    <tr><td>0</td><td>0</td><td>0/1</td><td>1</td><td>7</td><td>no</td></tr>
+    <tr><td>64</td><td>0.25</td><td>1/4</td><td>4</td><td>1</td><td><strong>yes</strong></td></tr>
+    <tr><td>128</td><td>0.5</td><td>1/2</td><td>2</td><td>4</td><td>no: s = 2 shares a factor with r</td></tr>
+    <tr><td>192</td><td>0.75</td><td>3/4</td><td>4</td><td>1</td><td><strong>yes</strong></td></tr>
+  </table>
+  <p class="small" style="margin-top:10px">Always check a candidate with a<sup>r</sup> mod N = 1, and use another shot if it fails.</p>
+  <div class="foot"><span>Module 3 · Shor's algorithm</span><span>11</span></div>
+</section>
+
+<!-- 12 -->
+<section class="slide">
+  <h2>When the phases are not exact</h2>
+  <p style="font-size:25px">For N = 21 and a = 2 the order is 6, and 256 is not a multiple of 6. The results cluster near m ≈ 256·s/6:</p>
+  <table style="font-size:23px">
+    <tr><th>m</th><th>probability</th><th>fraction (denominator ≤ 21)</th><th>candidate r</th><th>2<sup>r</sup> mod 21</th></tr>
+    <tr><td>43</td><td>0.114</td><td>1/6</td><td>6</td><td>1 (yes)</td></tr>
+    <tr><td>85</td><td>0.114</td><td>1/3</td><td>3</td><td>8 (no)</td></tr>
+    <tr><td>128</td><td>0.167</td><td>1/2</td><td>2</td><td>4 (no)</td></tr>
+    <tr><td>213</td><td>0.114</td><td>5/6</td><td>6</td><td>1 (yes)</td></tr>
+  </table>
+  <p class="small" style="margin-top:10px">Exact probabilities, 8 counting qubits. Continued fractions still find s/r from a nearby m. The explorer computes this for other N and a.</p>
+  <div class="foot"><span>Module 3 · Shor's algorithm</span><span>12</span></div>
+</section>
+
+<!-- 13 -->
+<section class="slide">
+  <h2>Pause and predict</h2>
+  <p>N = 15, a = 7, and your first shot gives m = 128 with 8 counting qubits. What do you conclude, and what do you do next?</p>
+  <div class="reveal"><button type="button">Show the answer</button>
+    <div class="ans">128/256 = 1/2, so the candidate is r = 2. But 7² mod 15 = 4, not 1, so 2 is not the order: here s = 2 and r = 4 share a factor. Take another shot; m = 64 or 192 gives 1/4 or 3/4 and the order 4. (You can also take the least common multiple of the denominators from several shots.)</div></div>
+  <div class="foot"><span>Module 3 · Shor's algorithm</span><span>13</span></div>
+</section>
+
+<!-- 14 -->
+<section class="slide">
+  <h2>What it would take to break RSA-2048</h2>
+  <ul>
+    <li style="font-size:25px">Shor's algorithm needs over a thousand <strong>error-corrected</strong> (logical) qubits and billions of gate operations, and each logical qubit is built from many physical qubits.</li>
+    <li style="font-size:25px">A 2025 estimate by Craig Gidney (Google): under one million noisy physical qubits, running for under a week, assuming a 0.1% error rate and a 1 µs error-correction cycle. In 2019 the estimate was 20 million qubits for 8 hours.</li>
+    <li style="font-size:25px">No quantum computer today comes close; the 15 = 3 × 5 of this lab is a demonstration.</li>
+  </ul>
+  <p class="small">Source: arXiv:2505.15917 (2025); Gidney and Ekerå, Quantum 5, 433 (2021).</p>
+  <div class="foot"><span>Module 3 · Shor's algorithm</span><span>14</span></div>
+</section>
+
+<!-- 15 -->
+<section class="slide">
+  <h2>Post-quantum cryptography</h2>
+  <div class="cols" style="gap:22px">
+    <div class="card"><h3>New standards</h3><p>NIST published FIPS 203 (ML-KEM, key exchange), FIPS 204 (ML-DSA, signatures) and FIPS 205 (SLH-DSA, signatures) on 13 August 2024. They run on ordinary computers.</p></div>
+    <div class="card"><h3>More coming</h3><p>FIPS 206 (FN-DSA, from Falcon) is in development, and HQC was selected on 11 March 2025 as a backup key-exchange method.</p></div>
+    <div class="card"><h3>Transition</h3><p>NIST's draft plan (IR 8547, 2024) would disallow RSA and elliptic-curve methods after 2035, with the weakest key sizes deprecated after 2030.</p></div>
+  </div>
+  <p class="small" style="margin-top:18px">"Harvest now, decrypt later": data recorded today could be read once a large quantum computer exists, which is why the move starts now.</p>
+  <div class="foot"><span>Module 3 · Shor's algorithm</span><span>15</span></div>
+</section>
+
+<!-- 16 -->
+<section class="slide">
+  <h2>What Shor's algorithm does not break</h2>
+  <ul>
+    <li style="font-size:25px">Shor's algorithm breaks <strong>public-key</strong> methods built on factoring and discrete logarithms: RSA, Diffie-Hellman and elliptic-curve cryptography.</li>
+    <li style="font-size:25px">Symmetric ciphers such as AES face only Grover's search (Module 2): a quadratic speed-up, so a 256-bit key keeps a large security margin.</li>
+    <li style="font-size:25px">The post-quantum standards are built on other mathematical problems (lattices, hash functions, codes) for which no fast quantum algorithm is known.</li>
+  </ul>
+  <div class="foot"><span>Module 3 · Shor's algorithm</span><span>16</span></div>
+</section>
+
+<!-- 17 -->
+<section class="slide">
+  <h2>Summary</h2>
+  <ul>
+    <li style="font-size:25px">Order r: smallest r with a<sup>r</sup> mod N = 1. Even r and a<sup>r/2</sup> ≠ −1 give the factors gcd(a<sup>r/2</sup> ± 1, N).</li>
+    <li style="font-size:25px">Order finding is phase estimation of "multiply by a mod N", started in |1⟩: each shot gives m/2ᵗ ≈ s/r.</li>
+    <li style="font-size:25px">Continued fractions give s/r; check the denominator, and use another shot if s shares a factor with r.</li>
+    <li style="font-size:25px">The N = 15 circuit is prepared; real modular arithmetic with error correction is the hard part. Post-quantum standards replace RSA.</li>
+  </ul>
+  <div class="eq" style="font-size:24px;margin-top:12px"><strong>Next:</strong> the Module 3 lab. You write <code>order()</code>, <code>factors_from_order()</code>, <code>order_finding()</code> and <code>period_from_counts()</code>, and factor 15.</div>
+  <div class="foot"><span>Module 3 · Shor's algorithm</span><span>17</span></div>
+</section>
+
+<!-- 18 -->
+<section class="slide">
+  <h2>Credits and license</h2>
+  <p>These slides were written for SemiAcademy's <em>Quantum Computing Intermediate</em> course, developed through the Intel Semiconductor Education Program at Central State University (ISEP-CSU).</p>
+  <p>License: <strong>Creative Commons Attribution 4.0 International (CC BY 4.0)</strong>, https://creativecommons.org/licenses/by/4.0/. You may copy, adapt and share them, with credit.</p>
+  <p>Suggested credit: "Module 3 slides, Quantum Computing Intermediate, SemiAcademy / ISEP-CSU, CC BY 4.0."</p>
+  <p class="small">Facts on standards: NIST post-quantum cryptography project page and NIST IR 8547 (initial public draft, 12 November 2024). Source of these slides: github.com/CSU-Physics/quantum-computing-notebooks (media/level2/m3-slides.html).</p>
+  <div class="foot"><span>Module 3 · Shor's algorithm</span><span>18</span></div>
+</section>
