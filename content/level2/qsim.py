@@ -18,6 +18,9 @@ QuantumCircuit.compose (version 1.4.0) joins circuits as in Qiskit.
 Statevector.probabilities(qargs) and probabilities_dict(qargs) (version 1.6.0) give the probabilities
 of measuring only some qubits, as in Qiskit; qargs[0] is the rightmost bit of a result.
 
+The controlled swap (version 1.8.0): cswap(control, target1, target2), also called the Fredkin gate, works
+as in Qiskit; the Module 3 order-finding circuits for N = 15 use it.
+
 Multi-controlled gates (version 1.7.0): ccz(c1, c2, target) and mcx(control_qubits, target_qubit) work
 as in Qiskit; Grover oracles and diffusers on 3 and 4 qubits use them.
 
@@ -41,7 +44,7 @@ __all__ = [
     "NoiseModel", "QuantumError", "ReadoutError", "depolarizing_error", "pauli_error",
     "amplitude_damping_error", "phase_damping_error", "thermal_relaxation_error", "partial_trace",
 ]
-__version__ = "1.7.0"
+__version__ = "1.8.0"
 
 
 class CircuitError(Exception):
@@ -104,6 +107,21 @@ def _controlled(u, n_controls=1):
 _SWAP = np.array([[1, 0, 0, 0], [0, 0, 1, 0], [0, 1, 0, 0], [0, 0, 0, 1]], dtype=complex)
 
 
+def _cswap_matrix():
+    """Controlled swap on (control, t1, t2); in the gate's little-endian order the control is bit 0."""
+    m = np.zeros((8, 8), dtype=complex)
+    for i in range(8):
+        j = i
+        if i & 1:
+            b1, b2 = (i >> 1) & 1, (i >> 2) & 1
+            j = (i & 1) | (b2 << 1) | (b1 << 2)
+        m[j, i] = 1
+    return m
+
+
+_CSWAP = _cswap_matrix()
+
+
 class Instruction:
     """One operation in a circuit: a name, the qubits and classical bits it acts on, and parameters."""
 
@@ -139,6 +157,8 @@ class Instruction:
             return _controlled(_FIXED["z"], 2)
         if n == "mcx":
             return _controlled(_FIXED["x"], len(self.qubits) - 1)
+        if n == "cswap":
+            return _CSWAP
         if n == "swap":
             return _SWAP
         raise CircuitError(f"'{n}' has no matrix")
@@ -308,6 +328,10 @@ class QuantumCircuit:
     def swap(self, a, b): return self._two("swap", a, b)
     def ccx(self, c1, c2, target): return self._add("ccx", [int(c1), int(c2), int(target)])
     def ccz(self, c1, c2, target): return self._add("ccz", [int(c1), int(c2), int(target)])
+    def cswap(self, control_qubit, target_qubit1, target_qubit2):
+        return self._add("cswap", [int(control_qubit), int(target_qubit1), int(target_qubit2)])
+    def fredkin(self, control_qubit, target_qubit1, target_qubit2):
+        return self.cswap(control_qubit, target_qubit1, target_qubit2)
 
     def mcx(self, control_qubits, target_qubit, ancilla_qubits=None, mode=None):
         """X on target_qubit when every qubit in control_qubits is 1 (Qiskit's mcx; no ancillas are needed here)."""
@@ -512,11 +536,13 @@ class _TextDrawing:
             if inst.name == "barrier":
                 col = ["░" if q in qs else "─" for q in range(n)]
                 w = 1
-            elif inst.name in ("cx", "cy", "cz", "ch", "cp", "crz", "ccx", "ccz", "mcx", "swap"):
+            elif inst.name in ("cx", "cy", "cz", "ch", "cp", "crz", "ccx", "ccz", "mcx", "swap", "cswap"):
                 lo, hi = min(qs), max(qs)
                 tgt = qs[-1]
                 if inst.name == "swap":
                     marks = {qs[0]: "X", qs[1]: "X"}
+                elif inst.name == "cswap":
+                    marks = {qs[0]: "■", qs[1]: "X", qs[2]: "X"}
                 elif inst.name in ("cz", "ccz"):
                     marks = {q: "■" for q in qs}
                 else:
@@ -541,7 +567,7 @@ class _TextDrawing:
             for q in range(n):
                 rows[q] += "─" + col[q] + "─"
             vert = set()
-            if inst.name in ("cx", "cy", "cz", "ch", "cp", "crz", "ccx", "ccz", "mcx", "swap"):
+            if inst.name in ("cx", "cy", "cz", "ch", "cp", "crz", "ccx", "ccz", "mcx", "swap", "cswap"):
                 vert = set(range(min(qs), max(qs)))
             for q in range(n):
                 mid = ("│".center(w)) if q in vert else " " * w
