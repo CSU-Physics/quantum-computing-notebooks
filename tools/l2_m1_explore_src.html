@@ -189,7 +189,7 @@
     var exact = Math.abs(phi * N - Math.round(phi * N)) < 1e-9;
     var msg = exact
       ? 'φ·2ᵗ = ' + Math.round(phi * N) + ' is a whole number: φ has an exact ' + t + '-bit binary expansion, so every shot returns m = ' + (Math.round(phi * N) % N) + ' and the estimate is exact.'
-      : 'φ·2ᵗ = ' + (phi * N).toFixed(2) + ' is not a whole number, so no result is exactly right. The closest m comes up most often (probability ' + p[best].toFixed(3) + ', never below 4/π² ≈ 0.405), and its neighbours share the rest. Add a counting qubit to halve the gap between possible estimates.';
+      : 'φ·2ᵗ = ' + (phi * N).toFixed(2) + ' is not a whole number, so no result is exactly right. The closest m comes up most often (probability ' + p[best].toFixed(3) + ', never below 4/π² ≈ 0.405); the remaining probability is spread over other results, mostly its neighbours. Add a counting qubit to halve the gap between possible estimates.';
     if (counts) msg += ' Black lines: your 1,000 shots, which scatter around the bars because of shot noise.';
     $('msgp').textContent = msg;
     document.querySelectorAll('[data-phi]').forEach(function (b) { b.classList.toggle('on', +b.dataset.phi === +$('phisl').value); });

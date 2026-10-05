@@ -10,7 +10,7 @@ CHECK = (ROOT / "checks" / "l2_m1_check.py").read_text().split('"""', 2)[2].lstr
 META = {"kernelspec": {"name": "python", "display_name": "Python (Pyodide)", "language": "python"},
         "language_info": {"name": "python"}}
 NAME = "QC-L2-M1-lab-qft-phase-estimation.ipynb"
-VERSION = "2026-10-05"
+VERSION = "2026-10-05b"
 
 
 def md(s): return nbf.v4.new_markdown_cell(s)
@@ -127,20 +127,30 @@ md("""## Step 4: the QFT for any number of qubits
 
 The same pattern works for n qubits: for each qubit j from n − 1 down to 0, an H on qubit j, then `cp(pi / 2**(j - k), k, j)` for every k below j; at the end, swap qubit i with qubit n − 1 − i for i = 0 up to n // 2 − 1.
 
-**Your task:** complete `qft(n)`. The loops are started for you."""),
+**Your task:** complete `qft(n)`. The two loops and the swap loop are written for you; fill in the three gates marked `YOUR CODE HERE`."""),
 code("""def qft(n):
     \"\"\"Return the n-qubit QFT as a QuantumCircuit.\"\"\"
     qc = QuantumCircuit(n)
-    # YOUR CODE HERE: for j in reversed(range(n)): an H on j, then the controlled phases from each k < j;
-    # then the swaps.
-    raise NotImplementedError("Complete qft(n) first.")
+    for j in reversed(range(n)):
+        # YOUR CODE HERE: an H gate on qubit j
+        for k in reversed(range(j)):
+            # YOUR CODE HERE: the controlled phase between qubits k and j, angle pi / 2**(j - k)
+            pass
+    for i in range(n // 2):
+        # YOUR CODE HERE: swap qubit i with qubit n - 1 - i
+        pass
+    if not qc.data:    # leave this line: it stops the lab until you have added gates
+        raise NotImplementedError("Complete qft(n) first: fill in the three gates marked YOUR CODE HERE.")
     return qc"""),
-code("""for n in range(1, 6):
+code("""ok = True
+for n in range(1, 6):
     c = qft(n)
     diff = np.abs(Operator(c).data - dft_matrix(n)).max()
     names = [i.name for i in c.data]
     print(f"n = {n}: largest difference {diff:.1e};  {names.count('h')} H, {names.count('cp')} controlled-phase, "
-          f"{names.count('swap')} swap gates")"""),
+          f"{names.count('swap')} swap gates")
+    ok = ok and diff < 1e-8
+print("qft(n) matches the DFT for n = 1 to 5" if ok else "Not yet: compare your gates with the pattern above.")"""),
 md("""**What to notice.** The number of controlled-phase gates is n(n − 1)/2, so the QFT needs about n²/2 gates. The classical fast Fourier transform needs about n·2ⁿ operations on 2ⁿ numbers. The QFT is exponentially smaller, but its output is a quantum state: you cannot read all 2ⁿ amplitudes, only measure it. Algorithms use it where one measurement is enough, as in phase estimation."""),
 
 md("""## Step 5: phase estimation
@@ -149,7 +159,7 @@ Phase estimation finds the eigenphase φ of a gate U for one of its eigenvectors
 
 1. Put the target in the eigenvector |1⟩ (an X gate) and each counting qubit in |+⟩ (H gates).
 2. Counting qubit k controls U raised to the power 2ᵏ. For the phase gate, U^(2ᵏ) is P(2π·φ·2ᵏ), so this is one `cp(2 * math.pi * phase * 2**k, k, t)`. By phase kickback (Level 1, Module 6), counting qubit k picks up the phase e^(2πi·φ·2ᵏ) on its |1⟩ part.
-3. The counting register now holds (1/√2ᵗ) Σⱼ e^(2πi·φ·j)|j⟩: exactly the QFT of |φ·2ᵗ⟩. So apply the **inverse** QFT, `qft(t).inverse()`, to the counting qubits.
+3. The counting register now holds (1/√2ᵗ) Σⱼ e^(2πi·φ·j)|j⟩. If x = φ·2ᵗ is a whole number, this is exactly the QFT of |x⟩, so the inverse QFT turns it into |x⟩ and every shot gives x (Step 6). If φ·2ᵗ is not a whole number, the state is not the QFT of any single basis state, and the inverse QFT gives a spread of results that peaks at the closest whole numbers (Step 7). In both cases, apply the **inverse** QFT, `qft(t).inverse()`, to the counting qubits. (`.inverse()` applies the inverse of every gate in reverse order.)
 4. Measure counting qubit k into classical bit k. The result m, read as a binary number, gives the estimate φ ≈ m / 2ᵗ.
 
 **Your task:** write `phase_estimation(phase, t)` following these four steps. Use `qc.compose(qft(t).inverse(), qubits=list(range(t)), inplace=True)` for step 3."""),
@@ -172,7 +182,7 @@ print("most frequent result:", format(m, "03b"), "= m =", m, "  estimate m / 8 =
 
 md("""## Step 7: a phase of 1/3, which no number of bits can hold exactly
 
-1/3 = 0.010101... in binary never ends, so no result is exactly right. Phase estimation then gives the closest t-bit fraction with probability at least 4/π² ≈ 0.405, and nearby fractions the rest of the time. Each extra counting qubit halves the gap between neighbouring estimates.
+1/3 = 0.010101... in binary never ends, so no result is exactly right. Phase estimation then gives the closest t-bit fraction with probability at least 4/π² ≈ 0.405; the remaining probability is spread over the other t-bit fractions, mostly the ones next to it. The closest fraction is never more than 1/2^(t+1) from φ, but that bound is for the best estimate, not for every shot: a single shot can return a fraction farther away. Each extra counting qubit halves the gap between neighbouring estimates.
 
 The cell computes the exact probabilities for t = 3 to 6 (with `Statevector(...).probabilities(qargs)`, new in qsim 1.6.0, which measures only the counting qubits) and draws the histogram for t = 5. The lab check asks for the estimate with 6 counting qubits."""),
 code("""for t in range(3, 7):
