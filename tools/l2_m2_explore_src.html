@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Module 2 Explorer: Grover's Search</title>
+<style>
+  :root { --maroon:#99004C; --ink:#24313D; --muted:#6A626B; --line:#E4DCE0; --tint:#F8F4F6; --gold:#C9A227; --ok:#2E7D4F; --bad:#B3261E; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:#fff; color:var(--ink); font-family:"Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size:15px; }
+  .tabs { display:flex; border-bottom:2px solid var(--line); background:var(--tint); }
+  .tabs button { flex:1; border:0; background:none; padding:10px 8px; font-size:15px; cursor:pointer; color:var(--muted); border-bottom:3px solid transparent; }
+  .tabs button.on { color:var(--maroon); border-bottom-color:var(--maroon); font-weight:600; background:#fff; }
+  .tool { display:none; padding:12px 16px; }
+  .tool.on { display:block; }
+  h2 { font-family:Georgia, serif; color:var(--maroon); font-size:19px; margin:0 0 4px; }
+  .hint { color:var(--muted); margin:0 0 10px; line-height:1.45; }
+  select { font-size:14px; padding:3px 6px; }
+  .grid { display:grid; grid-template-columns: 270px 1fr; gap:14px; align-items:start; }
+  @media (max-width: 660px) { .grid { grid-template-columns: 1fr; } }
+  .box { border:1px solid var(--line); border-radius:6px; padding:10px 12px; min-width:0; }
+  .box h3 { margin:0 0 6px; font-size:14.5px; color:var(--maroon); }
+  label { display:flex; justify-content:space-between; align-items:center; margin:8px 0 2px; font-size:14px; gap:8px; }
+  input[type=range] { width:100%; }
+  .row { display:flex; gap:6px; flex-wrap:wrap; margin-top:6px; align-items:center; }
+  button.act { border:2px solid var(--ink); background:#fff; color:var(--ink); padding:4px 9px; border-radius:5px; font-size:13.5px; cursor:pointer; }
+  button.act.on, button.act.fill { background:var(--maroon); border-color:var(--maroon); color:#fff; }
+  .mono { font-family: Consolas, "Courier New", monospace; }
+  .dials { display:grid; grid-template-columns: repeat(auto-fill, minmax(74px, 1fr)); gap:8px; }
+  .dial { text-align:center; font-size:12.5px; border:1px solid var(--line); border-radius:6px; padding:4px 2px; }
+  .dial svg { width:58px; height:58px; display:block; margin:0 auto; }
+  .note { margin-top:8px; padding:7px 10px; border-radius:4px; font-size:13.5px; background:var(--tint); color:var(--ink); line-height:1.45; }
+  .stats { display:grid; grid-template-columns: 1fr 1fr; gap:4px 10px; font-size:13.5px; margin-top:8px; }
+  .stats span.v { font-family:Consolas, monospace; text-align:right; }
+  svg.bars { width:100%; height:auto; display:block; }
+  .credit { color:var(--muted); font-size:12px; padding:8px 16px 12px; border-top:1px solid var(--line); }
+</style>
+</head>
+<body>
+<div class="tabs" role="tablist">
+  <button type="button" data-t="amp" role="tab">1. Oracle and diffuser</button>
+  <button type="button" data-t="iter" role="tab">2. How many iterations?</button>
+</div>
+
+<!-- TOOL 1: amplitudes step by step -->
+<section class="tool" id="t-amp" role="tabpanel">
+  <h2>Watch the marked amplitude grow</h2>
+  <p class="hint">Start from the equal superposition. <strong>Oracle</strong> flips the sign of the marked amplitude. <strong>Diffuser</strong> reflects every amplitude about the mean (the gold dashed line): a becomes 2·mean − a. Grover amplitudes stay real, so each bar shows an amplitude with its sign.</p>
+  <div class="grid">
+    <div class="box">
+      <h3>Settings</h3>
+      <div class="row" id="nbtn">
+        <button type="button" class="act" data-n="2">n = 2</button>
+        <button type="button" class="act" data-n="3">n = 3</button>
+        <button type="button" class="act" data-n="4">n = 4</button>
+      </div>
+      <label for="mk">Marked string <select id="mk"></select></label>
+      <div class="row">
+        <button type="button" class="act" id="bo">Oracle</button>
+        <button type="button" class="act" id="bd">Diffuser</button>
+        <button type="button" class="act fill" id="bi">One iteration</button>
+        <button type="button" class="act" id="br">Reset</button>
+      </div>
+      <div class="stats" id="st1"></div>
+    </div>
+    <div class="box">
+      <h3>Amplitudes</h3>
+      <svg class="bars" id="amp" viewBox="0 0 520 260" aria-label="Amplitude of each basis state"></svg>
+      <div class="note" id="msg1"></div>
+    </div>
+  </div>
+</section>
+
+<!-- TOOL 2: success against iterations -->
+<section class="tool" id="t-iter" role="tabpanel">
+  <h2>Success rises, then falls</h2>
+  <p class="hint">Choose the number of qubits n (N = 2ⁿ items) and the number of marked items s. The curve is the exact success probability sin²((2t + 1)θ) after t iterations, with sin θ = √(s/N). The maroon point is the recommended t = ⌊π/(4θ)⌋.</p>
+  <div class="grid">
+    <div class="box">
+      <h3>Settings</h3>
+      <label for="nsl">Qubits n <span class="mono" id="nv"></span></label>
+      <input type="range" id="nsl" min="2" max="10" step="1" value="3">
+      <label for="ssl">Marked items s <span class="mono" id="sv"></span></label>
+      <input type="range" id="ssl" min="1" max="4" step="1" value="1">
+      <div class="row">
+        <button type="button" class="act" data-p="3,1">N = 8, s = 1</button>
+        <button type="button" class="act" data-p="3,2">N = 8, s = 2</button>
+        <button type="button" class="act" data-p="4,1">N = 16, s = 1</button>
+        <button type="button" class="act" data-p="8,1">N = 256, s = 1</button>
+      </div>
+      <div class="stats" id="st2"></div>
+    </div>
+    <div class="box">
+      <h3>Probability of finding a marked item</h3>
+      <svg class="bars" id="curve" viewBox="0 0 520 250" aria-label="Success probability against the number of iterations"></svg>
+      <div class="note" id="msg2"></div>
+    </div>
+  </div>
+</section>
+<div class="credit">Module 2 explorer · Quantum Computing Intermediate · SemiAcademy / ISEP-CSU · CC BY 4.0. Strings are written as in Qiskit: the rightmost bit is qubit 0. The diffuser here is the reflection 2·mean − a; the lab's diffuser circuit gives the same state times −1, which no measurement can tell apart. This is a practice tool: the graded values come from the lab notebook.</div>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var NS = 'http://www.w3.org/2000/svg';
+  function sv(p, tag, a, txt) { var e = document.createElementNS(NS, tag); for (var k in a) e.setAttribute(k, a[k]); if (txt !== undefined) e.textContent = txt; p.appendChild(e); return e; }
+  function clear(s) { while (s.firstChild) s.removeChild(s.firstChild); }
+  var tabs = document.querySelectorAll('.tabs button');
+  function openTab(t) {
+    tabs.forEach(function (b) { b.classList.toggle('on', b.dataset.t === t); });
+    document.querySelectorAll('.tool').forEach(function (s) { s.classList.toggle('on', s.id === 't-' + t); });
+  }
+  tabs.forEach(function (b) { b.onclick = function () { openTab(b.dataset.t); }; });
+  function fromHash() { openTab(location.hash.indexOf('iter') >= 0 ? 'iter' : 'amp'); }
+  window.addEventListener('hashchange', fromHash);
+  fromHash();
+  // ---------- tool 1
+  var n = 2, marked = 2, a = [], its = 0, half = false, last = 'start';
+  function fillMarked() {
+    var N = Math.pow(2, n), sel = $('mk'); sel.innerHTML = '';
+    for (var k = 0; k < N; k++) { var o = document.createElement('option'); o.value = k; o.textContent = k.toString(2).padStart(n, '0'); sel.appendChild(o); }
+    if (marked >= N) marked = N - 1;
+    sel.value = marked;
+  }
+  function reset() { var N = Math.pow(2, n); a = []; for (var k = 0; k < N; k++) a.push(1 / Math.sqrt(N)); its = 0; half = false; last = 'start'; draw1(); }
+  function mean() { var s = 0; a.forEach(function (v) { s += v; }); return s / a.length; }
+  function oracle() { a[marked] = -a[marked]; }
+  function diffuse() { var m = mean(); a = a.map(function (v) { return 2 * m - v; }); }
+  function draw1() {
+    var N = a.length, svg = $('amp'); clear(svg);
+    document.querySelectorAll('[data-n]').forEach(function (b) { b.classList.toggle('on', +b.dataset.n === n); });
+    var x0 = 44, x1 = 510, ymid = 130, sc = 105, w = (x1 - x0) / N;
+    [-1, -0.5, 0, 0.5, 1].forEach(function (v) {
+      var y = ymid - sc * v;
+      sv(svg, 'line', { x1: x0 - 4, y1: y, x2: x1, y2: y, stroke: v === 0 ? '#24313D' : '#E4DCE0', 'stroke-width': v === 0 ? 1.5 : 1 });
+      sv(svg, 'text', { x: x0 - 8, y: y + 4, 'font-size': 12, 'text-anchor': 'end', fill: '#24313D' }, String(v));
+    });
+    for (var k = 0; k < N; k++) {
+      var v = a[k], h = sc * Math.abs(v), y = v >= 0 ? ymid - h : ymid;
+      sv(svg, 'rect', { x: x0 + k * w + w * 0.12, y: y, width: w * 0.76, height: Math.max(h, 0.5), fill: k === marked ? '#99004C' : '#B9AEB4' });
+      sv(svg, 'text', { x: x0 + (k + 0.5) * w, y: 254, 'font-size': N > 8 ? 9.5 : 12, 'text-anchor': 'middle', fill: k === marked ? '#99004C' : '#24313D', 'font-family': 'Consolas, monospace' }, k.toString(2).padStart(n, '0'));
+    }
+    var m = mean(), ym = ymid - sc * m;
+    sv(svg, 'line', { x1: x0, y1: ym, x2: x1, y2: ym, stroke: '#C9A227', 'stroke-width': 2.5, 'stroke-dasharray': '6 4' });
+    sv(svg, 'text', { x: x1, y: ym - 5, 'font-size': 12, 'text-anchor': 'end', fill: '#8A6D00' }, 'mean ' + m.toFixed(3));
+    var p = a[marked] * a[marked];
+    var th = Math.asin(1 / Math.sqrt(N)), best = Math.floor(Math.PI / (4 * th));
+    $('st1').innerHTML = '<span>N</span><span class="v">' + N + '</span><span>iterations done</span><span class="v">' + its + (half ? ' + oracle' : '') +
+      '</span><span>P(marked)</span><span class="v">' + p.toFixed(4) + '</span><span>recommended</span><span class="v">' + best + '</span>';
+    var msgs = {
+      start: 'The equal superposition: every amplitude is 1/√' + N + ' ≈ ' + (1 / Math.sqrt(N)).toFixed(3) + ', so each string has probability 1/' + N + '. Press Oracle.',
+      oracle: 'The oracle flipped the sign of the marked amplitude. No probability changed: measuring now would give each string as often as before. Press Diffuser.',
+      undo: 'A second oracle flipped the sign back: the oracle is its own inverse. Press Oracle again, then Diffuser.',
+      diffuser: 'The diffuser reflected every amplitude about the mean. The marked amplitude was far below the mean, so it lands far above it.',
+      iter: 'One iteration (oracle, then diffuser) done.'
+    };
+    var msg = msgs[last];
+    if (last === 'diffuser' || last === 'iter') {
+      msg += ' P(marked) is now ' + p.toFixed(4) + '. ';
+      if (its < best) msg += 'Keep going: the recommended number for N = ' + N + ' is ' + best + '.';
+      else if (its === best) msg += 'This is the recommended number of iterations for N = ' + N + '.';
+      else msg += 'You are past the recommended ' + best + ': the state has rotated beyond the marked direction, so more iterations make it worse for a while.';
+    }
+    if (last === 'oracle' && !half) msg = msgs.undo;
+    $('msg1').textContent = msg;
+  }
+  document.querySelectorAll('[data-n]').forEach(function (b) { b.onclick = function () { n = +b.dataset.n; marked = Math.min(marked, Math.pow(2, n) - 1); fillMarked(); reset(); }; });
+  $('mk').onchange = function () { marked = +$('mk').value; reset(); };
+  $('bo').onclick = function () { oracle(); half = !half; last = 'oracle'; draw1(); };
+  $('bd').onclick = function () { diffuse(); if (half) { its += 1; half = false; } last = 'diffuser'; draw1(); };
+  $('bi').onclick = function () { if (half) { diffuse(); half = false; } else { oracle(); diffuse(); } its += 1; last = 'iter'; draw1(); };
+  $('br').onclick = reset;
+  fillMarked(); reset();
+  // ---------- tool 2
+  function draw2() {
+    var nn = +$('nsl').value, N = Math.pow(2, nn);
+    $('ssl').max = Math.min(N / 2, 16);
+    var s = Math.min(+$('ssl').value, N / 2); $('ssl').value = s;
+    $('nv').textContent = nn + ' (N = ' + N + ')'; $('sv').textContent = s;
+    var th = Math.asin(Math.sqrt(s / N)), best = Math.floor(Math.PI / (4 * th));
+    var T = Math.max(6, Math.min(3 * best + 2, 80));
+    var svg = $('curve'); clear(svg);
+    var x0 = 44, x1 = 510, y0 = 205, y1 = 15;
+    var X = function (t) { return x0 + (x1 - x0) * t / T; }, Y = function (p) { return y0 - (y0 - y1) * p; };
+    [0, 0.5, 1].forEach(function (v) {
+      sv(svg, 'line', { x1: x0 - 4, y1: Y(v), x2: x1, y2: Y(v), stroke: v ? '#E4DCE0' : '#24313D', 'stroke-width': v ? 1 : 1.5 });
+      sv(svg, 'text', { x: x0 - 8, y: Y(v) + 4, 'font-size': 12, 'text-anchor': 'end', fill: '#24313D' }, String(v));
+    });
+    var pts = [], step = T <= 12 ? 1 : Math.ceil(T / 10);
+    for (var t = 0; t <= T; t++) {
+      var p = Math.pow(Math.sin((2 * t + 1) * th), 2);
+      pts.push(X(t).toFixed(1) + ',' + Y(p).toFixed(1));
+      if (t % step === 0) sv(svg, 'text', { x: X(t), y: y0 + 16, 'font-size': 11.5, 'text-anchor': 'middle', fill: '#24313D' }, String(t));
+    }
+    sv(svg, 'polyline', { points: pts.join(' '), fill: 'none', stroke: '#B9AEB4', 'stroke-width': 2 });
+    for (t = 0; t <= T; t++) { p = Math.pow(Math.sin((2 * t + 1) * th), 2); sv(svg, 'circle', { cx: X(t), cy: Y(p), r: t === best ? 6 : (T > 30 ? 1.8 : 3.2), fill: t === best ? '#99004C' : '#6A626B' }); }
+    var pb = Math.pow(Math.sin((2 * best + 1) * th), 2);
+    sv(svg, 'text', { x: Math.min(X(best) + 8, x1 - 80), y: Y(pb) + 18, 'font-size': 12.5, fill: '#99004C' }, 't = ' + best + ', P = ' + pb.toFixed(4));
+    sv(svg, 'text', { x: x1, y: y0 + 34, 'font-size': 12.5, 'text-anchor': 'end', fill: '#6A626B' }, 'iterations t');
+    $('st2').innerHTML = '<span>θ</span><span class="v">' + (th * 180 / Math.PI).toFixed(3) + '°</span><span>recommended t</span><span class="v">' + best +
+      '</span><span>P at that t</span><span class="v">' + pb.toFixed(4) + '</span><span>(π/4)√(N/s)</span><span class="v">' + (Math.PI / 4 * Math.sqrt(N / s)).toFixed(2) +
+      '</span><span>classical average</span><span class="v">' + ((N + 1) / (s + 1)).toFixed(1) + '</span>';
+    var msg;
+    if (2 * s === N) msg = 'Half the items are marked: θ = 45°, and Grover leaves the success probability at 1/2 for every t (a random guess does as well).';
+    else if (Math.abs((2 * best + 1) * th - Math.PI / 2) < 1e-9) msg = '(2t + 1)θ is exactly 90° at t = ' + best + ', so the search succeeds with certainty.';
+    else msg = 'Each iteration turns the state by 2θ = ' + (2 * th * 180 / Math.PI).toFixed(2) + '°. At t = ' + best + ' the angle (2t + 1)θ is ' + ((2 * best + 1) * th * 180 / Math.PI).toFixed(1) + '°, close to 90°. Past it the success probability falls, then rises again: running too long costs oracle calls and success.';
+    $('msg2').textContent = msg;
+    document.querySelectorAll('[data-p]').forEach(function (b) { b.classList.toggle('on', b.dataset.p === nn + ',' + s); });
+  }
+  $('nsl').oninput = draw2; $('ssl').oninput = draw2;
+  document.querySelectorAll('[data-p]').forEach(function (b) { b.onclick = function () { var q = b.dataset.p.split(','); $('nsl').value = q[0]; draw2(); $('ssl').value = q[1]; draw2(); }; });
+  draw2();
+})();
+</script>
+</body>
+</html>
