@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Module 6 Slides: Mini-Project, an Experiment with Noise</title>
+<style>
+  :root { --maroon:#99004C; --ink:#24313D; --muted:#6A626B; --line:#E4DCE0; --tint:#F8F4F6; --gold:#C9A227; --ok:#2E7D4F; }
+  * { box-sizing:border-box; }
+  html, body { margin:0; height:100%; background:#2B2230; font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color:var(--ink); }
+  #viewport { position:absolute; inset:0 0 44px 0; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+  #stage { width:1280px; height:720px; flex-shrink:0; position:relative; transform-origin:center center; }
+  .slide { position:absolute; inset:0; background:#fff; padding:56px 72px 64px; display:none; flex-direction:column; border-top:10px solid var(--maroon); }
+  .slide.on { display:flex; }
+  .slide h1 { font-family: Georgia, serif; color:var(--maroon); font-size:56px; margin:0 0 18px; line-height:1.1; }
+  .slide h2 { font-family: Georgia, serif; color:var(--maroon); font-size:40px; margin:0 0 22px; line-height:1.15; }
+  .slide p, .slide li { font-size:27px; line-height:1.45; margin:0 0 14px; }
+  .slide ul { margin:0 0 10px 0; padding-left:34px; }
+  .kicker { font-size:20px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); margin-bottom:10px; }
+  .eq { background:var(--tint); border-left:6px solid var(--maroon); padding:16px 24px; font-size:34px; margin:10px 0 18px; font-family: Georgia, serif; }
+  .small { font-size:20px !important; color:var(--muted); }
+  .cols { display:flex; gap:40px; align-items:flex-start; flex:1; }
+  .cols > div { flex:1; }
+  .card { border:2px solid var(--line); border-radius:10px; padding:18px 22px; }
+  .card h3 { margin:0 0 8px; font-size:27px; color:var(--maroon); }
+  .card p { font-size:23px; margin:0; }
+  table { border-collapse:collapse; font-size:26px; }
+  th, td { border:1px solid var(--line); padding:10px 18px; text-align:left; }
+  th { background:var(--tint); }
+  .foot { position:absolute; left:72px; right:72px; bottom:20px; display:flex; justify-content:space-between; font-size:15px; color:var(--muted); }
+  .reveal { margin-top:10px; }
+  .reveal button { font-size:22px; padding:8px 18px; border:2px solid var(--maroon); background:#fff; color:var(--maroon); border-radius:6px; cursor:pointer; }
+  .reveal .ans { display:none; margin-top:14px; background:#EEF6F0; border-left:6px solid var(--ok); padding:12px 20px; font-size:25px; line-height:1.45; }
+  .reveal.open .ans { display:block; }
+  .reveal.open button { display:none; }
+  .title-slide { background: linear-gradient(135deg, #fff 0%, #fff 58%, var(--tint) 58%); }
+  #bar { position:absolute; left:0; right:0; bottom:0; height:44px; background:#1E1722; display:flex; align-items:center; justify-content:center; gap:10px; color:#fff; font-size:14px; }
+  #bar button { background:#3A2F40; color:#fff; border:0; border-radius:4px; padding:7px 14px; font-size:14px; cursor:pointer; }
+  #bar button:hover { background:var(--maroon); }
+  #count { min-width:70px; text-align:center; }
+  .slide code { font-family: Consolas, "Courier New", monospace; font-size:0.9em; }
+  svg text { font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  @media print {
+    @page { size: 1280px 720px; margin:0; }
+    html, body { background:#fff; height:auto; }
+    #bar { display:none; }
+    #viewport { position:static; display:block; }
+    #stage { transform:none !important; width:1280px; height:auto; }
+    .slide { display:flex !important; position:relative; width:1280px; height:720px; page-break-after:always; break-after:page; }
+    .reveal .ans { display:block !important; }
+    .reveal button { display:none !important; }
+  }
+</style>
+</head>
+<body>
+<div id="viewport"><div id="stage">
+
+
+<!-- 1 -->
+<section class="slide title-slide">
+  <div class="kicker">Quantum Computing Intermediate · Module 6</div>
+  <h1>Mini-project: an experiment on a noisy quantum computer</h1>
+  <p style="font-size:29px;max-width:620px">Run one experiment on a noisy simulator, compare it with what the noise model predicts, and report the result with its uncertainty and its limits.</p>
+  <div style="position:absolute;right:80px;top:200px;width:420px"><svg width="420" height="300" viewBox="0 0 420 300" aria-label="Grover for 101 with 2 iterations: ideal and noisy probabilities"><line x1="50" y1="195.0" x2="405" y2="195.0" stroke="#E4DCE0"/><text x="44" y="200.0" font-size="14" text-anchor="end" fill="#24313D">0.25</text><line x1="50" y1="140.0" x2="405" y2="140.0" stroke="#E4DCE0"/><text x="44" y="145.0" font-size="14" text-anchor="end" fill="#24313D">0.50</text><line x1="50" y1="85.0" x2="405" y2="85.0" stroke="#E4DCE0"/><text x="44" y="90.0" font-size="14" text-anchor="end" fill="#24313D">0.75</text><line x1="50" y1="30.0" x2="405" y2="30.0" stroke="#E4DCE0"/><text x="44" y="35.0" font-size="14" text-anchor="end" fill="#24313D">1.00</text><rect x="55.3" y="248.3" width="16.0" height="1.7" fill="#B9AEB4"/><rect x="72.2" y="242.4" width="16.0" height="7.6" fill="#99004C"/><text x="72.2" y="270" font-size="14" text-anchor="middle" fill="#24313D">000</text><rect x="99.7" y="248.3" width="16.0" height="1.7" fill="#B9AEB4"/><rect x="116.6" y="235.8" width="16.0" height="14.2" fill="#99004C"/><text x="116.6" y="270" font-size="14" text-anchor="middle" fill="#24313D">001</text><rect x="144.1" y="248.3" width="16.0" height="1.7" fill="#B9AEB4"/><rect x="160.9" y="243.5" width="16.0" height="6.5" fill="#99004C"/><text x="160.9" y="270" font-size="14" text-anchor="middle" fill="#24313D">010</text><rect x="188.4" y="248.3" width="16.0" height="1.7" fill="#B9AEB4"/><rect x="205.3" y="243.2" width="16.0" height="6.8" fill="#99004C"/><text x="205.3" y="270" font-size="14" text-anchor="middle" fill="#24313D">011</text><rect x="232.8" y="248.3" width="16.0" height="1.7" fill="#B9AEB4"/><rect x="249.7" y="235.0" width="16.0" height="15.0" fill="#99004C"/><text x="249.7" y="270" font-size="14" text-anchor="middle" fill="#24313D">100</text><rect x="277.2" y="42.0" width="16.0" height="208.0" fill="#B9AEB4"/><rect x="294.1" y="98.9" width="16.0" height="151.1" fill="#99004C"/><text x="294.1" y="270" font-size="14" text-anchor="middle" fill="#24313D">101</text><rect x="321.6" y="248.3" width="16.0" height="1.7" fill="#B9AEB4"/><rect x="338.4" y="242.4" width="16.0" height="7.6" fill="#99004C"/><text x="338.4" y="270" font-size="14" text-anchor="middle" fill="#24313D">110</text><rect x="365.9" y="248.3" width="16.0" height="1.7" fill="#B9AEB4"/><rect x="382.8" y="238.7" width="16.0" height="11.3" fill="#99004C"/><text x="382.8" y="270" font-size="14" text-anchor="middle" fill="#24313D">111</text><line x1="50" y1="250" x2="405" y2="250" stroke="#24313D" stroke-width="2"/><rect x="60" y="6" width="14" height="14" fill="#B9AEB4"/><text x="80" y="18" font-size="15">ideal</text><rect x="270" y="6" width="14" height="14" fill="#99004C"/><text x="290" y="18" font-size="15">with noise</text><text x="227.5" y="288" font-size="15" text-anchor="middle" fill="#6A626B">result (marked: 101)</text></svg></div>
+  <div class="foot"><span>SemiAcademy · ISEP-CSU</span><span>CC BY 4.0</span></div>
+</section>
+
+<!-- 2 -->
+<section class="slide">
+  <h2>By the end of this module you can</h2>
+  <ul>
+    <li>describe a <strong>noise model</strong>: depolarizing errors on gates and readout errors on measurements;</li>
+    <li>compute the noise model's <strong>expected value</strong> and compare a sampled run with it by the <strong>3σ rule</strong>;</li>
+    <li>give a measured fraction or mean with its <strong>uncertainty</strong>, and test whether two results <strong>differ significantly</strong>;</li>
+    <li>find how a design choice (iterations, counting qubits, layers, transpiler settings) depends on the noise;</li>
+    <li>say what an experiment <strong>does not show</strong>: its limits.</li>
+  </ul>
+  <p class="small" style="margin-top:22px">Course outcome 5: run an experiment on a noisy simulator and report its results, their uncertainty and their limits; running it on a real quantum computer is an optional extension.</p>
+  <div class="foot"><span>Module 6 · Mini-project</span><span>2</span></div>
+</section>
+
+<!-- 3 -->
+<section class="slide">
+  <h2>Four experiments: choose one</h2>
+  <table style="font-size:20px">
+    <tr><th>Experiment</th><th>Question</th><th>You vary</th><th>Runs in</th></tr>
+    <tr><td>Grover's search with noise</td><td>Are 2 iterations still best on a noisy computer?</td><td>iterations, P2</td><td>browser</td></tr>
+    <tr><td>Phase estimation of 1/3 with noise</td><td>How many counting qubits give the best estimate?</td><td>counting qubits, P2</td><td>browser</td></tr>
+    <tr><td>QAOA with noise</td><td>How much of each layer's gain survives the noise?</td><td>layers, P2</td><td>browser</td></tr>
+    <tr><td>A transpiler comparison</td><td>Which transpiler differences can 4,000 shots detect?</td><td>optimization level, seed, qubits</td><td>Colab (or browser with saved runs)</td></tr>
+  </table>
+  <p style="font-size:23px;margin-top:18px">Each project notebook has check cells and personal numbers from your project quiz. You may change the choice you made in Module 2.</p>
+  <div class="foot"><span>Module 6 · Mini-project</span><span>3</span></div>
+</section>
+
+<!-- 4 -->
+<section class="slide">
+  <h2>How the project works</h2>
+  <div class="cols">
+    <div>
+      <ol style="font-size:24px;line-height:1.5;padding-left:30px">
+        <li>Read this page and the slides (about 75 minutes).</li>
+        <li>Open your project notebook: write the functions, run the experiment, get your verification value (about 3 hours).</li>
+        <li>Take the project quiz <strong>for your experiment</strong>: 20 points, pass at 16 (about 30 minutes).</li>
+        <li>Time log.</li>
+      </ol>
+    </div>
+    <div class="card" style="flex:0.8">
+      <h3>Optional</h3>
+      <p>A short written summary in the notebook (not graded).</p>
+      <p style="margin-top:12px">A run on a real IBM computer with your own free Open Plan account (Colab). The badge never depends on it.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Module 6 · Mini-project</span><span>4</span></div>
+</section>
+
+<!-- 5 -->
+<section class="slide">
+  <h2>A noise model in three parts</h2>
+  <ul>
+    <li style="font-size:24px"><strong>Two-qubit gates</strong> (cx, cz, cp, rzz, swap): a <strong>depolarizing error</strong> with parameter P2. With probability P2 the two qubits become completely random:</li>
+  </ul>
+  <div class="eq" style="font-size:28px">ρ → (1 − P2) ρ + P2 · I/4</div>
+  <ul>
+    <li style="font-size:24px"><strong>One-qubit gates</strong>: the same on one qubit, with P2/10.</li>
+    <li style="font-size:24px"><strong>Readout</strong>: a 0 is recorded as 1 with probability R, a 1 as 0 with probability 2R (an excited qubit can decay while it is measured).</li>
+  </ul>
+  <p class="small">Errors are attached by gate name. A gate on three qubits (ccx, mcx) would get no error, so the projects use only one- and two-qubit gates, as a real computer does.</p>
+  <div class="foot"><span>Module 6 · Mini-project</span><span>5</span></div>
+</section>
+
+<!-- 6 -->
+<section class="slide">
+  <h2>The course model and a real computer</h2>
+  <table style="font-size:22px">
+    <tr><th></th><th>course model</th><th>your personal model</th><th>FakePittsburgh (median)</th></tr>
+    <tr><td>two-qubit gate error</td><td>P2 = 0.01 (gate error 0.0075)</td><td>P2 = 0.005 to 0.030</td><td>0.0015</td></tr>
+    <tr><td>readout error</td><td>0.02 for 0, 0.04 for 1</td><td>R = 0.005 to 0.030</td><td>0.0045</td></tr>
+    <tr><td>connectivity</td><td>every pair</td><td>every pair</td><td>heavy-hex: 3 neighbours at most</td></tr>
+  </table>
+  <p style="font-size:23px;margin-top:18px">A depolarizing parameter P2 gives an average gate error of 0.75 · P2, the number IBM reports. The course values are several times worse than IBM's best current computers, so that the effects of noise show clearly in a few thousand shots.</p>
+  <div class="foot"><span>Module 6 · Mini-project</span><span>6</span></div>
+</section>
+
+<!-- 7 -->
+<section class="slide">
+  <h2>Two ways to use a noise model</h2>
+  <div class="cols">
+    <div>
+      <p style="font-size:23px"><strong>Expected value:</strong> follow the density matrix through the noisy gates, then apply the readout errors. Exact, no shots: <code>expected_probabilities(qc, p2, readout)</code>.</p>
+      <p style="font-size:23px"><strong>Sampled run:</strong> <code>AerSimulator(noise_model=nm).run(qc, shots=4000)</code> draws 4,000 results from the same probabilities.</p>
+      <p class="small">Grover, marked 101, 2 iterations, course model: the expected P(101) is 0.6870 (ideal 0.9453).</p>
+    </div>
+    <div style="flex:1.2"><svg width="560" height="330" viewBox="0 0 560 330" aria-label="Grover for 101 with 2 iterations: the noise model's expected probabilities and one run of 4,000 shots"><line x1="50" y1="217.5" x2="545" y2="217.5" stroke="#E4DCE0"/><text x="44" y="222.5" font-size="14" text-anchor="end" fill="#24313D">0.25</text><line x1="50" y1="155.0" x2="545" y2="155.0" stroke="#E4DCE0"/><text x="44" y="160.0" font-size="14" text-anchor="end" fill="#24313D">0.50</text><line x1="50" y1="92.5" x2="545" y2="92.5" stroke="#E4DCE0"/><text x="44" y="97.5" font-size="14" text-anchor="end" fill="#24313D">0.75</text><line x1="50" y1="30.0" x2="545" y2="30.0" stroke="#E4DCE0"/><text x="44" y="35.0" font-size="14" text-anchor="end" fill="#24313D">1.00</text><rect x="57.4" y="271.4" width="22.3" height="8.6" fill="#99004C"/><rect x="80.9" y="271.4" width="22.3" height="8.6" fill="#C9A227"/><text x="80.9" y="300" font-size="14" text-anchor="middle" fill="#24313D">000</text><rect x="119.3" y="263.9" width="22.3" height="16.1" fill="#99004C"/><rect x="142.8" y="263.5" width="22.3" height="16.5" fill="#C9A227"/><text x="142.8" y="300" font-size="14" text-anchor="middle" fill="#24313D">001</text><rect x="181.2" y="272.7" width="22.3" height="7.3" fill="#99004C"/><rect x="204.7" y="272.5" width="22.3" height="7.5" fill="#C9A227"/><text x="204.7" y="300" font-size="14" text-anchor="middle" fill="#24313D">010</text><rect x="243.1" y="272.3" width="22.3" height="7.7" fill="#99004C"/><rect x="266.6" y="271.4" width="22.3" height="8.6" fill="#C9A227"/><text x="266.6" y="300" font-size="14" text-anchor="middle" fill="#24313D">011</text><rect x="304.9" y="263.0" width="22.3" height="17.0" fill="#99004C"/><rect x="328.4" y="263.1" width="22.3" height="16.9" fill="#C9A227"/><text x="328.4" y="300" font-size="14" text-anchor="middle" fill="#24313D">100</text><rect x="366.8" y="108.2" width="22.3" height="171.8" fill="#99004C"/><rect x="390.3" y="110.4" width="22.3" height="169.6" fill="#C9A227"/><text x="390.3" y="300" font-size="14" text-anchor="middle" fill="#24313D">101</text><rect x="428.7" y="271.3" width="22.3" height="8.7" fill="#99004C"/><rect x="452.2" y="270.8" width="22.3" height="9.2" fill="#C9A227"/><text x="452.2" y="300" font-size="14" text-anchor="middle" fill="#24313D">110</text><rect x="490.6" y="267.2" width="22.3" height="12.8" fill="#99004C"/><rect x="514.1" y="266.8" width="22.3" height="13.2" fill="#C9A227"/><text x="514.1" y="300" font-size="14" text-anchor="middle" fill="#24313D">111</text><line x1="50" y1="280" x2="545" y2="280" stroke="#24313D" stroke-width="2"/><rect x="60" y="6" width="14" height="14" fill="#99004C"/><text x="80" y="18" font-size="15">noise model, expected</text><rect x="270" y="6" width="14" height="14" fill="#C9A227"/><text x="290" y="18" font-size="15">4,000 shots</text><text x="297.5" y="318" font-size="15" text-anchor="middle" fill="#6A626B">result (marked: 101)</text></svg></div>
+  </div>
+  <div class="foot"><span>Module 6 · Mini-project</span><span>7</span></div>
+</section>
+
+<!-- 8 -->
+<section class="slide">
+  <h2>Shot noise</h2>
+  <p style="font-size:24px">A result with probability p, in S shots, comes out k times: a binomial number. The fraction f = k/S has mean p and standard deviation</p>
+  <div class="eq">σ = √( p (1 − p) / S )</div>
+  <table style="font-size:22px"><tr><th>shots S</th><th>100</th><th>1,000</th><th>4,000</th><th>16,000</th></tr><tr><td>σ for p = 0.687</td><td>0.0464</td><td>0.0147</td><td>0.0073</td><td>0.0037</td></tr></table>
+  <p class="small" style="margin-top:12px">Four times as many shots halve σ. One run of 4,000 shots of the Grover circuit pins its success down to about ±0.022 (3σ).</p>
+  <div class="foot"><span>Module 6 · Mini-project</span><span>8</span></div>
+</section>
+
+<!-- 9 -->
+<section class="slide">
+  <h2>The course rule: 3σ</h2>
+  <p style="font-size:24px">A measured fraction f <strong>agrees</strong> with an expected value p when |f − p| ≤ 3σ. A correct run falls outside only about 3 times in 1,000 (0.27%).</p>
+  <p style="font-size:24px">On a noisy simulator, p must be the <strong>noise model's</strong> expected value. Example, one run of the Grover circuit: f = 0.6783.</p>
+  <table style="font-size:22px">
+    <tr><th>compared with</th><th>p</th><th>(f − p)/σ</th><th>verdict</th></tr>
+    <tr><td>the noise model</td><td>0.6870</td><td>-1.2</td><td>agrees</td></tr>
+    <tr><td>the ideal circuit</td><td>0.9453</td><td>-36</td><td>does not agree: it describes a different computer</td></tr>
+  </table>
+  <div class="foot"><span>Module 6 · Mini-project</span><span>9</span></div>
+</section>
+
+<!-- 10 -->
+<section class="slide">
+  <h2>Comparing two results</h2>
+  <p style="font-size:24px">Two fractions from S independent shots each: the difference f₂ − f₁ has</p>
+  <div class="eq">σ<sub>diff</sub> = √( f₁(1 − f₁)/S + f₂(1 − f₂)/S )</div>
+  <p style="font-size:24px">Uncertainties of independent results add <strong>in quadrature</strong>, so a difference is less certain than either result. A difference above 3σ<sub>diff</sub> is <strong>significant</strong>.</p>
+  <p style="font-size:23px">Grover, course model: 1 iteration 0.6342, 2 iterations 0.6870. Difference 0.0528, σ<sub>diff</sub> = 0.0106 with 4,000 shots each: about 5σ<sub>diff</sub>, significant.</p>
+  <div class="foot"><span>Module 6 · Mini-project</span><span>10</span></div>
+</section>
+
+<!-- 11 -->
+<section class="slide">
+  <h2>How many shots does a question need?</h2>
+  <p style="font-size:24px">To see a difference d at 3σ<sub>diff</sub>, with S shots for each result:</p>
+  <div class="eq">S &gt; 9 ( p₁(1 − p₁) + p₂(1 − p₂) ) / d²</div>
+  <p style="font-size:24px">Grover at P2 = 0.015: 1 iteration 0.6007, 2 iterations 0.6180, d = 0.0173. That needs about <strong>14,000 shots</strong> for each, not 4,000.</p>
+  <p style="font-size:24px">Close to a crossover, "which is better?" is an expensive question. The answer can be: <strong>the data cannot tell</strong>.</p>
+  <div class="foot"><span>Module 6 · Mini-project</span><span>11</span></div>
+</section>
+
+<!-- 12 -->
+<section class="slide">
+  <h2>Uncertainty of a mean</h2>
+  <p style="font-size:24px">Some results are averages over shots of a quantity that varies: the mean error of a phase estimate, the mean cut of QAOA. Their uncertainty is the <strong>standard error of the mean</strong>:</p>
+  <div class="eq">SEM = s / √S</div>
+  <p style="font-size:24px">where s is the standard deviation of the quantity over the shots. Two means differ significantly when their difference exceeds 3 √(SEM₁² + SEM₂²): the same rule as for fractions.</p>
+  <p class="small">QAOA, 2 layers, course model: expected cut 4.333; one shot's cut spreads by s ≈ 0.97, so 4,000 shots give SEM ≈ 0.015.</p>
+  <div class="foot"><span>Module 6 · Mini-project</span><span>12</span></div>
+</section>
+
+<!-- 13 -->
+<section class="slide">
+  <h2>Uncertainty that σ does not include</h2>
+  <ul>
+    <li style="font-size:24px"><strong>Choices made at random:</strong> the transpiler's seed changes the layout and routing. For 4 qubits at level 0, ten seeds spread by 0.011, more than the shot noise 0.007.</li>
+    <li style="font-size:24px"><strong>The computer changes:</strong> real calibrations drift; a run tomorrow can differ by more than its σ.</li>
+    <li style="font-size:24px"><strong>The model is not the computer:</strong> a 3σ agreement with a noise model says the run matches <em>that model</em>, nothing more.</li>
+  </ul>
+  <p style="font-size:23px">σ from one run measures how well that run measured <em>its</em> circuit. Questions about a setting need repeats over everything that varies.</p>
+  <div class="foot"><span>Module 6 · Mini-project</span><span>13</span></div>
+</section>
+
+<!-- 14 -->
+<section class="slide">
+  <h2>Noise can change the answer: Grover</h2>
+  <div class="cols">
+    <div style="flex:1.25"><svg width="620" height="380" viewBox="0 0 620 380" aria-label="Expected success of Grover with 1 and 2 iterations against P2; the curves cross at P2 = 0.018"><line x1="60" y1="320.0" x2="600" y2="320.0" stroke="#E4DCE0"/><text x="52" y="325.0" font-size="14" text-anchor="end">0.4</text><line x1="60" y1="260.0" x2="600" y2="260.0" stroke="#E4DCE0"/><text x="52" y="265.0" font-size="14" text-anchor="end">0.5</text><line x1="60" y1="200.0" x2="600" y2="200.0" stroke="#E4DCE0"/><text x="52" y="205.0" font-size="14" text-anchor="end">0.6</text><line x1="60" y1="140.0" x2="600" y2="140.0" stroke="#E4DCE0"/><text x="52" y="145.0" font-size="14" text-anchor="end">0.7</text><line x1="60" y1="80.0" x2="600" y2="80.0" stroke="#E4DCE0"/><text x="52" y="85.0" font-size="14" text-anchor="end">0.8</text><line x1="60" y1="20.0" x2="600" y2="20.0" stroke="#E4DCE0"/><text x="52" y="25.0" font-size="14" text-anchor="end">0.9</text><text x="60.0" y="342" font-size="14" text-anchor="middle">0.00</text><text x="240.0" y="342" font-size="14" text-anchor="middle">0.01</text><text x="420.0" y="342" font-size="14" text-anchor="middle">0.02</text><text x="600.0" y="342" font-size="14" text-anchor="middle">0.03</text><polyline points="60.0,135.2 78.0,139.9 96.0,144.5 114.0,149.1 132.0,153.6 150.0,158.0 168.0,162.4 186.0,166.8 204.0,171.1 222.0,175.3 240.0,179.5 258.0,183.6 276.0,187.7 294.0,191.7 312.0,195.6 330.0,199.6 348.0,203.4 366.0,207.3 384.0,211.0 402.0,214.7 420.0,218.4 438.0,222.1 456.0,225.6 474.0,229.2 492.0,232.7 510.0,236.1 528.0,239.5 546.0,242.9 564.0,246.2 582.0,249.5 600.0,252.7" fill="none" stroke="#B9AEB4" stroke-width="4"/><text x="596.0" y="232.7" font-size="16" text-anchor="end" fill="#24313D">1 iteration</text><polyline points="60.0,47.4 78.0,58.6 96.0,69.5 114.0,80.2 132.0,90.6 150.0,100.8 168.0,110.7 186.0,120.3 204.0,129.7 222.0,138.9 240.0,147.8 258.0,156.5 276.0,165.0 294.0,173.3 312.0,181.3 330.0,189.2 348.0,196.9 366.0,204.3 384.0,211.6 402.0,218.7 420.0,225.7 438.0,232.4 456.0,239.0 474.0,245.4 492.0,251.6 510.0,257.7 528.0,263.7 546.0,269.5 564.0,275.1 582.0,280.6 600.0,285.9" fill="none" stroke="#99004C" stroke-width="4"/><text x="596.0" y="307.9" font-size="16" text-anchor="end" fill="#99004C">2 iterations</text><line x1="384.0" y1="20" x2="384.0" y2="320" stroke="#24313D" stroke-dasharray="6 5"/><text x="390.0" y="36" font-size="15">P2 = 0.018</text><line x1="60" y1="320" x2="600" y2="320" stroke="#24313D" stroke-width="2"/><text x="330.0" y="366" font-size="15" text-anchor="middle" fill="#6A626B">P2, two-qubit depolarizing error</text></svg></div>
+    <div>
+      <p style="font-size:23px">Expected P(101) for 1 and 2 iterations as P2 grows (R = 0.02).</p>
+      <p style="font-size:23px">2 iterations have 24 cx gates, 1 iteration 12. From <strong>P2 = 0.018</strong> on, the shorter circuit wins although it is worse in theory.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Module 6 · Mini-project</span><span>14</span></div>
+</section>
+
+<!-- 15 -->
+<section class="slide">
+  <h2>Noise can change the answer: QPE and QAOA</h2>
+  <div class="cols">
+    <div>
+      <p style="font-size:22px"><strong>Phase estimation of 1/3:</strong> expected mean error (R = 0.02); the best number of counting qubits falls as the noise grows.</p>
+      <table style="font-size:19px"><tr><th>P2</th><th>m=3</th><th>m=4</th><th>m=5</th><th>m=6</th><th>m=7</th></tr><tr><td>0.00</td><td>0.079</td><td>0.046</td><td>0.026</td><td>0.015</td><td style="font-weight:700;color:#99004C">0.008</td></tr><tr><td>0.01</td><td>0.101</td><td>0.079</td><td>0.067</td><td>0.063</td><td style="font-weight:700;color:#99004C">0.062</td></tr><tr><td>0.02</td><td>0.109</td><td>0.092</td><td style="font-weight:700;color:#99004C">0.084</td><td>0.085</td><td>0.087</td></tr><tr><td>0.03</td><td>0.116</td><td>0.104</td><td style="font-weight:700;color:#99004C">0.100</td><td>0.104</td><td>0.109</td></tr></table>
+    </div>
+    <div style="flex:0.8">
+      <p style="font-size:22px"><strong>QAOA, 5 nodes:</strong> a third layer gains 0.203 without noise and 0.111 with the course model; from P2 = 0.032 two layers are better.</p>
+      <p class="small">Past the best choice, each extra gate adds more noise than it adds to the answer.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Module 6 · Mini-project</span><span>15</span></div>
+</section>
+
+<!-- 16 -->
+<section class="slide">
+  <h2>Limits: what a noise model leaves out</h2>
+  <ul>
+    <li style="font-size:24px"><strong>Connectivity:</strong> real qubits have few neighbours; swaps add two-qubit gates (Module 4).</li>
+    <li style="font-size:24px"><strong>Errors that repeat:</strong> a gate that over-rotates by the same angle every time; such errors add up instead of averaging out.</li>
+    <li style="font-size:24px"><strong>Crosstalk and leakage:</strong> neighbouring qubits disturb each other; a qubit can leave the states |0⟩ and |1⟩.</li>
+    <li style="font-size:24px"><strong>Drift:</strong> every qubit and gate has its own error, and it changes between calibrations.</li>
+  </ul>
+  <p style="font-size:23px">Every experiment has limits. Saying what a result does not show is part of reporting it.</p>
+  <div class="foot"><span>Module 6 · Mini-project</span><span>16</span></div>
+</section>
+
+<!-- 17 -->
+<section class="slide">
+  <h2>Optional: a real IBM quantum computer</h2>
+  <ul>
+    <li style="font-size:24px">Your own free IBM Quantum account with the <strong>Open Plan</strong>: up to 10 minutes of quantum computer time every 28 days.</li>
+    <li style="font-size:24px">The Colab hardware notebook runs your project's reference circuit (4,000 shots, a few seconds of quantum time; the queue can take much longer).</li>
+    <li style="font-size:24px">It compares the result with the ideal value, the course model and IBM's noise model of that computer.</li>
+    <li style="font-size:24px">Your API key stays in Colab <strong>Secrets</strong>; never type it into a cell.</li>
+  </ul>
+  <p class="small">Not graded; the badge does not depend on it. Without an account, the same notebook runs on FakePittsburgh.</p>
+  <div class="foot"><span>Module 6 · Mini-project</span><span>17</span></div>
+</section>
+
+<!-- 18 -->
+<section class="slide">
+  <h2>Reporting an experiment, and credits</h2>
+  <p style="font-size:23px"><strong>Question</strong> · <strong>Method</strong> (circuit, noise model, shots) · <strong>Result</strong> with its uncertainty (0.687 ± 0.007) · <strong>Interpretation</strong> (which differences are significant) · <strong>Limits</strong>.</p>
+  <p style="font-size:20px">These slides were written for SemiAcademy's <em>Quantum Computing Intermediate</em> course, developed through the Intel Semiconductor Education Program at Central State University (ISEP-CSU). License: <strong>CC BY 4.0</strong>, https://creativecommons.org/licenses/by/4.0/. Suggested credit: "Module 6 slides, Quantum Computing Intermediate, SemiAcademy / ISEP-CSU, CC BY 4.0."</p>
+  <p class="small">Every number was computed for these slides with the exact noisy simulator of the project check cells (checked against qsim 1.10.0 and Qiskit Aer 0.17.2); the transpiler numbers come from the course's saved runs (qiskit 2.5.2, FakePittsburgh). Source: github.com/CSU-Physics/quantum-computing-notebooks (media/level2/m6-slides.html).</p>
+  <div class="foot"><span>Module 6 · Mini-project</span><span>18</span></div>
+</section>
+
+</div></div>
+<div id="bar">
+  <button type="button" id="prev" aria-label="Previous slide">◀ Prev</button>
+  <span id="count">1 / 18</span>
+  <button type="button" id="next" aria-label="Next slide">Next ▶</button>
+  <button type="button" id="full">Full screen</button>
+  <button type="button" id="print">Print / PDF</button>
+</div>
+<script>
+(function () {
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide')), i = 0;
+  var m = /[#&]s=?(\d+)/.exec(location.hash); if (m) i = Math.min(slides.length - 1, Math.max(0, parseInt(m[1], 10) - 1));
+  function show(n) {
+    i = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach(function (s, j) { s.classList.toggle('on', j === i); });
+    document.getElementById('count').textContent = (i + 1) + ' / ' + slides.length;
+    try { history.replaceState(null, '', '#s' + (i + 1)); } catch (e) {}
+  }
+  function fit() {
+    var vp = document.getElementById('viewport'), st = document.getElementById('stage');
+    var sc = Math.min(vp.clientWidth / 1280, vp.clientHeight / 720);
+    st.style.transform = 'scale(' + sc + ')';
+  }
+  document.getElementById('prev').onclick = function () { show(i - 1); };
+  document.getElementById('next').onclick = function () { show(i + 1); };
+  document.getElementById('full').onclick = function () { var d = document.documentElement; if (!document.fullscreenElement && d.requestFullscreen) d.requestFullscreen(); else if (document.exitFullscreen) document.exitFullscreen(); };
+  document.getElementById('print').onclick = function () { window.print(); };
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { show(i + 1); e.preventDefault(); }
+    if (e.key === 'ArrowLeft' || e.key === 'PageUp') { show(i - 1); e.preventDefault(); }
+    if (e.key === 'Home') show(0); if (e.key === 'End') show(slides.length - 1);
+  });
+  var tx = null;
+  document.addEventListener('touchstart', function (e) { tx = e.touches[0].clientX; }, { passive: true });
+  document.addEventListener('touchend', function (e) { if (tx === null) return; var dx = e.changedTouches[0].clientX - tx; if (Math.abs(dx) > 50) show(i + (dx < 0 ? 1 : -1)); tx = null; });
+  document.getElementById('stage').addEventListener('click', function (e) {
+    var b = e.target.closest('.reveal button'); if (b) b.parentNode.classList.add('open');
+  });
+  window.addEventListener('resize', fit);
+  fit(); show(i);
+})();
+</script>
+</body>
+</html>

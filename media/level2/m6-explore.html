@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Module 6 Explorer: Uncertainty and Noise</title>
+<style>
+  :root { --maroon:#99004C; --ink:#24313D; --muted:#6A626B; --line:#E4DCE0; --tint:#F8F4F6; --gold:#C9A227; --ok:#2E7D4F; --bad:#B3261E; --grey:#B9AEB4; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:#fff; color:var(--ink); font-family:"Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size:15px; }
+  .tabs { display:flex; border-bottom:2px solid var(--line); background:var(--tint); }
+  .tabs button { flex:1; border:0; background:none; padding:10px 8px; font-size:15px; cursor:pointer; color:var(--muted); border-bottom:3px solid transparent; }
+  .tabs button.on { color:var(--maroon); border-bottom-color:var(--maroon); font-weight:600; background:#fff; }
+  .tool { display:none; padding:12px 16px; }
+  .tool.on { display:block; }
+  h2 { font-family:Georgia, serif; color:var(--maroon); font-size:19px; margin:0 0 4px; }
+  .hint { color:var(--muted); margin:0 0 10px; line-height:1.45; }
+  .grid { display:grid; grid-template-columns: 280px 1fr; gap:14px; align-items:start; }
+  @media (max-width: 660px) { .grid { grid-template-columns: 1fr; } }
+  .box { border:1px solid var(--line); border-radius:6px; padding:10px 12px; min-width:0; }
+  .box h3 { margin:0 0 6px; font-size:14.5px; color:var(--maroon); }
+  label { display:flex; justify-content:space-between; align-items:center; margin:8px 0 2px; font-size:14px; gap:8px; }
+  input[type=range] { width:100%; }
+  select { font-size:14px; padding:3px 6px; max-width:100%; }
+  .row { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; align-items:center; }
+  button.act { border:2px solid var(--ink); background:#fff; color:var(--ink); padding:4px 9px; border-radius:5px; font-size:13.5px; cursor:pointer; }
+  button.act:hover { border-color:var(--maroon); color:var(--maroon); }
+  .mono { font-family: Consolas, "Courier New", monospace; }
+  .note { margin-top:8px; padding:7px 10px; border-radius:4px; font-size:13.5px; background:var(--tint); color:var(--ink); line-height:1.45; }
+  .stats { display:grid; grid-template-columns: 1fr auto; gap:4px 10px; font-size:13.5px; margin-top:8px; }
+  .stats span.v { font-family:Consolas, monospace; text-align:right; }
+  svg.chart { width:100%; height:auto; display:block; }
+  .credit { color:var(--muted); font-size:12px; padding:8px 16px 12px; border-top:1px solid var(--line); }
+</style>
+</head>
+<body>
+<div class="tabs" role="tablist">
+  <button type="button" data-t="shots" role="tab">1. Shot noise and 3σ</button>
+  <button type="button" data-t="diff" role="tab">2. Comparing two results</button>
+  <button type="button" data-t="best" role="tab">3. Noise and the best choice</button>
+</div>
+
+<!-- TOOL 1 -->
+<section class="tool" id="t-shots">
+  <h2>How far can a correct run land from the expected value?</h2>
+  <p class="hint">Each run takes S shots of a circuit whose result comes out with probability p, and records the fraction f. Run it many times: the fractions scatter around p with standard deviation σ = √(p(1 − p)/S). The shaded band is p ± 3σ, the course's rule for agreement.</p>
+  <div class="grid">
+    <div class="box">
+      <h3>Experiment</h3>
+      <label for="p1">expected value p <span class="mono" id="p1v"></span></label><input type="range" id="p1" min="0.02" max="0.98" step="0.001" value="0.687">
+      <label for="s1">shots S per run</label>
+      <select id="s1"><option>100</option><option>400</option><option>1000</option><option selected>4000</option><option>16000</option></select>
+      <div class="row"><button type="button" class="act" id="one">1 run</button><button type="button" class="act" id="hund">100 runs</button><button type="button" class="act" id="clr1">Clear</button></div>
+      <div class="stats" id="st1"></div>
+    </div>
+    <div class="box">
+      <h3>Measured fractions</h3>
+      <svg class="chart" id="h1" viewBox="0 0 560 300" role="img" aria-label="Histogram of the measured fractions with the 3 sigma band"></svg>
+      <div class="note" id="msg1"></div>
+    </div>
+  </div>
+</section>
+
+<!-- TOOL 2 -->
+<section class="tool" id="t-diff">
+  <h2>Is a difference real, or shot noise?</h2>
+  <p class="hint">Two circuits succeed with probabilities p₁ and p₂. Each experiment runs both with S shots and tests the measured difference against 3σ<sub>diff</sub>, σ<sub>diff</sub> = √(f₁(1 − f₁)/S + f₂(1 − f₂)/S). How often does an experiment detect the real difference?</p>
+  <div class="grid">
+    <div class="box">
+      <h3>Two circuits</h3>
+      <select id="pre2">
+        <option value="0.6342,0.6870">Grover, course model: 1 vs 2 iterations</option>
+        <option value="0.6007,0.6180">Grover, P2 = 0.015: 1 vs 2 iterations</option>
+        <option value="0.5879,0.5928">Grover, P2 = 0.017: 1 vs 2 iterations</option>
+        <option value="custom">your own values</option>
+      </select>
+      <label for="pa">p₁ <span class="mono" id="pav"></span></label><input type="range" id="pa" min="0.02" max="0.98" step="0.0001" value="0.6342">
+      <label for="pb">p₂ <span class="mono" id="pbv"></span></label><input type="range" id="pb" min="0.02" max="0.98" step="0.0001" value="0.687">
+      <label for="s2">shots S for each</label>
+      <select id="s2"><option>1000</option><option selected>4000</option><option>16000</option><option>64000</option></select>
+      <div class="row"><button type="button" class="act" id="sim2">Run 200 experiments</button></div>
+      <div class="stats" id="st2"></div>
+    </div>
+    <div class="box">
+      <h3>Measured differences f₂ − f₁</h3>
+      <svg class="chart" id="h2" viewBox="0 0 560 300" role="img" aria-label="Histogram of measured differences with the band of plus or minus 3 sigma diff around zero"></svg>
+      <div class="note" id="msg2"></div>
+    </div>
+  </div>
+</section>
+
+<!-- TOOL 3 -->
+<section class="tool" id="t-best">
+  <h2>Which choice is best on a noisier computer?</h2>
+  <p class="hint">The noise model's exact expected values for the three browser projects (course readout error, READOUT = 0.02; no shots). Move P2, the two-qubit depolarizing error, and watch which choice is best. Values are rounded (3 decimals; 2 for QAOA).</p>
+  <div class="grid">
+    <div class="box">
+      <h3>Experiment</h3>
+      <select id="exp3">
+        <option value="grover">Grover, marked 101: P(101) by iterations</option>
+        <option value="qpe">Phase estimation of 1/3: mean error by counting qubits (lower is better)</option>
+        <option value="qaoa">QAOA, 5 nodes: expected cut by layers</option>
+      </select>
+      <label for="p3">P2 <span class="mono" id="p3v"></span></label><input type="range" id="p3" min="0" max="30" step="1" value="10">
+      <div class="stats" id="st3"></div>
+    </div>
+    <div class="box">
+      <h3>Expected value of each choice</h3>
+      <svg class="chart" id="b3" viewBox="0 0 560 260" role="img" aria-label="Bar chart of the expected value of each choice at the chosen P2"></svg>
+      <svg class="chart" id="l3" viewBox="0 0 560 230" role="img" aria-label="Expected value of each choice against P2"></svg>
+      <div class="row" id="leg3" style="font-size:12.5px;margin-top:2px"></div>
+      <div class="note" id="msg3"></div>
+    </div>
+  </div>
+</section>
+
+<div class="credit">Module 6 explorer · Quantum Computing Intermediate · SemiAcademy / ISEP-CSU · CC BY 4.0. Tabs 1 and 2 draw random shots in your browser. Tab 3 shows exact values computed for the course with the noisy simulator of the project check cells (density matrices with the course noise model). This is a practice tool: the graded values come from your project notebook.</div>
+
+<script>
+(function () {
+  var DATA = {"p2":[0.0,0.001,0.002,0.003,0.004,0.005,0.006,0.007,0.008,0.009,0.01,0.011,0.012,0.013,0.014,0.015,0.016,0.017,0.018,0.019,0.02,0.021,0.022,0.023,0.024,0.025,0.026,0.027,0.028,0.029,0.03],"p2wide":[0.0,0.001,0.002,0.003,0.004,0.005,0.006,0.007,0.008,0.009,0.01,0.011,0.012,0.013,0.014,0.015,0.016,0.017,0.018,0.019,0.02,0.021,0.022,0.023,0.024,0.025,0.026,0.027,0.028,0.029,0.03,0.031,0.032,0.033,0.034,0.035,0.036,0.037,0.038,0.039,0.04,0.041,0.042,0.043,0.044,0.045,0.046,0.047,0.048,0.049,0.05],"grover":{"0":[0.12245,0.12245,0.12245,0.12245,0.12245,0.12245,0.12245,0.12245,0.12245,0.12245,0.12245,0.12245,0.12245,0.12245,0.12245,0.12245,0.12245,0.12245,0.12245,0.12245,0.12245,0.12245,0.12245,0.12245,0.12245,0.12245,0.12245,0.12245,0.12245,0.12245,0.12245],"1":[0.70799,0.70018,0.69248,0.68487,0.67736,0.66994,0.66261,0.65538,0.64824,0.64119,0.63423,0.62736,0.62057,0.61387,0.60725,0.60072,0.59428,0.58791,0.58162,0.57542,0.56929,0.56325,0.55728,0.55138,0.54556,0.53982,0.53415,0.52855,0.52302,0.51757,0.51218],"2":[0.85437,0.83567,0.81742,0.79964,0.7823,0.76539,0.74891,0.73284,0.71718,0.7019,0.68701,0.6725,0.65834,0.64455,0.6311,0.61799,0.60521,0.59276,0.58061,0.56878,0.55724,0.54599,0.53503,0.52435,0.51393,0.50378,0.49389,0.48425,0.47485,0.46569,0.45676],"3":[0.30543,0.2992,0.29319,0.28737,0.28176,0.27633,0.27109,0.26603,0.26114,0.25641,0.25185,0.24744,0.24318,0.23906,0.23508,0.23124,0.22753,0.22395,0.22048,0.21714,0.2139,0.21078,0.20777,0.20485,0.20204,0.19932,0.19669,0.19415,0.1917,0.18933,0.18704],"4":[0.02181,0.02795,0.03375,0.03921,0.04437,0.04922,0.0538,0.05812,0.06218,0.06601,0.06962,0.07302,0.07621,0.07922,0.08205,0.08472,0.08722,0.08958,0.09179,0.09387,0.09582,0.09766,0.09938,0.101,0.10251,0.10394,0.10527,0.10652,0.10769,0.10879,0.10982],"5":[0.49985,0.47684,0.45523,0.43495,0.4159,0.39801,0.38121,0.36544,0.35063,0.33672,0.32366,0.3114,0.29989,0.28908,0.27892,0.26939,0.26044,0.25203,0.24414,0.23673,0.22977,0.22323,0.21709,0.21133,0.20592,0.20084,0.19607,0.19159,0.18738,0.18343,0.17971]},"qpe":{"3":[0.09291,0.09374,0.09456,0.09538,0.0962,0.09701,0.09782,0.09862,0.09942,0.10022,0.10101,0.1018,0.10259,0.10337,0.10415,0.10492,0.10569,0.10646,0.10722,0.10798,0.10874,0.10949,0.11024,0.11099,0.11173,0.11247,0.1132,0.11394,0.11466,0.11539,0.11611],"4":[0.06519,0.06663,0.06806,0.06948,0.07088,0.07228,0.07366,0.07504,0.0764,0.07775,0.07909,0.08042,0.08174,0.08305,0.08435,0.08564,0.08692,0.08819,0.08944,0.09069,0.09193,0.09316,0.09438,0.09559,0.09679,0.09798,0.09916,0.10033,0.1015,0.10265,0.1038],"5":[0.04721,0.04923,0.05124,0.05322,0.05519,0.05713,0.05905,0.06095,0.06283,0.06469,0.06654,0.06836,0.07016,0.07194,0.07371,0.07546,0.07718,0.07889,0.08058,0.08226,0.08391,0.08555,0.08717,0.08878,0.09036,0.09193,0.09349,0.09503,0.09655,0.09805,0.09954],"6":[0.03784,0.04051,0.04314,0.04574,0.04829,0.05081,0.0533,0.05575,0.05816,0.06054,0.06289,0.0652,0.06749,0.06974,0.07196,0.07414,0.0763,0.07843,0.08053,0.08259,0.08463,0.08665,0.08863,0.09059,0.09252,0.09442,0.0963,0.09815,0.09998,0.10178,0.10355],"7":[0.03207,0.03531,0.03849,0.04162,0.0447,0.04772,0.05069,0.05361,0.05648,0.0593,0.06207,0.0648,0.06748,0.07011,0.0727,0.07525,0.07775,0.08021,0.08263,0.08502,0.08736,0.08966,0.09192,0.09415,0.09634,0.09849,0.10061,0.10269,0.10474,0.10676,0.10874]},"qaoa":{"1":[3.97966,3.97647,3.97329,3.97012,3.96695,3.9638,3.96065,3.9575,3.95437,3.95124,3.94812,3.945,3.9419,3.9388,3.9357,3.93262,3.92954,3.92647,3.9234,3.92035,3.9173,3.91425,3.91122,3.90819,3.90517,3.90215,3.89914,3.89614,3.89315,3.89016,3.88718,3.88421,3.88124,3.87828,3.87533,3.87239,3.86945,3.86652,3.86359,3.86068,3.85777,3.85486,3.85197,3.84908,3.84619,3.84332,3.84045,3.83759,3.83473,3.83188,3.82904],"2":[4.43326,4.42289,4.41258,4.40235,4.39218,4.38208,4.37206,4.36209,4.3522,4.34238,4.33262,4.32292,4.3133,4.30374,4.29424,4.28481,4.27544,4.26613,4.25689,4.24771,4.2386,4.22954,4.22055,4.21162,4.20275,4.19394,4.18519,4.1765,4.16787,4.1593,4.15079,4.14233,4.13394,4.1256,4.11731,4.10909,4.10092,4.0928,4.08474,4.07674,4.06879,4.0609,4.05306,4.04527,4.03754,4.02986,4.02223,4.01466,4.00713,3.99966,3.99224],"3":[4.61241,4.59477,4.5773,4.56003,4.54293,4.52602,4.50928,4.49272,4.47634,4.46013,4.44409,4.42822,4.41252,4.39698,4.38161,4.3664,4.35136,4.33647,4.32174,4.30716,4.29274,4.27848,4.26436,4.25039,4.23658,4.22291,4.20938,4.196,4.18276,4.16966,4.1567,4.14387,4.13119,4.11864,4.10622,4.09393,4.08178,4.06975,4.05785,4.04608,4.03444,4.02291,4.01152,4.00024,3.98908,3.97805,3.96713,3.95632,3.94563,3.93506,3.9246]}};
+  var $ = function (id) { return document.getElementById(id); };
+  var NS = 'http://www.w3.org/2000/svg';
+  function sv(p, tag, a, txt) { var e = document.createElementNS(NS, tag); for (var k in a) e.setAttribute(k, a[k]); if (txt !== undefined) e.textContent = txt; p.appendChild(e); return e; }
+  function clear(s) { while (s.firstChild) s.removeChild(s.firstChild); }
+  var tabs = document.querySelectorAll('.tabs button');
+  function openTab(t) {
+    tabs.forEach(function (b) { b.classList.toggle('on', b.dataset.t === t); });
+    document.querySelectorAll('.tool').forEach(function (s) { s.classList.toggle('on', s.id === 't-' + t); });
+  }
+  tabs.forEach(function (b) { b.onclick = function () { openTab(b.dataset.t); }; });
+  function fromHash() { var h = location.hash; openTab(h.indexOf('diff') >= 0 ? 'diff' : (h.indexOf('best') >= 0 ? 'best' : 'shots')); }
+  window.addEventListener('hashchange', fromHash);
+  fromHash();
+
+  function binom(n, p) { var k = 0; for (var i = 0; i < n; i++) if (Math.random() < p) k++; return k; }
+
+  // ---------------------------------------------------------------- tool 1: shot noise
+  var runs = [];
+  function sig(p, s) { return Math.sqrt(p * (1 - p) / s); }
+  function draw1() {
+    var p = +$('p1').value, s = +$('s1').value, sd = sig(p, s), svg = $('h1');
+    $('p1v').textContent = p.toFixed(3);
+    clear(svg);
+    var x0 = 40, x1 = 545, yb = 255, yt = 20, lo = p - 5 * sd, hi = p + 5 * sd;
+    var X = function (f) { return x0 + (x1 - x0) * (f - lo) / (hi - lo); };
+    sv(svg, 'rect', { x: X(p - 3 * sd), y: yt, width: X(p + 3 * sd) - X(p - 3 * sd), height: yb - yt, fill: '#F8F4F6' });
+    sv(svg, 'rect', { x: X(p - sd), y: yt, width: X(p + sd) - X(p - sd), height: yb - yt, fill: '#F1E3EA' });
+    var nb = 40, bins = new Array(nb).fill(0), out = 0;
+    runs.forEach(function (f) { var b = Math.floor((f - lo) / (hi - lo) * nb); if (b >= 0 && b < nb) bins[b]++; if (Math.abs(f - p) > 3 * sd) out++; });
+    var mx = Math.max.apply(null, bins.concat([1])), bw = (x1 - x0) / nb;
+    bins.forEach(function (c, i) { if (!c) return; var h = c / mx * (yb - yt - 20); sv(svg, 'rect', { x: x0 + i * bw + 1, y: yb - h, width: bw - 2, height: h, fill: '#99004C' }); });
+    sv(svg, 'line', { x1: X(p), y1: yt, x2: X(p), y2: yb, stroke: '#24313D', 'stroke-dasharray': '5 4' });
+    sv(svg, 'line', { x1: x0, y1: yb, x2: x1, y2: yb, stroke: '#24313D', 'stroke-width': 2 });
+    [-3, -1, 0, 1, 3].forEach(function (z) { sv(svg, 'text', { x: X(p + z * sd), y: yb + 18, 'font-size': 12, 'text-anchor': 'middle' }, (p + z * sd).toFixed(3)); });
+    sv(svg, 'text', { x: (x0 + x1) / 2, y: 292, 'font-size': 13, 'text-anchor': 'middle', fill: '#6A626B' }, 'measured fraction f (light band ±1σ, wide band ±3σ)');
+    var html = '<span>σ = √(p(1 − p)/S)</span><span class="v">' + sd.toFixed(4) + '</span><span>3σ</span><span class="v">' + (3 * sd).toFixed(4) + '</span>' +
+      '<span>runs</span><span class="v">' + runs.length + '</span><span>outside ±3σ</span><span class="v">' + out + (runs.length ? ' (' + (100 * out / runs.length).toFixed(1) + '%)' : '') + '</span>';
+    if (runs.length) { var f = runs[runs.length - 1]; html += '<span>last run: f</span><span class="v">' + f.toFixed(4) + '</span><span>last run: (f − p)/σ</span><span class="v">' + ((f - p) / sd).toFixed(2) + '</span>'; }
+    $('st1').innerHTML = html;
+    $('msg1').textContent = runs.length < 50 ? 'Click "100 runs" a few times. About 68% of the runs land within ±1σ, 95% within ±2σ and 99.7% within ±3σ.' :
+      'Of ' + runs.length + ' correct runs, ' + out + ' landed outside ±3σ. Expected: about 3 in 1,000. With 4 times as many shots, σ halves.';
+  }
+  function addRuns(n) { var p = +$('p1').value, s = +$('s1').value; for (var i = 0; i < n; i++) runs.push(binom(s, p) / s); draw1(); }
+  $('one').onclick = function () { addRuns(1); };
+  $('hund').onclick = function () { addRuns(100); };
+  $('clr1').onclick = function () { runs = []; draw1(); };
+  $('p1').oninput = function () { runs = []; draw1(); };
+  $('s1').onchange = function () { runs = []; draw1(); };
+  draw1();
+
+  // ---------------------------------------------------------------- tool 2: two results
+  var diffs = [];
+  function draw2() {
+    var pa = +$('pa').value, pb = +$('pb').value, s = +$('s2').value, d = pb - pa;
+    $('pav').textContent = pa.toFixed(4); $('pbv').textContent = pb.toFixed(4);
+    var sd = Math.sqrt(pa * (1 - pa) / s + pb * (1 - pb) / s);
+    var need = d === 0 ? Infinity : 9 * (pa * (1 - pa) + pb * (1 - pb)) / (d * d);
+    var svg = $('h2'); clear(svg);
+    var span = Math.max(Math.abs(d) + 4 * sd, 4 * sd), lo = -span, hi = span, x0 = 40, x1 = 545, yb = 255, yt = 20;
+    var X = function (v) { return x0 + (x1 - x0) * (v - lo) / (hi - lo); };
+    sv(svg, 'rect', { x: X(-3 * sd), y: yt, width: X(3 * sd) - X(-3 * sd), height: yb - yt, fill: '#F8F4F6' });
+    var nb = 40, bins = new Array(nb).fill(0), sig_ = 0, wrong = 0;
+    diffs.forEach(function (o) { var b = Math.floor((o[0] - lo) / (hi - lo) * nb); if (b >= 0 && b < nb) bins[b]++; if (o[1]) sig_++; if (o[1] && Math.sign(o[0]) !== Math.sign(d)) wrong++; });
+    var mx = Math.max.apply(null, bins.concat([1])), bw = (x1 - x0) / nb;
+    bins.forEach(function (c, i) { if (!c) return; var h = c / mx * (yb - yt - 20); var mid = lo + (i + 0.5) * (hi - lo) / nb; sv(svg, 'rect', { x: x0 + i * bw + 1, y: yb - h, width: bw - 2, height: h, fill: Math.abs(mid) > 3 * sd ? '#99004C' : '#B9AEB4' }); });
+    sv(svg, 'line', { x1: X(0), y1: yt, x2: X(0), y2: yb, stroke: '#24313D' });
+    sv(svg, 'line', { x1: X(d), y1: yt, x2: X(d), y2: yb, stroke: '#C9A227', 'stroke-width': 3, 'stroke-dasharray': '6 4' });
+    sv(svg, 'text', { x: X(d), y: yt + 14, 'font-size': 12, 'text-anchor': 'middle' }, 'real difference');
+    sv(svg, 'line', { x1: x0, y1: yb, x2: x1, y2: yb, stroke: '#24313D', 'stroke-width': 2 });
+    [-3, 0, 3].forEach(function (z) { sv(svg, 'text', { x: X(z * sd), y: yb + 18, 'font-size': 12, 'text-anchor': 'middle' }, (z * sd).toFixed(3)); });
+    sv(svg, 'text', { x: (x0 + x1) / 2, y: 292, 'font-size': 13, 'text-anchor': 'middle', fill: '#6A626B' }, 'measured f₂ − f₁ (band: ±3σdiff; maroon bars are significant)');
+    var html = '<span>real difference d</span><span class="v">' + d.toFixed(4) + '</span><span>σdiff</span><span class="v">' + sd.toFixed(4) + '</span>' +
+      '<span>d / σdiff</span><span class="v">' + (d / sd).toFixed(1) + '</span><span>shots needed for 3σdiff</span><span class="v">' + (isFinite(need) ? Math.ceil(need).toLocaleString('en-US') : 'never') + '</span>';
+    if (diffs.length) html += '<span>experiments run</span><span class="v">' + diffs.length + '</span><span>significant</span><span class="v">' + (100 * sig_ / diffs.length).toFixed(0) + '%</span><span>significant, wrong sign</span><span class="v">' + wrong + '</span>';
+    $('st2').innerHTML = html;
+    $('msg2').textContent = !diffs.length ? 'Run 200 experiments to see how often the test finds the difference.' :
+      (sig_ / diffs.length > 0.9 ? 'Almost every experiment finds the difference: d is ' + (d / sd).toFixed(1) + ' σdiff.' :
+        (sig_ ? 'Only ' + (100 * sig_ / diffs.length).toFixed(0) + '% of the experiments find' : 'None of the experiments finds') + ' the difference. A "not significant" result here does not mean the circuits are equal: the experiment is too small to tell.');
+  }
+  function sim2() {
+    var pa = +$('pa').value, pb = +$('pb').value, s = +$('s2').value; diffs = [];
+    for (var i = 0; i < 200; i++) {
+      var fa = binom(s, pa) / s, fb = binom(s, pb) / s, sd = Math.sqrt(fa * (1 - fa) / s + fb * (1 - fb) / s);
+      diffs.push([fb - fa, Math.abs(fb - fa) > 3 * sd]);
+    }
+    draw2();
+  }
+  $('sim2').onclick = sim2;
+  $('pre2').onchange = function () { var v = $('pre2').value; if (v !== 'custom') { var a = v.split(','); $('pa').value = a[0]; $('pb').value = a[1]; } diffs = []; draw2(); };
+  ['pa', 'pb'].forEach(function (id) { $(id).oninput = function () { $('pre2').value = 'custom'; diffs = []; draw2(); }; });
+  $('s2').onchange = function () { diffs = []; draw2(); };
+  draw2();
+
+  // ---------------------------------------------------------------- tool 3: noise and the best choice
+  var EXP = {
+    grover: { keys: ['0', '1', '2', '3', '4', '5'], name: function (k) { return k + ' it.'; }, lower: false, label: 'P(101)', grid: DATA.p2, vals: DATA.grover, min: 0, dec: 3 },
+    qpe: { keys: ['3', '4', '5', '6', '7'], name: function (k) { return 'm = ' + k; }, lower: true, label: 'mean error', grid: DATA.p2, vals: DATA.qpe, min: 0, dec: 3 },
+    qaoa: { keys: ['1', '2', '3'], name: function (k) { return k + (k === '1' ? ' layer' : ' layers'); }, lower: false, label: 'expected cut', grid: DATA.p2wide, vals: DATA.qaoa, min: 3, dec: 2 }
+  };
+  var COLORS = ['#B9AEB4', '#24313D', '#99004C', '#C9A227', '#2E7D4F', '#6E2C4F'];
+  function draw3() {
+    var e = EXP[$('exp3').value], n = e.grid.length;
+    $('p3').max = n - 1;
+    var i = Math.min(+$('p3').value, n - 1), p2 = e.grid[i];
+    $('p3v').textContent = p2.toFixed(3);
+    var vals = e.keys.map(function (k) { return e.vals[k][i]; });
+    var best = 0; vals.forEach(function (v, j) { if (e.lower ? v < vals[best] : v > vals[best]) best = j; });
+    var svg = $('b3'); clear(svg);
+    var x0 = 50, x1 = 545, yb = 220, yt = 15, mx = 0;
+    e.keys.forEach(function (k) { e.vals[k].forEach(function (v) { mx = Math.max(mx, v); }); });
+    mx = Math.ceil(mx * 10) / 10;
+    var bw = (x1 - x0) / vals.length;
+    vals.forEach(function (v, j) {
+      var h = (v - e.min) / (mx - e.min) * (yb - yt);
+      sv(svg, 'rect', { x: x0 + j * bw + bw * 0.2, y: yb - h, width: bw * 0.6, height: h, fill: j === best ? '#99004C' : '#B9AEB4' });
+      sv(svg, 'text', { x: x0 + (j + 0.5) * bw, y: yb - h - 6, 'font-size': 13, 'text-anchor': 'middle' }, v.toFixed(e.dec));
+      sv(svg, 'text', { x: x0 + (j + 0.5) * bw, y: yb + 18, 'font-size': 13, 'text-anchor': 'middle' }, e.name(e.keys[j]));
+    });
+    sv(svg, 'line', { x1: x0, y1: yb, x2: x1, y2: yb, stroke: '#24313D', 'stroke-width': 2 });
+    sv(svg, 'text', { x: 14, y: (yb + yt) / 2, 'font-size': 13, 'text-anchor': 'middle', fill: '#6A626B', transform: 'rotate(-90 14 ' + (yb + yt) / 2 + ')' }, e.label + (e.min ? ' (from ' + e.min + ')' : ''));
+    var l = $('l3'); clear(l);
+    var X = function (q) { return x0 + (x1 - x0) * q / e.grid[n - 1]; }, lb = 190, lt = 10;
+    var Y = function (v) { return lb - (lb - lt) * (v - e.min) / (mx - e.min); };
+    e.keys.forEach(function (k, j) {
+      var pts = e.grid.map(function (q, t) { return X(q).toFixed(1) + ',' + Y(e.vals[k][t]).toFixed(1); }).join(' ');
+      sv(l, 'polyline', { points: pts, fill: 'none', stroke: COLORS[j % COLORS.length], 'stroke-width': j === best ? 3.5 : 2 });
+    });
+    sv(l, 'line', { x1: X(p2), y1: lt, x2: X(p2), y2: lb, stroke: '#24313D', 'stroke-dasharray': '5 4' });
+    sv(l, 'line', { x1: x0, y1: lb, x2: x1, y2: lb, stroke: '#24313D', 'stroke-width': 1.5 });
+    [0, e.grid[n - 1] / 2, e.grid[n - 1]].forEach(function (q) { sv(l, 'text', { x: X(q), y: lb + 16, 'font-size': 12, 'text-anchor': 'middle' }, q.toFixed(3)); });
+    sv(l, 'text', { x: (x0 + x1) / 2, y: 226, 'font-size': 12, 'text-anchor': 'middle', fill: '#6A626B' }, 'P2 (the dashed line is the value chosen above)');
+    $('leg3').innerHTML = e.keys.map(function (k, j) { return '<span><span style="display:inline-block;width:14px;height:4px;vertical-align:middle;margin-right:4px;background:' + COLORS[j % COLORS.length] + '"></span>' + e.name(k) + (j === best ? ' (best)' : '') + '</span>'; }).join(' ');
+    $('st3').innerHTML = '<span>P2</span><span class="v">' + p2.toFixed(3) + '</span><span>average gate error 0.75·P2</span><span class="v">' + (0.75 * p2).toFixed(4) + '</span>' +
+      '<span>best choice</span><span class="v">' + e.name(e.keys[best]) + '</span>';
+    var ideal = e.keys.map(function (k) { return e.vals[k][0]; }), ib = 0;
+    ideal.forEach(function (v, j) { if (e.lower ? v < ideal[ib] : v > ideal[ib]) ib = j; });
+    $('msg3').textContent = (best === ib ? 'At this P2 the best choice is the same as without noise (' + e.name(e.keys[ib]) + ').' :
+      'Without noise the best choice is ' + e.name(e.keys[ib]) + '; at this P2 it is ' + e.name(e.keys[best]) + ': the extra gates cost more than they give.') +
+      ' Remember that a difference smaller than about 3σ cannot be seen with a few thousand shots.';
+  }
+  $('exp3').onchange = function () { var n = EXP[$('exp3').value].grid.length; if (+$('p3').value > n - 1) $('p3').value = 10; draw3(); };
+  $('p3').oninput = draw3;
+  draw3();
+})();
+</script>
+</body>
+</html>
