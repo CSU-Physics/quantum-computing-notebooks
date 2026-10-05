@@ -170,7 +170,7 @@
       <p style="font-size:25px">The swaps at the end reverse the order, qubit i with qubit n − 1 − i. Without them the circuit is the DFT with its output bits reversed.</p>
     </div>
     <div>
-      <div class="card"><h3>A common mistake</h3><p>Leaving out the swaps. The lab's check cell recognises this case and says so. Writing the angles with a minus sign gives the <strong>inverse</strong> QFT, which it also recognises.</p></div>
+      <div class="card"><h3>A common mistake</h3><p>Leaving out the swaps. The lab's check cell recognises this case and says so. It also recognises the <strong>inverse</strong> QFT built by mistake. To build an inverse on purpose, apply the inverse gates in reverse order: <code>qft(n).inverse()</code>.</p></div>
     </div>
   </div>
   <div class="foot"><span>Module 1 · The QFT and phase estimation</span><span>8</span></div>
@@ -226,7 +226,7 @@
       <text x="760" y="248" font-size="21" fill="#2E7D4F">result m = c2 c1 c0 (binary), φ ≈ m/8</text>
     </g>
   </svg>
-  <p class="small">Here U = P(2πφ) and |ψ⟩ = |1⟩ (prepared with an X gate). QFT† is <code>qft(t).inverse()</code>.</p>
+  <p class="small">Here U = P(2πφ) and |ψ⟩ = |1⟩ (prepared with an X gate). QFT† is <code>qft(t).inverse()</code>: the inverse of every gate, in reverse order.</p>
   <div class="foot"><span>Module 1 · The QFT and phase estimation</span><span>11</span></div>
 </section>
 
@@ -235,10 +235,10 @@
   <h2>Why it works</h2>
   <p>After the controlled powers, the counting register holds</p>
   <div class="eq">(1/√2ᵗ) Σ<sub>j</sub> e<sup>2πi·φ·j</sup> |j⟩</div>
-  <p>Compare with QFT|x⟩ = (1/√2ᵗ) Σ<sub>j</sub> e<sup>2πi·x·j/2ᵗ</sup>|j⟩: it is the QFT of |x⟩ with x = φ·2ᵗ.</p>
+  <p>Compare with QFT|x⟩ = (1/√2ᵗ) Σ<sub>j</sub> e<sup>2πi·x·j/2ᵗ</sup>|j⟩: when x = φ·2ᵗ is a whole number, it is exactly QFT|x⟩.</p>
   <ul>
     <li style="font-size:25px">If φ·2ᵗ is a whole number, the inverse QFT gives exactly |φ·2ᵗ⟩: every shot returns m = φ·2ᵗ.</li>
-    <li style="font-size:25px">Otherwise it gives a peak at the nearest whole numbers: the closest one with probability at least 4/π² ≈ 0.405.</li>
+    <li style="font-size:25px">Otherwise the state is not the QFT of one basis state. The results peak at the closest whole number (probability at least 4/π² ≈ 0.405); the rest is spread over other results, mostly nearby.</li>
   </ul>
   <div class="foot"><span>Module 1 · The QFT and phase estimation</span><span>12</span></div>
 </section>
