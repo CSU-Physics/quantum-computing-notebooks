@@ -1,0 +1,229 @@
+
+<!-- 1 -->
+<section class="slide title-slide">
+  <div class="kicker">Quantum Computing Intermediate · Module 6</div>
+  <h1>Mini-project: an experiment on a noisy quantum computer</h1>
+  <p style="font-size:29px;max-width:620px">Run one experiment on a noisy simulator, compare it with what the noise model predicts, and report the result with its uncertainty and its limits.</p>
+  <div style="position:absolute;right:80px;top:200px;width:420px">/*FIG_TITLE*/</div>
+  <div class="foot"><span>SemiAcademy · ISEP-CSU</span><span>CC BY 4.0</span></div>
+</section>
+
+<!-- 2 -->
+<section class="slide">
+  <h2>By the end of this module you can</h2>
+  <ul>
+    <li>describe a <strong>noise model</strong>: depolarizing errors on gates and readout errors on measurements;</li>
+    <li>compute the noise model's <strong>expected value</strong> and compare a sampled run with it by the <strong>3σ rule</strong>;</li>
+    <li>give a measured fraction or mean with its <strong>uncertainty</strong>, and test whether two results <strong>differ significantly</strong>;</li>
+    <li>find how a design choice (iterations, counting qubits, layers, transpiler settings) depends on the noise;</li>
+    <li>say what an experiment <strong>does not show</strong>: its limits.</li>
+  </ul>
+  <p class="small" style="margin-top:22px">Course outcome 5: run an experiment on a noisy simulator and report its results, their uncertainty and their limits; running it on a real quantum computer is an optional extension.</p>
+  <div class="foot"><span>Module 6 · Mini-project</span><span>2</span></div>
+</section>
+
+<!-- 3 -->
+<section class="slide">
+  <h2>Four experiments: choose one</h2>
+  <table style="font-size:20px">
+    <tr><th>Experiment</th><th>Question</th><th>You vary</th><th>Runs in</th></tr>
+    <tr><td>Grover's search with noise</td><td>Are 2 iterations still best on a noisy computer?</td><td>iterations, P2</td><td>browser</td></tr>
+    <tr><td>Phase estimation of 1/3 with noise</td><td>How many counting qubits give the best estimate?</td><td>counting qubits, P2</td><td>browser</td></tr>
+    <tr><td>QAOA with noise</td><td>How much of each layer's gain survives the noise?</td><td>layers, P2</td><td>browser</td></tr>
+    <tr><td>A transpiler comparison</td><td>Which transpiler differences can 4,000 shots detect?</td><td>optimization level, seed, qubits</td><td>Colab (or browser with saved runs)</td></tr>
+  </table>
+  <p style="font-size:23px;margin-top:18px">Each project notebook has check cells and personal numbers from your project quiz. You may change the choice you made in Module 2.</p>
+  <div class="foot"><span>Module 6 · Mini-project</span><span>3</span></div>
+</section>
+
+<!-- 4 -->
+<section class="slide">
+  <h2>How the project works</h2>
+  <div class="cols">
+    <div>
+      <ol style="font-size:24px;line-height:1.5;padding-left:30px">
+        <li>Read this page and the slides (about 75 minutes).</li>
+        <li>Open your project notebook: write the functions, run the experiment, get your verification value (about 3 hours).</li>
+        <li>Take the project quiz <strong>for your experiment</strong>: 20 points, pass at 16 (about 30 minutes).</li>
+        <li>Time log.</li>
+      </ol>
+    </div>
+    <div class="card" style="flex:0.8">
+      <h3>Optional</h3>
+      <p>A short written summary in the notebook (not graded).</p>
+      <p style="margin-top:12px">A run on a real IBM computer with your own free Open Plan account (Colab). The badge never depends on it.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Module 6 · Mini-project</span><span>4</span></div>
+</section>
+
+<!-- 5 -->
+<section class="slide">
+  <h2>A noise model in three parts</h2>
+  <ul>
+    <li style="font-size:24px"><strong>Two-qubit gates</strong> (cx, cz, cp, rzz, swap): a <strong>depolarizing error</strong> with parameter P2. With probability P2 the two qubits become completely random:</li>
+  </ul>
+  <div class="eq" style="font-size:28px">ρ → (1 − P2) ρ + P2 · I/4</div>
+  <ul>
+    <li style="font-size:24px"><strong>One-qubit gates</strong>: the same on one qubit, with P2/10.</li>
+    <li style="font-size:24px"><strong>Readout</strong>: a 0 is recorded as 1 with probability R, a 1 as 0 with probability 2R (an excited qubit can decay while it is measured).</li>
+  </ul>
+  <p class="small">Errors are attached by gate name. A gate on three qubits (ccx, mcx) would get no error, so the projects use only one- and two-qubit gates, as a real computer does.</p>
+  <div class="foot"><span>Module 6 · Mini-project</span><span>5</span></div>
+</section>
+
+<!-- 6 -->
+<section class="slide">
+  <h2>The course model and a real computer</h2>
+  <table style="font-size:22px">
+    <tr><th></th><th>course model</th><th>your personal model</th><th>FakePittsburgh (median)</th></tr>
+    <tr><td>two-qubit gate error</td><td>P2 = 0.01 (gate error 0.0075)</td><td>P2 = 0.005 to 0.030</td><td>0.0015</td></tr>
+    <tr><td>readout error</td><td>0.02 for 0, 0.04 for 1</td><td>R = 0.005 to 0.030</td><td>0.0045</td></tr>
+    <tr><td>connectivity</td><td>every pair</td><td>every pair</td><td>heavy-hex: 3 neighbours at most</td></tr>
+  </table>
+  <p style="font-size:23px;margin-top:18px">A depolarizing parameter P2 gives an average gate error of 0.75 · P2, the number IBM reports. The course values are several times worse than IBM's best current computers, so that the effects of noise show clearly in a few thousand shots.</p>
+  <div class="foot"><span>Module 6 · Mini-project</span><span>6</span></div>
+</section>
+
+<!-- 7 -->
+<section class="slide">
+  <h2>Two ways to use a noise model</h2>
+  <div class="cols">
+    <div>
+      <p style="font-size:23px"><strong>Expected value:</strong> follow the density matrix through the noisy gates, then apply the readout errors. Exact, no shots: <code>expected_probabilities(qc, p2, readout)</code>.</p>
+      <p style="font-size:23px"><strong>Sampled run:</strong> <code>AerSimulator(noise_model=nm).run(qc, shots=4000)</code> draws 4,000 results from the same probabilities.</p>
+      <p class="small">Grover, marked 101, 2 iterations, course model: the expected P(101) is /*G_EXP*/ (ideal /*G_IDEAL*/).</p>
+    </div>
+    <div style="flex:1.2">/*FIG_BARS*/</div>
+  </div>
+  <div class="foot"><span>Module 6 · Mini-project</span><span>7</span></div>
+</section>
+
+<!-- 8 -->
+<section class="slide">
+  <h2>Shot noise</h2>
+  <p style="font-size:24px">A result with probability p, in S shots, comes out k times: a binomial number. The fraction f = k/S has mean p and standard deviation</p>
+  <div class="eq">σ = √( p (1 − p) / S )</div>
+  /*SIGMA_TABLE*/
+  <p class="small" style="margin-top:12px">Four times as many shots halve σ. One run of 4,000 shots of the Grover circuit pins its success down to about ±0.022 (3σ).</p>
+  <div class="foot"><span>Module 6 · Mini-project</span><span>8</span></div>
+</section>
+
+<!-- 9 -->
+<section class="slide">
+  <h2>The course rule: 3σ</h2>
+  <p style="font-size:24px">A measured fraction f <strong>agrees</strong> with an expected value p when |f − p| ≤ 3σ. A correct run falls outside only about 3 times in 1,000 (0.27%).</p>
+  <p style="font-size:24px">On a noisy simulator, p must be the <strong>noise model's</strong> expected value. Example, one run of the Grover circuit: f = /*G_RUN*/.</p>
+  <table style="font-size:22px">
+    <tr><th>compared with</th><th>p</th><th>(f − p)/σ</th><th>verdict</th></tr>
+    <tr><td>the noise model</td><td>/*G_EXP*/</td><td>/*Z_MODEL*/</td><td>agrees</td></tr>
+    <tr><td>the ideal circuit</td><td>/*G_IDEAL*/</td><td>/*Z_IDEAL*/</td><td>does not agree: it describes a different computer</td></tr>
+  </table>
+  <div class="foot"><span>Module 6 · Mini-project</span><span>9</span></div>
+</section>
+
+<!-- 10 -->
+<section class="slide">
+  <h2>Comparing two results</h2>
+  <p style="font-size:24px">Two fractions from S independent shots each: the difference f₂ − f₁ has</p>
+  <div class="eq">σ<sub>diff</sub> = √( f₁(1 − f₁)/S + f₂(1 − f₂)/S )</div>
+  <p style="font-size:24px">Uncertainties of independent results add <strong>in quadrature</strong>, so a difference is less certain than either result. A difference above 3σ<sub>diff</sub> is <strong>significant</strong>.</p>
+  <p style="font-size:23px">Grover, course model: 1 iteration /*G1*/, 2 iterations /*G2*/. Difference /*GD*/, σ<sub>diff</sub> = /*GSD*/ with 4,000 shots each: about /*GZ*/σ<sub>diff</sub>, significant.</p>
+  <div class="foot"><span>Module 6 · Mini-project</span><span>10</span></div>
+</section>
+
+<!-- 11 -->
+<section class="slide">
+  <h2>How many shots does a question need?</h2>
+  <p style="font-size:24px">To see a difference d at 3σ<sub>diff</sub>, with S shots for each result:</p>
+  <div class="eq">S &gt; 9 ( p₁(1 − p₁) + p₂(1 − p₂) ) / d²</div>
+  <p style="font-size:24px">Grover at P2 = 0.015: 1 iteration /*X1*/, 2 iterations /*X2*/, d = /*XD*/. That needs about <strong>/*XS*/ shots</strong> for each, not 4,000.</p>
+  <p style="font-size:24px">Close to a crossover, "which is better?" is an expensive question. The answer can be: <strong>the data cannot tell</strong>.</p>
+  <div class="foot"><span>Module 6 · Mini-project</span><span>11</span></div>
+</section>
+
+<!-- 12 -->
+<section class="slide">
+  <h2>Uncertainty of a mean</h2>
+  <p style="font-size:24px">Some results are averages over shots of a quantity that varies: the mean error of a phase estimate, the mean cut of QAOA. Their uncertainty is the <strong>standard error of the mean</strong>:</p>
+  <div class="eq">SEM = s / √S</div>
+  <p style="font-size:24px">where s is the standard deviation of the quantity over the shots. Two means differ significantly when their difference exceeds 3 √(SEM₁² + SEM₂²): the same rule as for fractions.</p>
+  <p class="small">QAOA, 2 layers, course model: expected cut /*QA2*/; one shot's cut spreads by s ≈ /*QS*/, so 4,000 shots give SEM ≈ /*QSEM*/.</p>
+  <div class="foot"><span>Module 6 · Mini-project</span><span>12</span></div>
+</section>
+
+<!-- 13 -->
+<section class="slide">
+  <h2>Uncertainty that σ does not include</h2>
+  <ul>
+    <li style="font-size:24px"><strong>Choices made at random:</strong> the transpiler's seed changes the layout and routing. For 4 qubits at level 0, ten seeds spread by /*TS0*/, more than the shot noise /*TSH*/.</li>
+    <li style="font-size:24px"><strong>The computer changes:</strong> real calibrations drift; a run tomorrow can differ by more than its σ.</li>
+    <li style="font-size:24px"><strong>The model is not the computer:</strong> a 3σ agreement with a noise model says the run matches <em>that model</em>, nothing more.</li>
+  </ul>
+  <p style="font-size:23px">σ from one run measures how well that run measured <em>its</em> circuit. Questions about a setting need repeats over everything that varies.</p>
+  <div class="foot"><span>Module 6 · Mini-project</span><span>13</span></div>
+</section>
+
+<!-- 14 -->
+<section class="slide">
+  <h2>Noise can change the answer: Grover</h2>
+  <div class="cols">
+    <div style="flex:1.25">/*FIG_CROSS*/</div>
+    <div>
+      <p style="font-size:23px">Expected P(101) for 1 and 2 iterations as P2 grows (R = 0.02).</p>
+      <p style="font-size:23px">2 iterations have 24 cx gates, 1 iteration 12. From <strong>P2 = /*CROSS*/</strong> on, the shorter circuit wins although it is worse in theory.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Module 6 · Mini-project</span><span>14</span></div>
+</section>
+
+<!-- 15 -->
+<section class="slide">
+  <h2>Noise can change the answer: QPE and QAOA</h2>
+  <div class="cols">
+    <div>
+      <p style="font-size:22px"><strong>Phase estimation of 1/3:</strong> expected mean error (R = 0.02); the best number of counting qubits falls as the noise grows.</p>
+      /*QPE_TABLE*/
+    </div>
+    <div style="flex:0.8">
+      <p style="font-size:22px"><strong>QAOA, 5 nodes:</strong> a third layer gains /*QG3*/ without noise and /*QG3N*/ with the course model; from P2 = /*QCROSS*/ two layers are better.</p>
+      <p class="small">Past the best choice, each extra gate adds more noise than it adds to the answer.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Module 6 · Mini-project</span><span>15</span></div>
+</section>
+
+<!-- 16 -->
+<section class="slide">
+  <h2>Limits: what a noise model leaves out</h2>
+  <ul>
+    <li style="font-size:24px"><strong>Connectivity:</strong> real qubits have few neighbours; swaps add two-qubit gates (Module 4).</li>
+    <li style="font-size:24px"><strong>Errors that repeat:</strong> a gate that over-rotates by the same angle every time; such errors add up instead of averaging out.</li>
+    <li style="font-size:24px"><strong>Crosstalk and leakage:</strong> neighbouring qubits disturb each other; a qubit can leave the states |0⟩ and |1⟩.</li>
+    <li style="font-size:24px"><strong>Drift:</strong> every qubit and gate has its own error, and it changes between calibrations.</li>
+  </ul>
+  <p style="font-size:23px">Every experiment has limits. Saying what a result does not show is part of reporting it.</p>
+  <div class="foot"><span>Module 6 · Mini-project</span><span>16</span></div>
+</section>
+
+<!-- 17 -->
+<section class="slide">
+  <h2>Optional: a real IBM quantum computer</h2>
+  <ul>
+    <li style="font-size:24px">Your own free IBM Quantum account with the <strong>Open Plan</strong>: up to 10 minutes of quantum computer time every 28 days.</li>
+    <li style="font-size:24px">The Colab hardware notebook runs your project's reference circuit (4,000 shots, a few seconds of quantum time; the queue can take much longer).</li>
+    <li style="font-size:24px">It compares the result with the ideal value, the course model and IBM's noise model of that computer.</li>
+    <li style="font-size:24px">Your API key stays in Colab <strong>Secrets</strong>; never type it into a cell.</li>
+  </ul>
+  <p class="small">Not graded; the badge does not depend on it. Without an account, the same notebook runs on FakePittsburgh.</p>
+  <div class="foot"><span>Module 6 · Mini-project</span><span>17</span></div>
+</section>
+
+<!-- 18 -->
+<section class="slide">
+  <h2>Reporting an experiment, and credits</h2>
+  <p style="font-size:23px"><strong>Question</strong> · <strong>Method</strong> (circuit, noise model, shots) · <strong>Result</strong> with its uncertainty (0.687 ± 0.007) · <strong>Interpretation</strong> (which differences are significant) · <strong>Limits</strong>.</p>
+  <p style="font-size:20px">These slides were written for SemiAcademy's <em>Quantum Computing Intermediate</em> course, developed through the Intel Semiconductor Education Program at Central State University (ISEP-CSU). License: <strong>CC BY 4.0</strong>, https://creativecommons.org/licenses/by/4.0/. Suggested credit: "Module 6 slides, Quantum Computing Intermediate, SemiAcademy / ISEP-CSU, CC BY 4.0."</p>
+  <p class="small">Every number was computed for these slides with the exact noisy simulator of the project check cells (checked against qsim /*QSIM*/ and Qiskit Aer 0.17.2); the transpiler numbers come from the course's saved runs (qiskit 2.5.2, FakePittsburgh). Source: github.com/CSU-Physics/quantum-computing-notebooks (media/level2/m6-slides.html).</p>
+  <div class="foot"><span>Module 6 · Mini-project</span><span>18</span></div>
+</section>
