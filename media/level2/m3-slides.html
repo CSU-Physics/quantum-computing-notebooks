@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Module 3 Slides: Shor's Algorithm and Period Finding</title>
+<style>
+  :root { --maroon:#99004C; --ink:#24313D; --muted:#6A626B; --line:#E4DCE0; --tint:#F8F4F6; --gold:#C9A227; --ok:#2E7D4F; }
+  * { box-sizing:border-box; }
+  html, body { margin:0; height:100%; background:#2B2230; font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color:var(--ink); }
+  #viewport { position:absolute; inset:0 0 44px 0; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+  #stage { width:1280px; height:720px; flex-shrink:0; position:relative; transform-origin:center center; }
+  .slide { position:absolute; inset:0; background:#fff; padding:56px 72px 64px; display:none; flex-direction:column; border-top:10px solid var(--maroon); }
+  .slide.on { display:flex; }
+  .slide h1 { font-family: Georgia, serif; color:var(--maroon); font-size:56px; margin:0 0 18px; line-height:1.1; }
+  .slide h2 { font-family: Georgia, serif; color:var(--maroon); font-size:40px; margin:0 0 22px; line-height:1.15; }
+  .slide p, .slide li { font-size:27px; line-height:1.45; margin:0 0 14px; }
+  .slide ul { margin:0 0 10px 0; padding-left:34px; }
+  .kicker { font-size:20px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); margin-bottom:10px; }
+  .eq { background:var(--tint); border-left:6px solid var(--maroon); padding:16px 24px; font-size:34px; margin:10px 0 18px; font-family: Georgia, serif; }
+  .small { font-size:20px !important; color:var(--muted); }
+  .cols { display:flex; gap:40px; align-items:flex-start; flex:1; }
+  .cols > div { flex:1; }
+  .card { border:2px solid var(--line); border-radius:10px; padding:18px 22px; }
+  .card h3 { margin:0 0 8px; font-size:27px; color:var(--maroon); }
+  .card p { font-size:23px; margin:0; }
+  table { border-collapse:collapse; font-size:26px; }
+  th, td { border:1px solid var(--line); padding:10px 18px; text-align:left; }
+  th { background:var(--tint); }
+  .foot { position:absolute; left:72px; right:72px; bottom:20px; display:flex; justify-content:space-between; font-size:15px; color:var(--muted); }
+  .reveal { margin-top:10px; }
+  .reveal button { font-size:22px; padding:8px 18px; border:2px solid var(--maroon); background:#fff; color:var(--maroon); border-radius:6px; cursor:pointer; }
+  .reveal .ans { display:none; margin-top:14px; background:#EEF6F0; border-left:6px solid var(--ok); padding:12px 20px; font-size:25px; line-height:1.45; }
+  .reveal.open .ans { display:block; }
+  .reveal.open button { display:none; }
+  .title-slide { background: linear-gradient(135deg, #fff 0%, #fff 58%, var(--tint) 58%); }
+  #bar { position:absolute; left:0; right:0; bottom:0; height:44px; background:#1E1722; display:flex; align-items:center; justify-content:center; gap:10px; color:#fff; font-size:14px; }
+  #bar button { background:#3A2F40; color:#fff; border:0; border-radius:4px; padding:7px 14px; font-size:14px; cursor:pointer; }
+  #bar button:hover { background:var(--maroon); }
+  #count { min-width:70px; text-align:center; }
+  .slide code { font-family: Consolas, "Courier New", monospace; font-size:0.9em; }
+  svg text { font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  @media print {
+    @page { size: 1280px 720px; margin:0; }
+    html, body { background:#fff; height:auto; }
+    #bar { display:none; }
+    #viewport { position:static; display:block; }
+    #stage { transform:none !important; width:1280px; height:auto; }
+    .slide { display:flex !important; position:relative; width:1280px; height:720px; page-break-after:always; break-after:page; }
+    .reveal .ans { display:block !important; }
+    .reveal button { display:none !important; }
+  }
+</style>
+</head>
+<body>
+<div id="viewport"><div id="stage">
+
+
+<!-- 1 -->
+<section class="slide title-slide">
+  <div class="kicker">Quantum Computing Intermediate · Module 3</div>
+  <h1>Shor's algorithm and period finding</h1>
+  <p style="font-size:30px;max-width:560px">Factoring reduces to finding a period. Phase estimation finds it, continued fractions read it, and a few gcds finish the job.</p>
+  <div style="position:absolute;right:80px;top:180px;width:380px"><svg width="360" height="360" viewBox="0 0 360 360" aria-label="The powers of 7 mod 15 repeat: 1, 7, 4, 13, then 1 again"><defs><marker id="ar" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#99004C"/></marker></defs><line x1="208.3" y1="88.3" x2="268.9" y2="148.9" stroke="#99004C" stroke-width="4" marker-end="url(#ar)"/><text x="256.8" y="109.2" font-size="18" text-anchor="middle" fill="#6A626B">× 7</text><line x1="271.7" y1="208.3" x2="211.1" y2="268.9" stroke="#99004C" stroke-width="4" marker-end="url(#ar)"/><text x="256.8" y="262.8" font-size="18" text-anchor="middle" fill="#6A626B">× 7</text><line x1="151.7" y1="271.7" x2="91.1" y2="211.1" stroke="#99004C" stroke-width="4" marker-end="url(#ar)"/><text x="103.2" y="262.8" font-size="18" text-anchor="middle" fill="#6A626B">× 7</text><line x1="88.3" y1="151.7" x2="148.9" y2="91.1" stroke="#99004C" stroke-width="4" marker-end="url(#ar)"/><text x="103.2" y="109.2" font-size="18" text-anchor="middle" fill="#6A626B">× 7</text><circle cx="180.0" cy="60.0" r="36" fill="#fff" stroke="#24313D" stroke-width="3"/><text x="180.0" y="70.0" font-size="28" text-anchor="middle" fill="#24313D">1</text><circle cx="300.0" cy="180.0" r="36" fill="#fff" stroke="#24313D" stroke-width="3"/><text x="300.0" y="190.0" font-size="28" text-anchor="middle" fill="#24313D">7</text><circle cx="180.0" cy="300.0" r="36" fill="#fff" stroke="#24313D" stroke-width="3"/><text x="180.0" y="310.0" font-size="28" text-anchor="middle" fill="#24313D">4</text><circle cx="60.0" cy="180.0" r="36" fill="#fff" stroke="#24313D" stroke-width="3"/><text x="60.0" y="190.0" font-size="28" text-anchor="middle" fill="#24313D">13</text><text x="180.0" y="188.0" font-size="20" text-anchor="middle" fill="#99004C">r = 4</text><text x="180.0" y="354" font-size="17" text-anchor="middle" fill="#6A626B">7ᵏ mod 15</text></svg></div>
+  <div class="foot"><span>SemiAcademy · ISEP-CSU</span><span>CC BY 4.0</span></div>
+</section>
+
+<!-- 2 -->
+<section class="slide">
+  <h2>By the end of this module you can</h2>
+  <ul>
+    <li>find the <strong>order</strong> r of a mod N, and turn an even order into the <strong>factors</strong> of N with gcds;</li>
+    <li>explain why <strong>phase estimation</strong> of "multiply by a mod N" reveals r;</li>
+    <li>build the <strong>order-finding circuit</strong> for N = 15 from a prepared modular multiplication;</li>
+    <li>read r from measured results with <strong>continued fractions</strong>;</li>
+    <li>explain why Shor's algorithm threatens RSA, and what <strong>post-quantum cryptography</strong> changes.</li>
+  </ul>
+  <p class="small" style="margin-top:24px">Course outcomes 1 (use order finding in prepared circuits) and 2 (why Shor's algorithm threatens RSA, and what post-quantum cryptography changes).</p>
+  <div class="foot"><span>Module 3 · Shor's algorithm</span><span>2</span></div>
+</section>
+
+<!-- 3 -->
+<section class="slide">
+  <h2>Why factoring matters</h2>
+  <div class="cols">
+    <div style="flex:0 0 620px">
+      <p style="font-size:25px">RSA encryption and signatures are safe only if nobody can factor the public modulus N, a product of two large primes (2,048 bits is common).</p>
+      <p style="font-size:25px">The best known classical algorithms take time that grows faster than any power of the number of digits. Shor's algorithm (1994) needs time that grows only like a power: polynomial time on a large fault-tolerant quantum computer.</p>
+    </div>
+    <div>
+      <div class="card"><h3>The plan</h3><p>1. Pick a random a.<br>2. Find its order r (quantum).<br>3. Get factors with gcds (classical).<br>4. If it fails, pick another a.</p></div>
+    </div>
+  </div>
+  <div class="foot"><span>Module 3 · Shor's algorithm</span><span>3</span></div>
+</section>
+
+<!-- 4 -->
+<section class="slide">
+  <h2>The order of a mod N</h2>
+  <p>For a with no factor in common with N, the powers a, a², a³, ... mod N repeat. The <strong>order</strong> r is the smallest r &gt; 0 with</p>
+  <div class="eq">a<sup>r</sup> mod N = 1</div>
+  <table style="font-size:24px">
+    <tr><th>k</th><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>6</td></tr>
+    <tr><th>7<sup>k</sup> mod 15</th><td>7</td><td>4</td><td>13</td><td><strong>1</strong></td><td>7</td><td>4</td></tr>
+  </table>
+  <p class="small" style="margin-top:10px">So the order of 7 mod 15 is r = 4. Classical search needs about r steps, and r can be nearly as large as N.</p>
+  <div class="foot"><span>Module 3 · Shor's algorithm</span><span>4</span></div>
+</section>
+
+<!-- 5 -->
+<section class="slide">
+  <h2>From the order to the factors</h2>
+  <p style="font-size:25px">If r is even, let h = a<sup>r/2</sup> mod N. Then h² mod N = 1, so</p>
+  <div class="eq">(h − 1)(h + 1) is a multiple of N</div>
+  <p style="font-size:25px">If also h ≠ N − 1, neither factor is a multiple of N, so each shares a factor with N: <strong>gcd(h − 1, N)</strong> and <strong>gcd(h + 1, N)</strong>.</p>
+  <p class="small">a = 7, N = 15, r = 4: h = 7² mod 15 = 4, gcd(3, 15) = 3 and gcd(5, 15) = 5. If r is odd or h = N − 1, try another a; for N with two or more different odd prime factors, at least half of the possible a work.</p>
+  <div class="foot"><span>Module 3 · Shor's algorithm</span><span>5</span></div>
+</section>
+
+<!-- 6 -->
+<section class="slide">
+  <h2>Pause and predict</h2>
+  <p>N = 15. What do a = 2 and a = 14 give?</p>
+  <div class="reveal"><button type="button">Show the answer</button>
+    <div class="ans">a = 2: the powers are 2, 4, 8, 1, so r = 4 and h = 2² = 4: gcd(3, 15) = 3 and gcd(5, 15) = 5. a = 14: 14² = 196 = 13·15 + 1, so r = 2, but h = 14 = N − 1, and the gcds are the useless 15 and 1. Pick another a.</div></div>
+  <div class="foot"><span>Module 3 · Shor's algorithm</span><span>6</span></div>
+</section>
+
+<!-- 7 -->
+<section class="slide">
+  <h2>The quantum step: a phase estimation</h2>
+  <p style="font-size:25px">Let U multiply a register by a mod N: U|x⟩ = |a·x mod N⟩. Since a<sup>r</sup> = 1 mod N, U<sup>r</sup> = I, so every eigenvalue is e<sup>2πi·s/r</sup>.</p>
+  <ul>
+    <li style="font-size:25px">Eigenvectors: |u<sub>s</sub>⟩ = (1/√r) Σ<sub>k</sub> e<sup>−2πi·sk/r</sup> |a<sup>k</sup> mod N⟩, with eigenphase s/r, for s = 0, ..., r − 1.</li>
+    <li style="font-size:25px">We cannot prepare one |u<sub>s</sub>⟩ without knowing r, but their equal superposition is easy: (1/√r) Σ<sub>s</sub> |u<sub>s</sub>⟩ = <strong>|1⟩</strong>.</li>
+    <li style="font-size:25px">Phase estimation started on |1⟩ returns m/2ᵗ ≈ s/r for a <strong>random</strong> s.</li>
+  </ul>
+  <div class="foot"><span>Module 3 · Shor's algorithm</span><span>7</span></div>
+</section>
+
+<!-- 8 -->
+<section class="slide">
+  <h2>The order-finding circuit</h2>
+  <div><svg width="1120" height="330" viewBox="0 0 1120 330" aria-label="Order-finding circuit: H on the counting qubits, controlled U, U squared and U to the fourth on a register in the state 1, the inverse QFT and measurements"><g font-size="22" fill="#24313D" stroke-width="3"><text x="0" y="57" font-size="20">c0 = |0⟩</text><line x1="96" y1="50" x2="880" y2="50" stroke="#24313D"/><text x="0" y="127" font-size="20">c1 = |0⟩</text><line x1="96" y1="120" x2="880" y2="120" stroke="#24313D"/><text x="0" y="197" font-size="20">c2 = |0⟩</text><line x1="96" y1="190" x2="880" y2="190" stroke="#24313D"/><text x="0" y="287" font-size="20">reg = |1⟩</text><line x1="106" y1="268" x2="880" y2="268" stroke="#24313D" stroke-width="1.5"/><line x1="106" y1="276" x2="880" y2="276" stroke="#24313D" stroke-width="1.5"/><line x1="106" y1="284" x2="880" y2="284" stroke="#24313D" stroke-width="1.5"/><line x1="106" y1="292" x2="880" y2="292" stroke="#24313D" stroke-width="1.5"/><text x="106" y="318" font-size="16" fill="#6A626B">4 qubits</text><rect x="130" y="28" width="44" height="44" rx="5" fill="#fff" stroke="#99004C"/><text x="152" y="58" text-anchor="middle" fill="#99004C">H</text><rect x="130" y="98" width="44" height="44" rx="5" fill="#fff" stroke="#99004C"/><text x="152" y="128" text-anchor="middle" fill="#99004C">H</text><rect x="130" y="168" width="44" height="44" rx="5" fill="#fff" stroke="#99004C"/><text x="152" y="198" text-anchor="middle" fill="#99004C">H</text><circle cx="270" cy="50" r="8" fill="#24313D"/><line x1="270" y1="50" x2="270" y2="256" stroke="#24313D"/><rect x="234" y="256" width="72" height="48" rx="5" fill="#fff" stroke="#24313D"/><text x="270" y="288" text-anchor="middle">U</text><circle cx="390" cy="120" r="8" fill="#24313D"/><line x1="390" y1="120" x2="390" y2="256" stroke="#24313D"/><rect x="354" y="256" width="72" height="48" rx="5" fill="#fff" stroke="#24313D"/><text x="390" y="288" text-anchor="middle">U²</text><circle cx="510" cy="190" r="8" fill="#24313D"/><line x1="510" y1="190" x2="510" y2="256" stroke="#24313D"/><rect x="474" y="256" width="72" height="48" rx="5" fill="#fff" stroke="#24313D"/><text x="510" y="288" text-anchor="middle">U⁴</text><rect x="590" y="28" width="170" height="184" rx="8" fill="#F8F4F6" stroke="#99004C"/><text x="675" y="126" text-anchor="middle" fill="#99004C">QFT†</text><rect x="800" y="28" width="50" height="44" rx="5" fill="#fff" stroke="#24313D"/><text x="825" y="58" text-anchor="middle">M</text><rect x="800" y="98" width="50" height="44" rx="5" fill="#fff" stroke="#24313D"/><text x="825" y="128" text-anchor="middle">M</text><rect x="800" y="168" width="50" height="44" rx="5" fill="#fff" stroke="#24313D"/><text x="825" y="198" text-anchor="middle">M</text><text x="900" y="126" font-size="20" fill="#2E7D4F">m/2ᵗ ≈ s/r</text><text x="900" y="156" font-size="18" fill="#6A626B">s random</text></g></svg></div>
+  <p class="small">Counting qubit k controls U<sup>2ᵏ</sup>, the multiplication by a<sup>2ᵏ</sup> mod N. In the lab: <code>qc.compose(c_amod15(a, 2**k), qubits=[k] + list(range(t, t + 4)), inplace=True)</code>, then <code>qft_dagger(t)</code>.</p>
+  <div class="foot"><span>Module 3 · Shor's algorithm</span><span>8</span></div>
+</section>
+
+<!-- 9 -->
+<section class="slide">
+  <h2>A prepared circuit, hard-coded for N = 15</h2>
+  <div class="cols">
+    <div style="flex:0 0 600px">
+      <p style="font-size:25px">The lab's <code>c_amod15(a, power)</code> multiplies by a mod 15 with a fixed pattern of controlled swaps (<code>cswap</code>) and controlled X gates, one pattern for each a in 2, 4, 7, 8, 11, 13.</p>
+      <p style="font-size:25px">It is <strong>not</strong> a general method. For a real N, modular multiplication is built from quantum adders using only a and N, and that arithmetic, run with error correction, is the main cost of Shor's algorithm.</p>
+    </div>
+    <div class="card"><h3>a = 7</h3><p>controlled swaps of register bits (0, 1), (1, 2) and (2, 3), then a controlled X on each register bit: x becomes 7x mod 15.</p></div>
+  </div>
+  <div class="foot"><span>Module 3 · Shor's algorithm</span><span>9</span></div>
+</section>
+
+<!-- 10 -->
+<section class="slide">
+  <h2>Results for a = 7, 8 counting qubits</h2>
+  <div class="cols">
+    <div style="flex:0 0 520px">
+      <p style="font-size:25px">256 is a multiple of r = 4, so each phase s/4 is exact: only four results appear, each about a quarter of the time.</p>
+      <p style="font-size:25px">m/256 = 0, 1/4, 1/2, 3/4.</p>
+      <p class="small">qsim, 1,000 shots, seed 7 (lab Step 5).</p>
+    </div>
+    <div><svg width="470" height="300" viewBox="0 0 470 300" aria-label="Histogram of the four results"><line x1="46" y1="254.0" x2="460" y2="254.0" stroke="#24313D" stroke-width="2"/><text x="42" y="259.0" font-size="16" text-anchor="end" fill="#24313D">0</text><line x1="46" y1="137.0" x2="460" y2="137.0" stroke="#E4DCE0" stroke-width="1"/><text x="42" y="142.0" font-size="16" text-anchor="end" fill="#24313D">200</text><line x1="46" y1="20.0" x2="460" y2="20.0" stroke="#E4DCE0" stroke-width="1"/><text x="42" y="25.0" font-size="16" text-anchor="end" fill="#24313D">400</text><rect x="70.5" y="99.0" width="61.5" height="155.0" fill="#99004C"/><text x="101.2" y="93.0" font-size="16" text-anchor="middle" fill="#24313D">265</text><text x="101.2" y="274" font-size="17" text-anchor="middle" fill="#24313D">0</text><rect x="173.0" y="114.2" width="61.5" height="139.8" fill="#99004C"/><text x="203.8" y="108.2" font-size="16" text-anchor="middle" fill="#24313D">239</text><text x="203.8" y="274" font-size="17" text-anchor="middle" fill="#24313D">64</text><rect x="275.5" y="101.3" width="61.5" height="152.7" fill="#99004C"/><text x="306.2" y="95.3" font-size="16" text-anchor="middle" fill="#24313D">261</text><text x="306.2" y="274" font-size="17" text-anchor="middle" fill="#24313D">128</text><rect x="378.0" y="116.5" width="61.5" height="137.5" fill="#99004C"/><text x="408.8" y="110.5" font-size="16" text-anchor="middle" fill="#24313D">235</text><text x="408.8" y="274" font-size="17" text-anchor="middle" fill="#24313D">192</text><text x="460" y="296" font-size="15" text-anchor="end" fill="#6A626B">result m (of 256)</text></svg></div>
+  </div>
+  <div class="foot"><span>Module 3 · Shor's algorithm</span><span>10</span></div>
+</section>
+
+<!-- 11 -->
+<section class="slide">
+  <h2>Reading r with continued fractions</h2>
+  <p style="font-size:25px"><code>Fraction(m, 2**t).limit_denominator(N)</code> gives the closest fraction with denominator at most N: s/r in lowest terms.</p>
+  <table style="font-size:23px">
+    <tr><th>m</th><th>m/256</th><th>fraction</th><th>candidate r</th><th>7<sup>r</sup> mod 15</th><th></th></tr>
+    <tr><td>0</td><td>0</td><td>0/1</td><td>1</td><td>7</td><td>no</td></tr>
+    <tr><td>64</td><td>0.25</td><td>1/4</td><td>4</td><td>1</td><td><strong>yes</strong></td></tr>
+    <tr><td>128</td><td>0.5</td><td>1/2</td><td>2</td><td>4</td><td>no: s = 2 shares a factor with r</td></tr>
+    <tr><td>192</td><td>0.75</td><td>3/4</td><td>4</td><td>1</td><td><strong>yes</strong></td></tr>
+  </table>
+  <p class="small" style="margin-top:10px">Always check a candidate with a<sup>r</sup> mod N = 1, and use another shot if it fails.</p>
+  <div class="foot"><span>Module 3 · Shor's algorithm</span><span>11</span></div>
+</section>
+
+<!-- 12 -->
+<section class="slide">
+  <h2>When the phases are not exact</h2>
+  <p style="font-size:25px">For N = 21 and a = 2 the order is 6, and 256 is not a multiple of 6. The results cluster near m ≈ 256·s/6:</p>
+  <table style="font-size:23px">
+    <tr><th>m</th><th>probability</th><th>fraction (denominator ≤ 21)</th><th>candidate r</th><th>2<sup>r</sup> mod 21</th></tr>
+    <tr><td>43</td><td>0.114</td><td>1/6</td><td>6</td><td>1 (yes)</td></tr>
+    <tr><td>85</td><td>0.114</td><td>1/3</td><td>3</td><td>8 (no)</td></tr>
+    <tr><td>128</td><td>0.167</td><td>1/2</td><td>2</td><td>4 (no)</td></tr>
+    <tr><td>213</td><td>0.114</td><td>5/6</td><td>6</td><td>1 (yes)</td></tr>
+  </table>
+  <p class="small" style="margin-top:10px">Exact probabilities, 8 counting qubits. Continued fractions still find s/r from a nearby m. The explorer computes this for other N and a.</p>
+  <div class="foot"><span>Module 3 · Shor's algorithm</span><span>12</span></div>
+</section>
+
+<!-- 13 -->
+<section class="slide">
+  <h2>Pause and predict</h2>
+  <p>N = 15, a = 7, and your first shot gives m = 128 with 8 counting qubits. What do you conclude, and what do you do next?</p>
+  <div class="reveal"><button type="button">Show the answer</button>
+    <div class="ans">128/256 = 1/2, so the candidate is r = 2. But 7² mod 15 = 4, not 1, so 2 is not the order: here s = 2 and r = 4 share a factor. Take another shot; m = 64 or 192 gives 1/4 or 3/4 and the order 4. (You can also take the least common multiple of the denominators from several shots.)</div></div>
+  <div class="foot"><span>Module 3 · Shor's algorithm</span><span>13</span></div>
+</section>
+
+<!-- 14 -->
+<section class="slide">
+  <h2>What it would take to break RSA-2048</h2>
+  <ul>
+    <li style="font-size:25px">Shor's algorithm needs over a thousand <strong>error-corrected</strong> (logical) qubits and billions of gate operations, and each logical qubit is built from many physical qubits.</li>
+    <li style="font-size:25px">A 2025 estimate by Craig Gidney (Google): under one million noisy physical qubits, running for under a week, assuming a 0.1% error rate and a 1 µs error-correction cycle. In 2019 the estimate was 20 million qubits for 8 hours.</li>
+    <li style="font-size:25px">No quantum computer today comes close; the 15 = 3 × 5 of this lab is a demonstration.</li>
+  </ul>
+  <p class="small">Source: arXiv:2505.15917 (2025); Gidney and Ekerå, Quantum 5, 433 (2021).</p>
+  <div class="foot"><span>Module 3 · Shor's algorithm</span><span>14</span></div>
+</section>
+
+<!-- 15 -->
+<section class="slide">
+  <h2>Post-quantum cryptography</h2>
+  <div class="cols" style="gap:22px">
+    <div class="card"><h3>New standards</h3><p>NIST published FIPS 203 (ML-KEM, key exchange), FIPS 204 (ML-DSA, signatures) and FIPS 205 (SLH-DSA, signatures) on 13 August 2024. They run on ordinary computers.</p></div>
+    <div class="card"><h3>More coming</h3><p>FIPS 206 (FN-DSA, from Falcon) is in development, and HQC was selected on 11 March 2025 as a backup key-exchange method.</p></div>
+    <div class="card"><h3>Transition</h3><p>NIST's draft plan (IR 8547, 2024) would disallow RSA and elliptic-curve methods after 2035, with the weakest key sizes deprecated after 2030.</p></div>
+  </div>
+  <p class="small" style="margin-top:18px">"Harvest now, decrypt later": data recorded today could be read once a large quantum computer exists, which is why the move starts now.</p>
+  <div class="foot"><span>Module 3 · Shor's algorithm</span><span>15</span></div>
+</section>
+
+<!-- 16 -->
+<section class="slide">
+  <h2>What Shor's algorithm does not break</h2>
+  <ul>
+    <li style="font-size:25px">Shor's algorithm breaks <strong>public-key</strong> methods built on factoring and discrete logarithms: RSA, Diffie-Hellman and elliptic-curve cryptography.</li>
+    <li style="font-size:25px">Symmetric ciphers such as AES face only Grover's search (Module 2): a quadratic speed-up, so a 256-bit key keeps a large security margin.</li>
+    <li style="font-size:25px">The post-quantum standards are built on other mathematical problems (lattices, hash functions, codes) for which no fast quantum algorithm is known.</li>
+  </ul>
+  <div class="foot"><span>Module 3 · Shor's algorithm</span><span>16</span></div>
+</section>
+
+<!-- 17 -->
+<section class="slide">
+  <h2>Summary</h2>
+  <ul>
+    <li style="font-size:25px">Order r: smallest r with a<sup>r</sup> mod N = 1. Even r and a<sup>r/2</sup> ≠ −1 give the factors gcd(a<sup>r/2</sup> ± 1, N).</li>
+    <li style="font-size:25px">Order finding is phase estimation of "multiply by a mod N", started in |1⟩: each shot gives m/2ᵗ ≈ s/r.</li>
+    <li style="font-size:25px">Continued fractions give s/r; check the denominator, and use another shot if s shares a factor with r.</li>
+    <li style="font-size:25px">The N = 15 circuit is prepared; real modular arithmetic with error correction is the hard part. Post-quantum standards replace RSA.</li>
+  </ul>
+  <div class="eq" style="font-size:24px;margin-top:12px"><strong>Next:</strong> the Module 3 lab. You write <code>order()</code>, <code>factors_from_order()</code>, <code>order_finding()</code> and <code>period_from_counts()</code>, and factor 15.</div>
+  <div class="foot"><span>Module 3 · Shor's algorithm</span><span>17</span></div>
+</section>
+
+<!-- 18 -->
+<section class="slide">
+  <h2>Credits and license</h2>
+  <p>These slides were written for SemiAcademy's <em>Quantum Computing Intermediate</em> course, developed through the Intel Semiconductor Education Program at Central State University (ISEP-CSU).</p>
+  <p>License: <strong>Creative Commons Attribution 4.0 International (CC BY 4.0)</strong>, https://creativecommons.org/licenses/by/4.0/. You may copy, adapt and share them, with credit.</p>
+  <p>Suggested credit: "Module 3 slides, Quantum Computing Intermediate, SemiAcademy / ISEP-CSU, CC BY 4.0."</p>
+  <p class="small">Facts on standards: NIST post-quantum cryptography project page and NIST IR 8547 (initial public draft, 12 November 2024). Source of these slides: github.com/CSU-Physics/quantum-computing-notebooks (media/level2/m3-slides.html).</p>
+  <div class="foot"><span>Module 3 · Shor's algorithm</span><span>18</span></div>
+</section>
+
+</div></div>
+<div id="bar">
+  <button type="button" id="prev" aria-label="Previous slide">◀ Prev</button>
+  <span id="count">1 / 18</span>
+  <button type="button" id="next" aria-label="Next slide">Next ▶</button>
+  <button type="button" id="full">Full screen</button>
+  <button type="button" id="print">Print / PDF</button>
+</div>
+<script>
+(function () {
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide')), i = 0;
+  var m = /[#&]s=?(\d+)/.exec(location.hash); if (m) i = Math.min(slides.length - 1, Math.max(0, parseInt(m[1], 10) - 1));
+  function show(n) {
+    i = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach(function (s, j) { s.classList.toggle('on', j === i); });
+    document.getElementById('count').textContent = (i + 1) + ' / ' + slides.length;
+    try { history.replaceState(null, '', '#s' + (i + 1)); } catch (e) {}
+  }
+  function fit() {
+    var vp = document.getElementById('viewport'), st = document.getElementById('stage');
+    var sc = Math.min(vp.clientWidth / 1280, vp.clientHeight / 720);
+    st.style.transform = 'scale(' + sc + ')';
+  }
+  document.getElementById('prev').onclick = function () { show(i - 1); };
+  document.getElementById('next').onclick = function () { show(i + 1); };
+  document.getElementById('full').onclick = function () { var d = document.documentElement; if (!document.fullscreenElement && d.requestFullscreen) d.requestFullscreen(); else if (document.exitFullscreen) document.exitFullscreen(); };
+  document.getElementById('print').onclick = function () { window.print(); };
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { show(i + 1); e.preventDefault(); }
+    if (e.key === 'ArrowLeft' || e.key === 'PageUp') { show(i - 1); e.preventDefault(); }
+    if (e.key === 'Home') show(0); if (e.key === 'End') show(slides.length - 1);
+  });
+  var tx = null;
+  document.addEventListener('touchstart', function (e) { tx = e.touches[0].clientX; }, { passive: true });
+  document.addEventListener('touchend', function (e) { if (tx === null) return; var dx = e.changedTouches[0].clientX - tx; if (Math.abs(dx) > 50) show(i + (dx < 0 ? 1 : -1)); tx = null; });
+  document.getElementById('stage').addEventListener('click', function (e) {
+    var b = e.target.closest('.reveal button'); if (b) b.parentNode.classList.add('open');
+  });
+  window.addEventListener('resize', fit);
+  fit(); show(i);
+})();
+</script>
+</body>
+</html>
