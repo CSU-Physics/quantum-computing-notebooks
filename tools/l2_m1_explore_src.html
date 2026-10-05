@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Module 1 Explorer: The QFT and Phase Estimation</title>
+<style>
+  :root { --maroon:#99004C; --ink:#24313D; --muted:#6A626B; --line:#E4DCE0; --tint:#F8F4F6; --gold:#C9A227; --ok:#2E7D4F; --bad:#B3261E; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:#fff; color:var(--ink); font-family:"Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size:15px; }
+  .tabs { display:flex; border-bottom:2px solid var(--line); background:var(--tint); }
+  .tabs button { flex:1; border:0; background:none; padding:10px 8px; font-size:15px; cursor:pointer; color:var(--muted); border-bottom:3px solid transparent; }
+  .tabs button.on { color:var(--maroon); border-bottom-color:var(--maroon); font-weight:600; background:#fff; }
+  .tool { display:none; padding:12px 16px; }
+  .tool.on { display:block; }
+  h2 { font-family:Georgia, serif; color:var(--maroon); font-size:19px; margin:0 0 4px; }
+  .hint { color:var(--muted); margin:0 0 10px; line-height:1.45; }
+  .grid { display:grid; grid-template-columns: 270px 1fr; gap:14px; align-items:start; }
+  @media (max-width: 660px) { .grid { grid-template-columns: 1fr; } }
+  .box { border:1px solid var(--line); border-radius:6px; padding:10px 12px; min-width:0; }
+  .box h3 { margin:0 0 6px; font-size:14.5px; color:var(--maroon); }
+  label { display:flex; justify-content:space-between; align-items:center; margin:8px 0 2px; font-size:14px; gap:8px; }
+  input[type=range] { width:100%; }
+  .row { display:flex; gap:6px; flex-wrap:wrap; margin-top:6px; align-items:center; }
+  button.act { border:2px solid var(--ink); background:#fff; color:var(--ink); padding:4px 9px; border-radius:5px; font-size:13.5px; cursor:pointer; }
+  button.act.on, button.act.fill { background:var(--maroon); border-color:var(--maroon); color:#fff; }
+  .mono { font-family: Consolas, "Courier New", monospace; }
+  .dials { display:grid; grid-template-columns: repeat(auto-fill, minmax(74px, 1fr)); gap:8px; }
+  .dial { text-align:center; font-size:12.5px; border:1px solid var(--line); border-radius:6px; padding:4px 2px; }
+  .dial svg { width:58px; height:58px; display:block; margin:0 auto; }
+  .note { margin-top:8px; padding:7px 10px; border-radius:4px; font-size:13.5px; background:var(--tint); color:var(--ink); line-height:1.45; }
+  .stats { display:grid; grid-template-columns: 1fr 1fr; gap:4px 10px; font-size:13.5px; margin-top:8px; }
+  .stats span.v { font-family:Consolas, monospace; text-align:right; }
+  svg.bars { width:100%; height:auto; display:block; }
+  .credit { color:var(--muted); font-size:12px; padding:8px 16px 12px; border-top:1px solid var(--line); }
+</style>
+</head>
+<body>
+<div class="tabs" role="tablist">
+  <button type="button" data-t="qft" role="tab">1. What the QFT does</button>
+  <button type="button" data-t="pe" role="tab">2. Phase estimation</button>
+</div>
+
+<!-- TOOL 1: QFT of a basis state -->
+<section class="tool" id="t-qft" role="tabpanel">
+  <h2>The QFT turns a number into a pattern of phases</h2>
+  <p class="hint">Pick the number of qubits n and an input basis state |j⟩. Each dial is one output amplitude |k⟩: all have the same size, 1/√2ⁿ, and the arrow shows its phase, e<sup>2πi·j·k/2ⁿ</sup>. Phase 0 points right; angles grow anticlockwise.</p>
+  <div class="grid">
+    <div class="box">
+      <h3>Input</h3>
+      <div class="row" id="nbtn">
+        <button type="button" class="act" data-n="2">n = 2</button>
+        <button type="button" class="act" data-n="3">n = 3</button>
+        <button type="button" class="act" data-n="4">n = 4</button>
+      </div>
+      <label for="jsl">Input |j⟩ <span class="mono" id="jv"></span></label>
+      <input type="range" id="jsl" min="0" max="7" step="1" value="3">
+      <div class="note" id="msgq"></div>
+    </div>
+    <div class="box">
+      <h3>Output amplitudes, QFT|j⟩</h3>
+      <div class="dials" id="dials"></div>
+    </div>
+  </div>
+</section>
+
+<!-- TOOL 2: phase estimation -->
+<section class="tool" id="t-pe" role="tabpanel">
+  <h2>How precise is phase estimation?</h2>
+  <p class="hint">Choose the eigenphase φ and the number of counting qubits t. The bars are the exact probabilities of each result m; the gold line is φ·2ᵗ, where the result would be if it could be a fraction. The estimate is m / 2ᵗ.</p>
+  <div class="grid">
+    <div class="box">
+      <h3>Settings</h3>
+      <label for="phisl">Phase φ <span class="mono" id="phiv"></span></label>
+      <input type="range" id="phisl" min="0" max="5999" step="1" value="2000">
+      <div class="row">
+        <button type="button" class="act" data-phi="750">1/8</button>
+        <button type="button" class="act" data-phi="2000">1/3</button>
+        <button type="button" class="act" data-phi="4200">0.7</button>
+        <button type="button" class="act" data-phi="2592">0.432</button>
+      </div>
+      <label for="tsl">Counting qubits t <span class="mono" id="tv"></span></label>
+      <input type="range" id="tsl" min="1" max="7" step="1" value="3">
+      <div class="row"><button type="button" class="act fill" id="run">Run 1,000 shots</button></div>
+      <div class="stats" id="stats"></div>
+    </div>
+    <div class="box">
+      <h3>Probability of each result m</h3>
+      <svg class="bars" id="bars" viewBox="0 0 520 250" aria-label="Probability of each phase estimation result"></svg>
+      <div class="note" id="msgp"></div>
+    </div>
+  </div>
+</section>
+
+<div class="credit">Module 1 explorer · Quantum Computing Intermediate · SemiAcademy / ISEP-CSU · CC BY 4.0. Results are written as numbers m = 0 to 2ᵗ − 1, as Qiskit reads the counting register. Probabilities are exact; the shots use your browser's random numbers, so your counts differ from other learners'. This is a practice tool: the graded values come from the lab notebook.</div>
+
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var NS = 'http://www.w3.org/2000/svg';
+  function sv(p, tag, a, txt) { var e = document.createElementNS(NS, tag); for (var k in a) e.setAttribute(k, a[k]); if (txt !== undefined) e.textContent = txt; p.appendChild(e); return e; }
+
+  var tabs = document.querySelectorAll('.tabs button');
+  function openTab(t) {
+    tabs.forEach(function (b) { b.classList.toggle('on', b.dataset.t === t); });
+    document.querySelectorAll('.tool').forEach(function (s) { s.classList.toggle('on', s.id === 't-' + t); });
+  }
+  tabs.forEach(function (b) { b.onclick = function () { openTab(b.dataset.t); }; });
+  function fromHash() { openTab(location.hash.indexOf('pe') >= 0 ? 'pe' : 'qft'); }
+  window.addEventListener('hashchange', fromHash);
+  fromHash();
+
+  // ---------- tool 1
+  var n = 3;
+  function gcd(a, b) { return b ? gcd(b, a % b) : a; }
+  function drawQ() {
+    var N = Math.pow(2, n), j = Math.min(+$('jsl').value, N - 1);
+    $('jsl').max = N - 1; $('jsl').value = j;
+    $('jv').textContent = '|' + j.toString(2).padStart(n, '0') + '⟩ = ' + j;
+    document.querySelectorAll('[data-n]').forEach(function (b) { b.classList.toggle('on', +b.dataset.n === n); });
+    var box = $('dials'); box.innerHTML = '';
+    for (var k = 0; k < N; k++) {
+      var frac = (j * k) % N, ang = 2 * Math.PI * frac / N, deg = Math.round(360 * frac / N * 10) / 10;
+      var d = document.createElement('div'); d.className = 'dial';
+      var s = document.createElementNS(NS, 'svg'); s.setAttribute('viewBox', '-1.25 -1.25 2.5 2.5');
+      sv(s, 'circle', { cx: 0, cy: 0, r: 1, fill: '#F8F4F6', stroke: '#B9AEB4', 'stroke-width': 0.06 });
+      sv(s, 'line', { x1: 0, y1: 0, x2: 1, y2: 0, stroke: '#E4DCE0', 'stroke-width': 0.05 });
+      sv(s, 'line', { x1: 0, y1: 0, x2: 0.92 * Math.cos(ang), y2: -0.92 * Math.sin(ang), stroke: '#99004C', 'stroke-width': 0.14, 'stroke-linecap': 'round' });
+      sv(s, 'circle', { cx: 0.92 * Math.cos(ang), cy: -0.92 * Math.sin(ang), r: 0.13, fill: '#99004C' });
+      d.appendChild(s);
+      var lab = document.createElement('div'); lab.innerHTML = '<span class="mono">|' + k.toString(2).padStart(n, '0') + '⟩</span><br>' + deg + '°';
+      d.appendChild(lab); box.appendChild(d);
+    }
+    var step = Math.round(360 * j / N * 10) / 10, g = gcd(j, N);
+    var msg = 'Input j = ' + j + ': the phase grows by j/2ⁿ = ' + j + '/' + N + ' of a turn (' + step + '°) from each k to the next, so a larger j makes the arrows turn faster. ';
+    if (j === 0) msg = 'Input j = 0: every amplitude has phase 0, an equal superposition with no phase pattern: the QFT of |0⟩ is H on every qubit. ';
+    msg += 'The sizes are all equal, so measuring QFT|j⟩ gives a uniformly random k: the information about j is only in the phases. The inverse QFT turns this pattern back into |j⟩, which is the step phase estimation uses.';
+    if (j > 0 && g > 1) msg += ' Here j and 2ⁿ share a factor ' + g + ', so the pattern repeats every ' + (N / g) + ' values of k.';
+    $('msgq').textContent = msg;
+  }
+  document.querySelectorAll('[data-n]').forEach(function (b) { b.onclick = function () { n = +b.dataset.n; drawQ(); }; });
+  $('jsl').oninput = drawQ;
+  drawQ();
+
+  // ---------- tool 2
+  var counts = null;
+  function probs(phi, t) {
+    var N = Math.pow(2, t), out = [];
+    for (var m = 0; m < N; m++) {
+      var re = 0, im = 0, d = phi - m / N;
+      for (var x = 0; x < N; x++) { re += Math.cos(2 * Math.PI * x * d); im += Math.sin(2 * Math.PI * x * d); }
+      out.push((re * re + im * im) / (N * N));
+    }
+    return out;
+  }
+  function drawP() {
+    var phi = +$('phisl').value / 6000, t = +$('tsl').value, N = Math.pow(2, t);
+    $('phiv').textContent = (+$('phisl').value === 2000 ? '1/3 = ' : '') + phi.toFixed(4); $('tv').textContent = t;
+    var p = probs(phi, t), best = 0;
+    for (var m = 1; m < N; m++) if (p[m] > p[best]) best = m;
+    var svg = $('bars'); while (svg.firstChild) svg.removeChild(svg.firstChild);
+    var x0 = 40, x1 = 510, y0 = 210, y1 = 15, w = (x1 - x0) / N;
+    sv(svg, 'line', { x1: x0, y1: y0, x2: x1, y2: y0, stroke: '#24313D', 'stroke-width': 1.5 });
+    [0, 0.5, 1].forEach(function (v) {
+      var y = y0 - (y0 - y1) * v;
+      sv(svg, 'line', { x1: x0 - 4, y1: y, x2: x1, y2: y, stroke: v ? '#E4DCE0' : '#24313D', 'stroke-width': 1 });
+      sv(svg, 'text', { x: x0 - 8, y: y + 4, 'font-size': 12, 'text-anchor': 'end', fill: '#24313D' }, String(v));
+    });
+    for (m = 0; m < N; m++) {
+      var h = (y0 - y1) * p[m];
+      sv(svg, 'rect', { x: x0 + m * w + Math.min(1, w * 0.1), y: y0 - h, width: Math.max(0.6, w * 0.8), height: h, fill: m === best ? '#99004C' : '#C98FAE' });
+      if (counts) {
+        var hc = (y0 - y1) * (counts[m] || 0) / 1000;
+        sv(svg, 'line', { x1: x0 + m * w + w * 0.1, y1: y0 - hc, x2: x0 + m * w + w * 0.9, y2: y0 - hc, stroke: '#24313D', 'stroke-width': 2.2 });
+      }
+    }
+    var labs = N <= 16 ? 1 : N / 8;
+    for (m = 0; m < N; m += labs) sv(svg, 'text', { x: x0 + (m + 0.5) * w, y: y0 + 16, 'font-size': 11.5, 'text-anchor': 'middle', fill: '#24313D' }, String(m));
+    sv(svg, 'text', { x: x1, y: y0 + 34, 'font-size': 12.5, 'text-anchor': 'end', fill: '#6A626B' }, 'result m (estimate m / ' + N + ')');
+    var xs = x0 + (phi * N + 0.5) * w;
+    if (phi * N > N - 0.5) xs = x0 + (phi * N - N + 0.5) * w;
+    sv(svg, 'line', { x1: xs, y1: y1 - 4, x2: xs, y2: y0, stroke: '#C9A227', 'stroke-width': 2.5, 'stroke-dasharray': '5 3' });
+    sv(svg, 'text', { x: Math.min(xs + 4, x1 - 60), y: y1 + 8, 'font-size': 12, fill: '#8A6D00' }, 'φ·2ᵗ = ' + (phi * N).toFixed(2));
+    var est = best / N, err = Math.min(Math.abs(est - phi), 1 - Math.abs(est - phi));
+    $('stats').innerHTML = '<span>most likely m</span><span class="v">' + best + '</span><span>estimate m/2ᵗ</span><span class="v">' + est.toFixed(5) +
+      '</span><span>error</span><span class="v">' + err.toFixed(5) + '</span><span>P(best m)</span><span class="v">' + p[best].toFixed(4) +
+      '</span><span>gap 1/2ᵗ</span><span class="v">' + (1 / N).toFixed(5) + '</span>' +
+      (counts ? '<span>your shots at best m</span><span class="v">' + (counts[best] || 0) + '</span>' : '');
+    var exact = Math.abs(phi * N - Math.round(phi * N)) < 1e-9;
+    var msg = exact
+      ? 'φ·2ᵗ = ' + Math.round(phi * N) + ' is a whole number: φ has an exact ' + t + '-bit binary expansion, so every shot returns m = ' + (Math.round(phi * N) % N) + ' and the estimate is exact.'
+      : 'φ·2ᵗ = ' + (phi * N).toFixed(2) + ' is not a whole number, so no result is exactly right. The closest m comes up most often (probability ' + p[best].toFixed(3) + ', never below 4/π² ≈ 0.405), and its neighbours share the rest. Add a counting qubit to halve the gap between possible estimates.';
+    if (counts) msg += ' Black lines: your 1,000 shots, which scatter around the bars because of shot noise.';
+    $('msgp').textContent = msg;
+    document.querySelectorAll('[data-phi]').forEach(function (b) { b.classList.toggle('on', +b.dataset.phi === +$('phisl').value); });
+  }
+  function sample(p, shots) {
+    var c = {};
+    for (var s = 0; s < shots; s++) {
+      var r = Math.random(), acc = 0, k = p.length - 1;
+      for (var i = 0; i < p.length; i++) { acc += p[i]; if (r < acc) { k = i; break; } }
+      c[k] = (c[k] || 0) + 1;
+    }
+    return c;
+  }
+  $('phisl').oninput = function () { counts = null; drawP(); };
+  $('tsl').oninput = function () { counts = null; drawP(); };
+  document.querySelectorAll('[data-phi]').forEach(function (b) { b.onclick = function () { $('phisl').value = b.dataset.phi; counts = null; drawP(); }; });
+  $('run').onclick = function () { counts = sample(probs(+$('phisl').value / 6000, +$('tsl').value), 1000); drawP(); };
+  drawP();
+})();
+</script>
+</body>
+</html>
