@@ -15,6 +15,9 @@ Everything is exact linear algebra with NumPy. It is meant for small circuits (u
 
 QuantumCircuit.compose (version 1.4.0) joins circuits as in Qiskit.
 
+Statevector.probabilities(qargs) and probabilities_dict(qargs) (version 1.6.0) give the probabilities
+of measuring only some qubits, as in Qiskit; qargs[0] is the rightmost bit of a result.
+
 Dynamic circuits (version 1.5.0): `with qc.if_test((clbit, value)):` applies the gates inside the
 block only when that classical bit holds that value, as in Qiskit 2. An `else` block works too:
 `with qc.if_test((0, 1)) as else_: ...` then `with else_: ...`.
@@ -35,7 +38,7 @@ __all__ = [
     "NoiseModel", "QuantumError", "ReadoutError", "depolarizing_error", "pauli_error",
     "amplitude_damping_error", "phase_damping_error", "thermal_relaxation_error", "partial_trace",
 ]
-__version__ = "1.5.0"
+__version__ = "1.6.0"
 
 
 class CircuitError(Exception):
@@ -595,6 +598,35 @@ def _as_operator(op, n):
 
 
 # ---------------------------------------------------------------- states
+def _marginal(p, n, qargs, decimals):
+    if qargs is not None:
+        qargs = [int(q) for q in _as_list(qargs)]
+        for q in qargs:
+            if not 0 <= q < n:
+                raise CircuitError(f"Index {q} out of range for size {n}.")
+        if len(set(qargs)) != len(qargs):
+            raise CircuitError("Duplicate qubits in qargs.")
+        t = p.reshape([2] * n)                 # axis a holds qubit n - 1 - a
+        axes = [n - 1 - q for q in qargs]
+        keep = tuple(a for a in range(n) if a not in axes)
+        t = t.sum(axis=keep) if keep else t
+        order = sorted(axes)                   # remaining axes, in their old order
+        perm = [order.index(n - 1 - q) for q in reversed(qargs)]
+        p = np.transpose(t, perm).reshape(-1)
+    if decimals is not None:
+        p = np.round(p, decimals)
+    return p
+
+
+def _prob_dict(p, decimals):
+    m = int(round(math.log2(len(p))))
+    out = {}
+    for i, x in enumerate(p):
+        if x > 1e-12:
+            out[format(i, f"0{m}b")] = float(x)
+    return out
+
+
 class Statevector:
     """A pure state. Statevector(list of amplitudes) or Statevector(circuit without measurements)."""
 
@@ -615,16 +647,14 @@ class Statevector:
         v[int(label, 2)] = 1
         return cls(v)
 
-    def probabilities(self):
-        return np.abs(self.data) ** 2
+    def probabilities(self, qargs=None, decimals=None):
+        """Measurement probabilities, as in Qiskit. With qargs, only those qubits are measured:
+        qargs[0] is the least significant bit of the result's index."""
+        return _marginal(np.abs(self.data) ** 2, self.num_qubits, qargs, decimals)
 
-    def probabilities_dict(self, decimals=None):
-        p = self.probabilities()
-        out = {}
-        for i, x in enumerate(p):
-            if x > 1e-12:
-                out[format(i, f"0{self.num_qubits}b")] = round(float(x), decimals) if decimals is not None else float(x)
-        return out
+    def probabilities_dict(self, qargs=None, decimals=None):
+        """Probabilities keyed by result strings such as "011" (qargs[0], or qubit 0, on the right)."""
+        return _prob_dict(self.probabilities(qargs, decimals), decimals)
 
     def evolve(self, other):
         if isinstance(other, QuantumCircuit):
@@ -682,8 +712,12 @@ class DensityMatrix:
         self.data = m
         self.num_qubits = n
 
-    def probabilities(self):
-        return np.real(np.diag(self.data)).clip(min=0)
+    def probabilities(self, qargs=None, decimals=None):
+        """Measurement probabilities, as in Qiskit; qargs selects and orders the measured qubits."""
+        return _marginal(np.real(np.diag(self.data)).clip(min=0), self.num_qubits, qargs, decimals)
+
+    def probabilities_dict(self, qargs=None, decimals=None):
+        return _prob_dict(self.probabilities(qargs, decimals), decimals)
 
     def evolve(self, other):
         if isinstance(other, QuantumCircuit):
