@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Module 2 Slides: Grover's Search</title>
+<style>
+  :root { --maroon:#99004C; --ink:#24313D; --muted:#6A626B; --line:#E4DCE0; --tint:#F8F4F6; --gold:#C9A227; --ok:#2E7D4F; }
+  * { box-sizing:border-box; }
+  html, body { margin:0; height:100%; background:#2B2230; font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color:var(--ink); }
+  #viewport { position:absolute; inset:0 0 44px 0; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+  #stage { width:1280px; height:720px; flex-shrink:0; position:relative; transform-origin:center center; }
+  .slide { position:absolute; inset:0; background:#fff; padding:56px 72px 64px; display:none; flex-direction:column; border-top:10px solid var(--maroon); }
+  .slide.on { display:flex; }
+  .slide h1 { font-family: Georgia, serif; color:var(--maroon); font-size:56px; margin:0 0 18px; line-height:1.1; }
+  .slide h2 { font-family: Georgia, serif; color:var(--maroon); font-size:40px; margin:0 0 22px; line-height:1.15; }
+  .slide p, .slide li { font-size:27px; line-height:1.45; margin:0 0 14px; }
+  .slide ul { margin:0 0 10px 0; padding-left:34px; }
+  .kicker { font-size:20px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); margin-bottom:10px; }
+  .eq { background:var(--tint); border-left:6px solid var(--maroon); padding:16px 24px; font-size:34px; margin:10px 0 18px; font-family: Georgia, serif; }
+  .small { font-size:20px !important; color:var(--muted); }
+  .cols { display:flex; gap:40px; align-items:flex-start; flex:1; }
+  .cols > div { flex:1; }
+  .card { border:2px solid var(--line); border-radius:10px; padding:18px 22px; }
+  .card h3 { margin:0 0 8px; font-size:27px; color:var(--maroon); }
+  .card p { font-size:23px; margin:0; }
+  table { border-collapse:collapse; font-size:26px; }
+  th, td { border:1px solid var(--line); padding:10px 18px; text-align:left; }
+  th { background:var(--tint); }
+  .foot { position:absolute; left:72px; right:72px; bottom:20px; display:flex; justify-content:space-between; font-size:15px; color:var(--muted); }
+  .reveal { margin-top:10px; }
+  .reveal button { font-size:22px; padding:8px 18px; border:2px solid var(--maroon); background:#fff; color:var(--maroon); border-radius:6px; cursor:pointer; }
+  .reveal .ans { display:none; margin-top:14px; background:#EEF6F0; border-left:6px solid var(--ok); padding:12px 20px; font-size:25px; line-height:1.45; }
+  .reveal.open .ans { display:block; }
+  .reveal.open button { display:none; }
+  .title-slide { background: linear-gradient(135deg, #fff 0%, #fff 58%, var(--tint) 58%); }
+  #bar { position:absolute; left:0; right:0; bottom:0; height:44px; background:#1E1722; display:flex; align-items:center; justify-content:center; gap:10px; color:#fff; font-size:14px; }
+  #bar button { background:#3A2F40; color:#fff; border:0; border-radius:4px; padding:7px 14px; font-size:14px; cursor:pointer; }
+  #bar button:hover { background:var(--maroon); }
+  #count { min-width:70px; text-align:center; }
+  .slide code { font-family: Consolas, "Courier New", monospace; font-size:0.9em; }
+  .slide pre { font-family: Consolas, "Courier New", monospace; background:var(--tint); border-left:6px solid var(--maroon); padding:12px 18px; margin:6px 0; white-space:pre; }
+  svg text { font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  @media print {
+    @page { size: 1280px 720px; margin:0; }
+    html, body { background:#fff; height:auto; }
+    #bar { display:none; }
+    #viewport { position:static; display:block; }
+    #stage { transform:none !important; width:1280px; height:auto; }
+    .slide { display:flex !important; position:relative; width:1280px; height:720px; page-break-after:always; break-after:page; }
+    .reveal .ans { display:block !important; }
+    .reveal button { display:none !important; }
+  }
+</style>
+</head>
+<body>
+<div id="viewport"><div id="stage">
+
+
+<!-- 1 -->
+<section class="slide title-slide">
+  <div class="kicker">Quantum Computing Intermediate · Module 2</div>
+  <h1>Grover's search</h1>
+  <p style="font-size:30px;max-width:560px">Find a marked item among N with about √N questions: mark it with a minus sign, then turn that sign into probability.</p>
+  <div style="position:absolute;right:70px;top:190px;width:420px"><svg width="420" height="260" viewBox="0 0 420 260" aria-label="amplitudes"><line x1="42" y1="226.0" x2="412" y2="226.0" stroke="#E4DCE0" stroke-width="1"/><text x="38" y="231.0" font-size="15" text-anchor="end" fill="#24313D">-1</text><line x1="42" y1="130.0" x2="412" y2="130.0" stroke="#24313D" stroke-width="2"/><text x="38" y="135.0" font-size="15" text-anchor="end" fill="#24313D">0</text><line x1="42" y1="34.0" x2="412" y2="34.0" stroke="#E4DCE0" stroke-width="1"/><text x="38" y="39.0" font-size="15" text-anchor="end" fill="#24313D">1</text><rect x="52.4" y="130.0" width="32.9" height="8.5" fill="#B9AEB4"/><text x="68.9" y="256" font-size="14" text-anchor="middle" fill="#24313D">000</text><rect x="98.2" y="130.0" width="32.9" height="8.5" fill="#B9AEB4"/><text x="114.6" y="256" font-size="14" text-anchor="middle" fill="#24313D">001</text><rect x="143.9" y="130.0" width="32.9" height="8.5" fill="#B9AEB4"/><text x="160.4" y="256" font-size="14" text-anchor="middle" fill="#24313D">010</text><rect x="189.7" y="130.0" width="32.9" height="8.5" fill="#B9AEB4"/><text x="206.1" y="256" font-size="14" text-anchor="middle" fill="#24313D">011</text><rect x="235.4" y="130.0" width="32.9" height="8.5" fill="#B9AEB4"/><text x="251.9" y="256" font-size="14" text-anchor="middle" fill="#24313D">100</text><rect x="281.2" y="36.7" width="32.9" height="93.3" fill="#99004C"/><text x="297.6" y="256" font-size="14" text-anchor="middle" fill="#99004C">101</text><rect x="326.9" y="130.0" width="32.9" height="8.5" fill="#B9AEB4"/><text x="343.4" y="256" font-size="14" text-anchor="middle" fill="#24313D">110</text><rect x="372.7" y="130.0" width="32.9" height="8.5" fill="#B9AEB4"/><text x="389.1" y="256" font-size="14" text-anchor="middle" fill="#24313D">111</text></svg></div>
+  <div class="foot"><span>SemiAcademy · ISEP-CSU</span><span>CC BY 4.0</span></div>
+</section>
+
+<!-- 2 -->
+<section class="slide">
+  <h2>By the end of this module you can</h2>
+  <ul>
+    <li>explain <strong>unstructured search</strong> and why a classical search needs about N/2 queries on average;</li>
+    <li>build a <strong>phase oracle</strong> for any marked bit string from X gates and a multi-controlled Z;</li>
+    <li>build the <strong>diffuser</strong> and explain it as a reflection about the mean;</li>
+    <li>predict the <strong>best number of iterations</strong>, about (π/4)√N, and what happens if you run longer;</li>
+    <li>choose your <strong>mini-project</strong> experiment.</li>
+  </ul>
+  <p class="small" style="margin-top:24px">Course outcome 1: build and explain Grover's search with Qiskit-compatible circuit commands. Module 4 transpiles your Grover circuit for a model of an IBM computer.</p>
+  <div class="foot"><span>Module 2 · Grover's search</span><span>2</span></div>
+</section>
+
+<!-- 3 -->
+<section class="slide">
+  <h2>Unstructured search</h2>
+  <div class="cols">
+    <div style="flex:0 0 600px">
+      <p>A black box answers one question: f(x) = 1 if x is the marked item, 0 otherwise. Nothing about x tells you where to look next.</p>
+      <p>Classically you test items one at a time: about <strong>N/2</strong> queries on average, up to N in the worst case. Grover's search needs about <strong>(π/4)√N</strong>.</p>
+    </div>
+    <div>
+      <table style="font-size:23px">
+        <tr><th>N</th><th>classical, average</th><th>Grover iterations</th></tr>
+        <tr><td>16</td><td>8</td><td>3</td></tr>
+        <tr><td>1,024</td><td>512</td><td>25</td></tr>
+        <tr><td>1,048,576</td><td>524,288</td><td>804</td></tr>
+      </table>
+      <p class="small" style="margin-top:10px">Grover iterations: ⌊π/(4θ)⌋ with sin θ = 1/√N (slide 12).</p>
+    </div>
+  </div>
+  <div class="foot"><span>Module 2 · Grover's search</span><span>3</span></div>
+</section>
+
+<!-- 4 -->
+<section class="slide">
+  <h2>A phase oracle marks with a sign</h2>
+  <div class="cols">
+    <div style="flex:0 0 560px">
+      <div class="eq">Z<sub>f</sub>|x⟩ = (−1)<sup>f(x)</sup>|x⟩</div>
+      <p style="font-size:25px">It multiplies the marked amplitude by −1 and leaves the others alone. The <strong>probabilities do not change</strong>: measuring right after the oracle tells you nothing.</p>
+    </div>
+    <div><svg width="440" height="270" viewBox="0 0 440 270" aria-label="after the oracle for 10"><text x="46" y="18" font-size="17" fill="#24313D">after the oracle for 10</text><line x1="42" y1="244.0" x2="432" y2="244.0" stroke="#E4DCE0" stroke-width="1"/><text x="38" y="249.0" font-size="15" text-anchor="end" fill="#24313D">-1</text><line x1="42" y1="143.0" x2="432" y2="143.0" stroke="#24313D" stroke-width="2"/><text x="38" y="148.0" font-size="15" text-anchor="end" fill="#24313D">0</text><line x1="42" y1="42.0" x2="432" y2="42.0" stroke="#E4DCE0" stroke-width="1"/><text x="38" y="47.0" font-size="15" text-anchor="end" fill="#24313D">1</text><rect x="59.5" y="92.5" width="69.5" height="50.5" fill="#B9AEB4"/><text x="94.2" y="266" font-size="16" text-anchor="middle" fill="#24313D">00</text><rect x="156.0" y="92.5" width="69.5" height="50.5" fill="#B9AEB4"/><text x="190.8" y="266" font-size="16" text-anchor="middle" fill="#24313D">01</text><rect x="252.5" y="143.0" width="69.5" height="50.5" fill="#99004C"/><text x="287.2" y="266" font-size="16" text-anchor="middle" fill="#99004C">10</text><rect x="349.0" y="92.5" width="69.5" height="50.5" fill="#B9AEB4"/><text x="383.8" y="266" font-size="16" text-anchor="middle" fill="#24313D">11</text></svg></div>
+  </div>
+  <div class="foot"><span>Module 2 · Grover's search</span><span>4</span></div>
+</section>
+
+<!-- 5 -->
+<section class="slide">
+  <h2>Building an oracle for any string</h2>
+  <ol>
+    <li style="font-size:25px">X on every qubit whose bit is 0: |w⟩ becomes |11...1⟩.</li>
+    <li style="font-size:25px">A multi-controlled Z: flips the sign of |11...1⟩ only.</li>
+    <li style="font-size:25px">The same X gates again: |11...1⟩ becomes |w⟩.</li>
+  </ol>
+  <p style="font-size:25px">Bit order as in Qiskit: in "01" the <strong>rightmost</strong> bit is qubit 0. For w = 01 the X gates go on qubit 1. In code, the bit for qubit q is <code>marked[n - 1 - q]</code>.</p>
+  <pre style="font-size:21px">zeros = [q for q in range(n) if marked[n - 1 - q] == "0"]
+qc.x(zeros); mcz(qc, range(n)); qc.x(zeros)</pre>
+  <div class="foot"><span>Module 2 · Grover's search</span><span>5</span></div>
+</section>
+
+<!-- 6 -->
+<section class="slide">
+  <h2>Pause and predict</h2>
+  <p>You want the oracle for w = 110 on 3 qubits. Which qubits get X gates?</p>
+  <div class="reveal"><button type="button">Show the answer</button>
+    <div class="ans">Only qubit 0. Reading "110" from the right: qubit 0 has bit 0, qubit 1 has bit 1, qubit 2 has bit 1. The X on qubit 0 turns |110⟩ into |111⟩, the multi-controlled Z flips its sign, and the second X turns it back.</div></div>
+  <div class="foot"><span>Module 2 · Grover's search</span><span>6</span></div>
+</section>
+
+<!-- 7 -->
+<section class="slide">
+  <h2>The multi-controlled Z</h2>
+  <div class="cols">
+    <div class="card"><h3>2 qubits</h3><p><code>qc.cz(0, 1)</code></p><p style="margin-top:10px">Flips the sign of |11⟩.</p></div>
+    <div class="card"><h3>3 qubits</h3><p><code>qc.ccz(0, 1, 2)</code></p><p style="margin-top:10px">Flips the sign of |111⟩.</p></div>
+    <div class="card"><h3>Any n</h3><p><code>qc.h(t)</code><br><code>qc.mcx(controls, t)</code><br><code>qc.h(t)</code></p><p style="margin-top:10px">H X H = Z turns the multi-controlled X into a multi-controlled Z.</p></div>
+  </div>
+  <p class="small" style="margin-top:22px">It does not matter which qubit is the target: a multi-controlled Z treats all its qubits the same way. The lab's helper <code>mcz(qc, qubits)</code> picks the right form.</p>
+  <div class="foot"><span>Module 2 · Grover's search</span><span>7</span></div>
+</section>
+
+<!-- 8 -->
+<section class="slide">
+  <h2>The diffuser: reflection about the mean</h2>
+  <div class="cols">
+    <div style="flex:0 0 560px">
+      <div class="eq">a → 2·m − a</div>
+      <p style="font-size:25px">m is the mean (average) of all the amplitudes. Each amplitude ends up as far on the other side of m as it started. The marked amplitude, pushed below zero by the oracle, jumps far above the rest.</p>
+      <p class="small">Example: 0.5, 0.5, −0.5, 0.5 has mean 0.25 and becomes 0, 0, 1, 0.</p>
+    </div>
+    <div><svg width="440" height="270" viewBox="0 0 440 270" aria-label="before: gold line = mean 0.25"><text x="46" y="18" font-size="17" fill="#24313D">before: gold line = mean 0.25</text><line x1="42" y1="244.0" x2="432" y2="244.0" stroke="#E4DCE0" stroke-width="1"/><text x="38" y="249.0" font-size="15" text-anchor="end" fill="#24313D">-1</text><line x1="42" y1="143.0" x2="432" y2="143.0" stroke="#24313D" stroke-width="2"/><text x="38" y="148.0" font-size="15" text-anchor="end" fill="#24313D">0</text><line x1="42" y1="42.0" x2="432" y2="42.0" stroke="#E4DCE0" stroke-width="1"/><text x="38" y="47.0" font-size="15" text-anchor="end" fill="#24313D">1</text><rect x="59.5" y="92.5" width="69.5" height="50.5" fill="#B9AEB4"/><text x="94.2" y="266" font-size="16" text-anchor="middle" fill="#24313D">00</text><rect x="156.0" y="92.5" width="69.5" height="50.5" fill="#B9AEB4"/><text x="190.8" y="266" font-size="16" text-anchor="middle" fill="#24313D">01</text><rect x="252.5" y="143.0" width="69.5" height="50.5" fill="#99004C"/><text x="287.2" y="266" font-size="16" text-anchor="middle" fill="#99004C">10</text><rect x="349.0" y="92.5" width="69.5" height="50.5" fill="#B9AEB4"/><text x="383.8" y="266" font-size="16" text-anchor="middle" fill="#24313D">11</text><line x1="46" y1="117.8" x2="432" y2="117.8" stroke="#C9A227" stroke-width="3" stroke-dasharray="7 5"/></svg></div>
+  </div>
+  <div class="foot"><span>Module 2 · Grover's search</span><span>8</span></div>
+</section>
+
+<!-- 9 -->
+<section class="slide">
+  <h2>The diffuser circuit</h2>
+  <p>As a matrix the diffuser is 2|s⟩⟨s| − I, with |s⟩ the equal superposition. The circuit:</p>
+  <div class="eq" style="font-size:30px">H on all → X on all → multi-controlled Z → X on all → H on all</div>
+  <ul>
+    <li style="font-size:25px">H and X turn |s⟩ into |11...1⟩, so the multi-controlled Z flips the sign of |s⟩ and nothing else.</li>
+    <li style="font-size:25px">That gives I − 2|s⟩⟨s|: the diffuser times −1. A factor −1 on the whole state is invisible to every measurement; Qiskit's Grover operator has it too.</li>
+  </ul>
+  <div class="foot"><span>Module 2 · Grover's search</span><span>9</span></div>
+</section>
+
+<!-- 10 -->
+<section class="slide">
+  <h2>One iteration on 2 qubits</h2>
+  <p style="font-size:25px">N = 4, marked w = 10. Start, oracle, diffuser:</p>
+  <div><div style="display:inline-block;margin-right:14px"><svg width="340" height="250" viewBox="0 0 340 250" aria-label="start"><text x="46" y="18" font-size="17" fill="#24313D">start</text><line x1="42" y1="224.0" x2="332" y2="224.0" stroke="#E4DCE0" stroke-width="1"/><text x="38" y="229.0" font-size="15" text-anchor="end" fill="#24313D">-1</text><line x1="42" y1="133.0" x2="332" y2="133.0" stroke="#24313D" stroke-width="2"/><text x="38" y="138.0" font-size="15" text-anchor="end" fill="#24313D">0</text><line x1="42" y1="42.0" x2="332" y2="42.0" stroke="#E4DCE0" stroke-width="1"/><text x="38" y="47.0" font-size="15" text-anchor="end" fill="#24313D">1</text><rect x="56.0" y="87.5" width="51.5" height="45.5" fill="#B9AEB4"/><text x="81.8" y="246" font-size="16" text-anchor="middle" fill="#24313D">00</text><rect x="127.5" y="87.5" width="51.5" height="45.5" fill="#B9AEB4"/><text x="153.2" y="246" font-size="16" text-anchor="middle" fill="#24313D">01</text><rect x="199.0" y="87.5" width="51.5" height="45.5" fill="#99004C"/><text x="224.8" y="246" font-size="16" text-anchor="middle" fill="#99004C">10</text><rect x="270.5" y="87.5" width="51.5" height="45.5" fill="#B9AEB4"/><text x="296.2" y="246" font-size="16" text-anchor="middle" fill="#24313D">11</text><line x1="46" y1="87.5" x2="332" y2="87.5" stroke="#C9A227" stroke-width="3" stroke-dasharray="7 5"/></svg></div><div style="display:inline-block;margin-right:14px"><svg width="340" height="250" viewBox="0 0 340 250" aria-label="oracle"><text x="46" y="18" font-size="17" fill="#24313D">oracle</text><line x1="42" y1="224.0" x2="332" y2="224.0" stroke="#E4DCE0" stroke-width="1"/><text x="38" y="229.0" font-size="15" text-anchor="end" fill="#24313D">-1</text><line x1="42" y1="133.0" x2="332" y2="133.0" stroke="#24313D" stroke-width="2"/><text x="38" y="138.0" font-size="15" text-anchor="end" fill="#24313D">0</text><line x1="42" y1="42.0" x2="332" y2="42.0" stroke="#E4DCE0" stroke-width="1"/><text x="38" y="47.0" font-size="15" text-anchor="end" fill="#24313D">1</text><rect x="56.0" y="87.5" width="51.5" height="45.5" fill="#B9AEB4"/><text x="81.8" y="246" font-size="16" text-anchor="middle" fill="#24313D">00</text><rect x="127.5" y="87.5" width="51.5" height="45.5" fill="#B9AEB4"/><text x="153.2" y="246" font-size="16" text-anchor="middle" fill="#24313D">01</text><rect x="199.0" y="133.0" width="51.5" height="45.5" fill="#99004C"/><text x="224.8" y="246" font-size="16" text-anchor="middle" fill="#99004C">10</text><rect x="270.5" y="87.5" width="51.5" height="45.5" fill="#B9AEB4"/><text x="296.2" y="246" font-size="16" text-anchor="middle" fill="#24313D">11</text><line x1="46" y1="110.2" x2="332" y2="110.2" stroke="#C9A227" stroke-width="3" stroke-dasharray="7 5"/></svg></div><div style="display:inline-block;margin-right:14px"><svg width="340" height="250" viewBox="0 0 340 250" aria-label="diffuser"><text x="46" y="18" font-size="17" fill="#24313D">diffuser</text><line x1="42" y1="224.0" x2="332" y2="224.0" stroke="#E4DCE0" stroke-width="1"/><text x="38" y="229.0" font-size="15" text-anchor="end" fill="#24313D">-1</text><line x1="42" y1="133.0" x2="332" y2="133.0" stroke="#24313D" stroke-width="2"/><text x="38" y="138.0" font-size="15" text-anchor="end" fill="#24313D">0</text><line x1="42" y1="42.0" x2="332" y2="42.0" stroke="#E4DCE0" stroke-width="1"/><text x="38" y="47.0" font-size="15" text-anchor="end" fill="#24313D">1</text><rect x="56.0" y="133.0" width="51.5" height="0.8" fill="#B9AEB4"/><text x="81.8" y="246" font-size="16" text-anchor="middle" fill="#24313D">00</text><rect x="127.5" y="133.0" width="51.5" height="0.8" fill="#B9AEB4"/><text x="153.2" y="246" font-size="16" text-anchor="middle" fill="#24313D">01</text><rect x="199.0" y="42.0" width="51.5" height="91.0" fill="#99004C"/><text x="224.8" y="246" font-size="16" text-anchor="middle" fill="#99004C">10</text><rect x="270.5" y="133.0" width="51.5" height="0.8" fill="#B9AEB4"/><text x="296.2" y="246" font-size="16" text-anchor="middle" fill="#24313D">11</text></svg></div></div>
+  <p class="small">After one oracle and one diffuser, |10⟩ has probability 1 (the amplitude −1 carries the overall sign from slide 9). Lab Step 5: 1,000 of 1,000 shots give 10.</p>
+  <div class="foot"><span>Module 2 · Grover's search</span><span>10</span></div>
+</section>
+
+<!-- 11 -->
+<section class="slide">
+  <h2>The geometric picture</h2>
+  <div class="cols">
+    <div style="flex:0 0 560px">
+      <p style="font-size:25px">The state stays in a plane: |w⟩ (the marked state) and |w⊥⟩ (the equal superposition of the others).</p>
+      <p style="font-size:25px">It starts at angle θ from |w⊥⟩, with <strong>sin θ = √(s/N)</strong> for s marked items. The oracle and the diffuser are two reflections, and two reflections make a rotation: <strong>each iteration turns the state by 2θ</strong>.</p>
+    </div>
+    <div><svg width="440" height="380" viewBox="0 0 440 380" aria-label="Geometric picture: the state starts at angle theta from |w perp> and turns by 2 theta per iteration"><line x1="120" y1="336" x2="410" y2="336" stroke="#24313D" stroke-width="2"/><line x1="120" y1="336" x2="120" y2="46" stroke="#24313D" stroke-width="2"/><text x="410" y="326" font-size="20" text-anchor="end" fill="#24313D">|w⊥⟩</text><text x="130" y="60" font-size="20" fill="#24313D">|w⟩</text><line x1="120" y1="336" x2="372.6" y2="240.5" stroke="#B9AEB4" stroke-width="5" stroke-linecap="round"/><circle cx="372.6" cy="240.5" r="7" fill="#B9AEB4"/><text x="384.6" y="246.5" font-size="18" fill="#24313D">start: θ</text><line x1="120" y1="336" x2="246.3" y2="97.4" stroke="#C98FAE" stroke-width="5" stroke-linecap="round"/><circle cx="246.3" cy="97.4" r="7" fill="#C98FAE"/><text x="258.3" y="103.4" font-size="18" fill="#24313D">t = 1: 3θ</text><line x1="120" y1="336" x2="56.9" y2="73.5" stroke="#99004C" stroke-width="5" stroke-linecap="round"/><circle cx="56.9" cy="73.5" r="7" fill="#99004C"/><text x="46.9" y="59.5" font-size="18" text-anchor="middle" fill="#24313D">t = 2: 5θ</text><path d="M 190 336 A 70 70 0 0 0 185.5 311.3" fill="none" stroke="#C9A227" stroke-width="3"/><text x="198" y="328" font-size="18" fill="#8A6D00">θ</text><text x="434" y="374" font-size="16" text-anchor="end" fill="#6A626B">N = 8, θ ≈ 20.7°; 5θ ≈ 103.5° passes |w⟩</text></svg></div>
+  </div>
+  <div class="foot"><span>Module 2 · Grover's search</span><span>11</span></div>
+</section>
+
+<!-- 12 -->
+<section class="slide">
+  <h2>How many iterations?</h2>
+  <p>After t iterations the angle is (2t + 1)θ, so</p>
+  <div class="eq">P(success) = sin²((2t + 1)θ)</div>
+  <ul>
+    <li style="font-size:25px">Aim for (2t + 1)θ close to 90°: take <strong>t = ⌊π/(4θ)⌋</strong>, about (π/4)√(N/s).</li>
+    <li style="font-size:25px">N = 8, one marked: θ ≈ 20.7°, t = 2, P = 0.9453. Not exactly 1, because 5θ ≈ 103.5° overshoots 90° a little.</li>
+    <li style="font-size:25px">For large N the success probability at the best t is close to 1 (at least 1 − s/N).</li>
+  </ul>
+  <div class="foot"><span>Module 2 · Grover's search</span><span>12</span></div>
+</section>
+
+<!-- 13 -->
+<section class="slide">
+  <h2>Running too long makes it worse</h2>
+  <div class="cols">
+    <div style="flex:0 0 500px">
+      <p style="font-size:25px">Past the best t the state rotates beyond |w⟩, and the success probability falls: 0.9453 at t = 2, 0.3301 at t = 3, 0.0122 at t = 4.</p>
+      <p style="font-size:25px">It comes back later (0.9998 at t = 6), but that costs three times as many oracle calls.</p>
+      <p class="small">Exact values for N = 8 (lab Step 6).</p>
+    </div>
+    <div><svg width="520" height="300" viewBox="0 0 520 300" aria-label="Success probability against iterations for N = 8"><line x1="46" y1="260.0" x2="504" y2="260.0" stroke="#24313D" stroke-width="2"/><text x="40" y="266.0" font-size="18" text-anchor="end" fill="#24313D">0</text><line x1="46" y1="140.0" x2="504" y2="140.0" stroke="#E4DCE0" stroke-width="1"/><text x="40" y="146.0" font-size="18" text-anchor="end" fill="#24313D">0.5</text><line x1="46" y1="20.0" x2="504" y2="20.0" stroke="#E4DCE0" stroke-width="1"/><text x="40" y="26.0" font-size="18" text-anchor="end" fill="#24313D">1</text><text x="50.0" y="284" font-size="18" text-anchor="middle" fill="#24313D">0</text><text x="125.7" y="284" font-size="18" text-anchor="middle" fill="#24313D">1</text><text x="201.3" y="284" font-size="18" text-anchor="middle" fill="#24313D">2</text><text x="277.0" y="284" font-size="18" text-anchor="middle" fill="#24313D">3</text><text x="352.7" y="284" font-size="18" text-anchor="middle" fill="#24313D">4</text><text x="428.3" y="284" font-size="18" text-anchor="middle" fill="#24313D">5</text><text x="504.0" y="284" font-size="18" text-anchor="middle" fill="#24313D">6</text><polyline points="50.0,230.0 125.7,72.5 201.3,33.1 277.0,180.8 352.7,257.1 428.3,128.5 504.0,20.1" fill="none" stroke="#B9AEB4" stroke-width="3"/><circle cx="50.0" cy="230.0" r="6" fill="#6A626B"/><text x="62.0" y="220.0" font-size="16" text-anchor="start" fill="#24313D">0.125</text><circle cx="125.7" cy="72.5" r="6" fill="#6A626B"/><text x="137.7" y="62.5" font-size="16" text-anchor="start" fill="#24313D">0.781</text><circle cx="201.3" cy="33.1" r="8" fill="#99004C"/><text x="213.3" y="55.1" font-size="16" text-anchor="start" fill="#24313D">0.945</text><circle cx="277.0" cy="180.8" r="6" fill="#6A626B"/><text x="289.0" y="170.8" font-size="16" text-anchor="start" fill="#24313D">0.330</text><circle cx="352.7" cy="257.1" r="6" fill="#6A626B"/><text x="364.7" y="247.1" font-size="16" text-anchor="start" fill="#24313D">0.012</text><circle cx="428.3" cy="128.5" r="6" fill="#6A626B"/><text x="440.3" y="118.5" font-size="16" text-anchor="start" fill="#24313D">0.548</text><circle cx="504.0" cy="20.1" r="6" fill="#6A626B"/><text x="492.0" y="42.1" font-size="16" text-anchor="end" fill="#24313D">1.000</text><text x="504" y="298" font-size="17" text-anchor="end" fill="#6A626B">iterations t</text></svg></div>
+  </div>
+  <div class="foot"><span>Module 2 · Grover's search</span><span>13</span></div>
+</section>
+
+<!-- 14 -->
+<section class="slide">
+  <h2>Pause and predict</h2>
+  <p>N = 4 with one marked item. How many iterations should you run, and how often does it succeed? What about N = 16?</p>
+  <div class="reveal"><button type="button">Show the answer</button>
+    <div class="ans">N = 4: sin θ = 1/2, so θ = 30°. One iteration gives 3θ = 90°: success every time. N = 16: sin θ = 1/4, θ ≈ 14.48°, π/(4θ) ≈ 3.1, so t = 3 and P = sin²(7θ) ≈ 0.961.</div></div>
+  <div class="foot"><span>Module 2 · Grover's search</span><span>14</span></div>
+</section>
+
+<!-- 15 -->
+<section class="slide">
+  <h2>More than one marked item</h2>
+  <div class="cols">
+    <div class="card"><h3>s marked</h3><p>sin θ = √(s/N). Compose one oracle per string. s = 2 of N = 8: θ = 30°, so one iteration finds a marked item with certainty (lab Step 7).</p></div>
+    <div class="card"><h3>Half marked</h3><p>s = N/2 gives θ = 45°: one iteration leaves the success probability at 1/2. Guessing already does that well, so Grover does not help.</p></div>
+    <div class="card"><h3>s unknown</h3><p>If you do not know s, choosing the number of iterations at random still finds a marked item with good probability, using about √N queries. The optional video clip explains why.</p></div>
+  </div>
+  <div class="foot"><span>Module 2 · Grover's search</span><span>15</span></div>
+</section>
+
+<!-- 16 -->
+<section class="slide">
+  <h2>A quadratic speed-up</h2>
+  <ul>
+    <li style="font-size:25px">About √N oracle calls instead of about N: a <strong>quadratic</strong> speed-up, not an exponential one.</li>
+    <li style="font-size:25px">No quantum algorithm can do unstructured search with fewer than about √N queries, so Grover's search is optimal up to a constant factor.</li>
+    <li style="font-size:25px">The speed-up counts oracle calls. On real hardware each call is a circuit with many gates, and noise limits how many iterations you can run. Module 4 measures this cost.</li>
+  </ul>
+  <div class="foot"><span>Module 2 · Grover's search</span><span>16</span></div>
+</section>
+
+<!-- 17 -->
+<section class="slide">
+  <h2>Choose your mini-project</h2>
+  <p style="font-size:24px">Module 6 is a mini-project. Choose one experiment now (you can change your mind until Module 6):</p>
+  <div class="cols" style="flex:0 0 auto;gap:22px">
+    <div class="card"><h3>Grover</h3><p>On 2 or 3 qubits, with noise: how does success change with iterations?</p></div>
+    <div class="card"><h3>Phase estimation</h3><p>Of 1/3, with noise: does the best estimate survive?</p></div>
+    <div class="card"><h3>Transpiler</h3><p>Compare optimization levels for a circuit on a model of an IBM computer.</p></div>
+    <div class="card"><h3>QAOA</h3><p>Train on a simulator, then evaluate the parameters with noise.</p></div>
+  </div>
+  <p class="small" style="margin-top:18px">A noisy-simulator run is required; a run on a real IBM computer is optional.</p>
+  <div class="foot"><span>Module 2 · Grover's search</span><span>17</span></div>
+</section>
+
+<!-- 18 -->
+<section class="slide">
+  <h2>Summary and credits</h2>
+  <ul>
+    <li style="font-size:24px">The oracle hides the answer in a sign; the diffuser reflects about the mean and turns the sign into probability.</li>
+    <li style="font-size:24px">Each iteration rotates the state by 2θ, sin θ = √(s/N); best t = ⌊π/(4θ)⌋, about (π/4)√(N/s).</li>
+    <li style="font-size:24px">Next: the lab, where you write <code>oracle()</code>, <code>diffuser()</code> and <code>grover()</code>.</li>
+  </ul>
+  <p class="small" style="margin-top:18px">Slides written for SemiAcademy's <em>Quantum Computing Intermediate</em> course (Intel Semiconductor Education Program at Central State University, ISEP-CSU). License: CC BY 4.0, https://creativecommons.org/licenses/by/4.0/. Suggested credit: "Module 2 slides, Quantum Computing Intermediate, SemiAcademy / ISEP-CSU, CC BY 4.0." Source: github.com/CSU-Physics/quantum-computing-notebooks (media/level2/m2-slides.html).</p>
+  <div class="foot"><span>Module 2 · Grover's search</span><span>18</span></div>
+</section>
+
+</div></div>
+<div id="bar">
+  <button type="button" id="prev" aria-label="Previous slide">◀ Prev</button>
+  <span id="count">1 / 18</span>
+  <button type="button" id="next" aria-label="Next slide">Next ▶</button>
+  <button type="button" id="full">Full screen</button>
+  <button type="button" id="print">Print / PDF</button>
+</div>
+<script>
+(function () {
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide')), i = 0;
+  var m = /[#&]s=?(\d+)/.exec(location.hash); if (m) i = Math.min(slides.length - 1, Math.max(0, parseInt(m[1], 10) - 1));
+  function show(n) {
+    i = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach(function (s, j) { s.classList.toggle('on', j === i); });
+    document.getElementById('count').textContent = (i + 1) + ' / ' + slides.length;
+    try { history.replaceState(null, '', '#s' + (i + 1)); } catch (e) {}
+  }
+  function fit() {
+    var vp = document.getElementById('viewport'), st = document.getElementById('stage');
+    var sc = Math.min(vp.clientWidth / 1280, vp.clientHeight / 720);
+    st.style.transform = 'scale(' + sc + ')';
+  }
+  document.getElementById('prev').onclick = function () { show(i - 1); };
+  document.getElementById('next').onclick = function () { show(i + 1); };
+  document.getElementById('full').onclick = function () { var d = document.documentElement; if (!document.fullscreenElement && d.requestFullscreen) d.requestFullscreen(); else if (document.exitFullscreen) document.exitFullscreen(); };
+  document.getElementById('print').onclick = function () { window.print(); };
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { show(i + 1); e.preventDefault(); }
+    if (e.key === 'ArrowLeft' || e.key === 'PageUp') { show(i - 1); e.preventDefault(); }
+    if (e.key === 'Home') show(0); if (e.key === 'End') show(slides.length - 1);
+  });
+  var tx = null;
+  document.addEventListener('touchstart', function (e) { tx = e.touches[0].clientX; }, { passive: true });
+  document.addEventListener('touchend', function (e) { if (tx === null) return; var dx = e.changedTouches[0].clientX - tx; if (Math.abs(dx) > 50) show(i + (dx < 0 ? 1 : -1)); tx = null; });
+  document.getElementById('stage').addEventListener('click', function (e) {
+    var b = e.target.closest('.reveal button'); if (b) b.parentNode.classList.add('open');
+  });
+  window.addEventListener('resize', fit);
+  fit(); show(i);
+})();
+</script>
+</body>
+</html>
