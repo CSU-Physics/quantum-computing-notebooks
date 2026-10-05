@@ -1,0 +1,200 @@
+<!-- 1 -->
+<section class="slide title-slide">
+  <div class="kicker">Quantum Computing Intermediate · Module 5</div>
+  <h1>Variational algorithms: VQE and QAOA</h1>
+  <p style="font-size:30px;max-width:600px">A quantum circuit with adjustable angles, a classical optimizer, and a loop between them: the ground energy of a molecule and the best cut of a graph.</p>
+  <div style="position:absolute;right:90px;top:190px;width:380px">/*GRAPH_TITLE*/</div>
+  <div class="foot"><span>SemiAcademy · ISEP-CSU</span><span>CC BY 4.0</span></div>
+</section>
+
+<!-- 2 -->
+<section class="slide">
+  <h2>By the end of this module you can</h2>
+  <ul>
+    <li>write a Hamiltonian as a sum of <strong>Pauli strings</strong> and compute its <strong>expectation value</strong> with the Estimator;</li>
+    <li>explain the <strong>variational principle</strong> and the hybrid quantum-classical loop;</li>
+    <li>build a <strong>parameterized circuit</strong> (an ansatz) and run <strong>VQE</strong> for the hydrogen molecule;</li>
+    <li>write <strong>Max-Cut</strong> as a cost Hamiltonian and build the <strong>QAOA</strong> circuit;</li>
+    <li>judge the result: chemical accuracy, local optima, and what more layers buy.</li>
+  </ul>
+  <p class="small" style="margin-top:24px">Course outcome 4: run and adapt variational algorithms (VQE and QAOA) for small chemistry and optimization problems.</p>
+  <div class="foot"><span>Module 5 · Variational algorithms</span><span>2</span></div>
+</section>
+
+<!-- 3 -->
+<section class="slide">
+  <h2>The hybrid loop</h2>
+  <div>/*LOOP*/</div>
+  <p class="small">The quantum computer only prepares states and estimates expectation values; the optimizer runs on an ordinary computer. Short circuits, many runs: a good match for today's noisy hardware.</p>
+  <div class="foot"><span>Module 5 · Variational algorithms</span><span>3</span></div>
+</section>
+
+<!-- 4 -->
+<section class="slide">
+  <h2>The variational principle</h2>
+  <p style="font-size:25px">For any normalized state |ψ⟩ and Hamiltonian H with lowest eigenvalue E₀,</p>
+  <div class="eq">⟨ψ|H|ψ⟩ ≥ E₀</div>
+  <p style="font-size:25px">Write |ψ⟩ = Σ cₖ|Eₖ⟩ in the eigenbasis: ⟨ψ|H|ψ⟩ = Σ |cₖ|² Eₖ, a weighted average of energies, so it can never be below the smallest one.</p>
+  <p style="font-size:25px">So: <strong>lower is always better</strong>, and the energy found is an upper bound on the true ground energy. Equality needs the ansatz to reach the ground state.</p>
+  <div class="foot"><span>Module 5 · Variational algorithms</span><span>4</span></div>
+</section>
+
+<!-- 5 -->
+<section class="slide">
+  <h2>Hamiltonians as sums of Pauli strings</h2>
+  <p style="font-size:24px">The hydrogen molecule at a bond length of 0.735 Å, reduced to 2 qubits (energies in hartree, 1 hartree ≈ 27.2 eV):</p>
+  <div class="eq" style="font-size:26px">H = −1.0524 II + 0.3979 IZ − 0.3979 ZI − 0.0113 ZZ + 0.1809 XX</div>
+  <p style="font-size:24px">In Qiskit and qsim: <code>SparsePauliOp.from_list([("II", -1.0524), ("IZ", 0.3979), ...])</code>. Qubit 0 is the rightmost letter.</p>
+  <p class="small">Exact lowest eigenvalue: /*E_EXACT*/ hartree (electronic). Adding the nuclear repulsion, 0.71997 hartree, gives /*E_TOTAL*/ hartree for the molecule. Source of the operator: IBM Quantum Learning, <em>Variational Algorithm Design</em>, "Examples and applications".</p>
+  <div class="foot"><span>Module 5 · Variational algorithms</span><span>5</span></div>
+</section>
+
+<!-- 6 -->
+<section class="slide">
+  <h2>Expectation values, term by term</h2>
+  <div class="cols">
+    <div style="flex:0 0 560px">
+      <p style="font-size:24px">⟨ψ|H|ψ⟩ = Σₖ cₖ ⟨ψ|Pₖ|ψ⟩. Each Pauli string is measured on its own: Z terms directly, X terms after an H gate on that qubit.</p>
+      <p style="font-size:24px">For |01⟩ (the Hartree-Fock state):</p>
+    </div>
+    <div>/*TERMS*/</div>
+  </div>
+  <p class="small">Sum: /*E_HF*/ hartree, /*ERR_HF*/ millihartree above the exact answer. Chemical accuracy is 1.6 millihartree (1 kcal/mol).</p>
+  <div class="foot"><span>Module 5 · Variational algorithms</span><span>6</span></div>
+</section>
+
+<!-- 7 -->
+<section class="slide">
+  <h2>The Estimator primitive</h2>
+  <p style="font-size:24px">One call, many expectation values. Each <strong>PUB</strong> (primitive unified bloc) is a tuple:</p>
+  <div class="eq" style="font-size:26px">(circuit, observable, parameter_values)</div>
+  <ul>
+    <li style="font-size:23px"><code>estimator.run([(qc, H2, theta)]).result()[0].data.evs</code> is ⟨ψ(θ)|H₂|ψ(θ)⟩.</li>
+    <li style="font-size:23px">A list of observables gives one value each; a 2-D array of parameter values gives one value per row.</li>
+    <li style="font-size:23px"><code>StatevectorEstimator</code> computes exact values; on hardware, the Estimator measures with shots, so each value has a standard error.</li>
+  </ul>
+  <div class="foot"><span>Module 5 · Variational algorithms</span><span>7</span></div>
+</section>
+
+<!-- 8 -->
+<section class="slide">
+  <h2>A parameterized ansatz</h2>
+  <div>/*ANSATZ*/</div>
+  <p style="font-size:23px"><code>theta = ParameterVector("θ", 2 * layers)</code>; layer 1 is two RY gates; each further layer adds a CNOT and two more RY gates. One circuit serves every step: the Estimator fills in the angles.</p>
+  <p class="small">The structure of Qiskit's <code>real_amplitudes(2, reps=layers − 1)</code>. Real amplitudes are enough here, because the ground state of H₂ has real amplitudes.</p>
+  <div class="foot"><span>Module 5 · Variational algorithms</span><span>8</span></div>
+</section>
+
+<!-- 9 -->
+<section class="slide">
+  <h2>Classical optimizers</h2>
+  <ul>
+    <li style="font-size:24px"><strong>COBYLA</strong> (in SciPy) is gradient-free: it builds simple local models of the cost from its evaluations. Each evaluation is one Estimator run.</li>
+    <li style="font-size:24px"><strong>Gradient-based</strong> optimizers need derivatives, which cost two extra runs per angle (the parameter-shift rule).</li>
+    <li style="font-size:24px"><strong>Local optima:</strong> a local optimizer finds the bottom of the valley it starts in. Better starting points and several starts help.</li>
+    <li style="font-size:24px"><strong>Barren plateaus:</strong> in large, random-looking circuits the cost landscape becomes almost flat, and no optimizer can find a direction.</li>
+  </ul>
+  <div class="foot"><span>Module 5 · Variational algorithms</span><span>9</span></div>
+</section>
+
+<!-- 10 -->
+<section class="slide">
+  <h2>VQE for H₂: one defined change</h2>
+  <div class="cols">
+    <div style="flex:0 0 500px">/*VQE_TABLE*/
+      <p class="small" style="margin-top:10px">COBYLA from all angles 0, at most 300 evaluations. The number of evaluations varies a little with the SciPy version; the energies do not.</p>
+    </div>
+    <div>/*CONVERGE*/</div>
+  </div>
+  <div class="foot"><span>Module 5 · Variational algorithms</span><span>10</span></div>
+</section>
+
+<!-- 11 -->
+<section class="slide">
+  <h2>Pause and predict</h2>
+  <p>With one layer, COBYLA stops 20 millihartree above the exact energy. Would running it ten times longer, or from other starting angles, get it to chemical accuracy?</p>
+  <div class="reveal"><button type="button">Show the answer</button>
+    <div class="ans">No. With one layer there is no CNOT, so the ansatz can only make product states, and the best product state is |01⟩ at −1.836968 hartree. The exact ground state is about 0.994|01⟩ − 0.112|10⟩, which is entangled. The limit is the ansatz, not the optimizer: one CNOT more reaches the exact energy.</div></div>
+  <div class="foot"><span>Module 5 · Variational algorithms</span><span>11</span></div>
+</section>
+
+<!-- 12 -->
+<section class="slide">
+  <h2>Max-Cut as a Hamiltonian</h2>
+  <div class="cols">
+    <div style="flex:0 0 640px">
+      <p style="font-size:24px">Split the nodes into two groups to cut as many edges as possible. For edge (i, j), Z<sub>i</sub>Z<sub>j</sub> = +1 if both nodes are in the same group and −1 if the edge is cut:</p>
+      <div class="eq" style="font-size:28px">H<sub>C</sub> = Σ<sub>edges</sub> Z<sub>i</sub>Z<sub>j</sub>, &nbsp; cut = (|E| − ⟨H<sub>C</sub>⟩) / 2</div>
+      <p style="font-size:23px">The maximum cut is the lowest energy of H<sub>C</sub>. Course graph: 4 nodes, 5 edges; brute force over 16 splits gives a maximum cut of /*MAXCUT*/, for 0101 and 1010.</p>
+    </div>
+    <div>/*GRAPH_CUT*/</div>
+  </div>
+  <div class="foot"><span>Module 5 · Variational algorithms</span><span>12</span></div>
+</section>
+
+<!-- 13 -->
+<section class="slide">
+  <h2>The QAOA circuit</h2>
+  <div>/*QAOA_CIRCUIT*/</div>
+  <p style="font-size:23px">Start in the equal superposition; each layer applies the cost step e<sup>−iγH<sub>C</sub></sup> (an <code>rzz(2γ)</code> on every edge) and the mixer step e<sup>−iβΣX</sup> (an <code>rx(2β)</code> on every qubit). p layers have 2p angles.</p>
+  <p class="small">QAOA is inspired by slow (adiabatic) evolution from the equal superposition, the lowest-energy state of −ΣX, to the ground state of H<sub>C</sub>; with many layers it approaches that evolution.</p>
+  <div class="foot"><span>Module 5 · Variational algorithms</span><span>13</span></div>
+</section>
+
+<!-- 14 -->
+<section class="slide">
+  <h2>The landscape for one layer</h2>
+  <div class="cols">
+    <div style="flex:0 0 560px">/*LANDSCAPE*/</div>
+    <div>
+      <p style="font-size:22px">Expected cut for every (γ, β) on a 33 × 17 grid.</p>
+      <p style="font-size:22px">COBYLA from (0.5, 0.5): <strong>/*QA*/</strong>, the top of a lower hill (a local optimum).</p>
+      <p style="font-size:22px">Best grid point, then COBYLA: <strong>/*QC*/</strong>.</p>
+      <p style="font-size:22px">Random guessing gives 2.5; the maximum is 4.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Module 5 · Variational algorithms</span><span>14</span></div>
+</section>
+
+<!-- 15 -->
+<section class="slide">
+  <h2>Pause and predict</h2>
+  <p>With one layer and the best angles, the expected cut is /*QC*/ out of 4, and a maximum cut comes out /*P1*/ of the time. What do you expect from two layers, and what does it cost?</p>
+  <div class="reveal"><button type="button">Show the answer</button>
+    <div class="ans">Two layers reach an expected cut of /*Q2*/, and a maximum cut comes out /*P2*/ of the time. The cost: twice as many angles for the optimizer, and twice as many rzz gates, each of which needs two-qubit gates on hardware (Module 4), so more noise.</div></div>
+  <div class="foot"><span>Module 5 · Variational algorithms</span><span>15</span></div>
+</section>
+
+<!-- 16 -->
+<section class="slide">
+  <h2>VQE and QAOA in practice</h2>
+  <ul>
+    <li style="font-size:24px"><strong>Measurement cost:</strong> on hardware every expectation value comes from shots; a molecule with thousands of Pauli terms needs many circuits per step.</li>
+    <li style="font-size:24px"><strong>Noise:</strong> the variational principle holds for the exact energy; noise and shot error can push an estimate below it, so mitigation (Module 4) matters.</li>
+    <li style="font-size:24px"><strong>Scale:</strong> IBM's QAOA tutorial runs Max-Cut on a 100-node graph (100 qubits); whether it beats the best classical methods is an open research question.</li>
+  </ul>
+  <div class="foot"><span>Module 5 · Variational algorithms</span><span>16</span></div>
+</section>
+
+<!-- 17 -->
+<section class="slide">
+  <h2>Summary</h2>
+  <ul>
+    <li style="font-size:25px">Hamiltonians are sums of Pauli strings; the Estimator gives ⟨ψ|H|ψ⟩ = Σ cₖ⟨Pₖ⟩.</li>
+    <li style="font-size:25px">Variational loop: ansatz on the quantum computer, optimizer on a classical one; the energy never goes below E₀.</li>
+    <li style="font-size:25px">The ansatz limits what VQE can reach: for H₂, one CNOT made the difference between 20 millihartree and exact.</li>
+    <li style="font-size:25px">QAOA: H<sub>C</sub> = ΣZ<sub>i</sub>Z<sub>j</sub>, rzz cost steps and rx mixers; starting points matter, and more layers give better cuts.</li>
+  </ul>
+  <div class="eq" style="font-size:24px;margin-top:12px"><strong>Next:</strong> the Module 5 lab. You write <code>ansatz()</code>, <code>maxcut_hamiltonian()</code> and <code>qaoa_circuit()</code>.</div>
+  <div class="foot"><span>Module 5 · Variational algorithms</span><span>17</span></div>
+</section>
+
+<!-- 18 -->
+<section class="slide">
+  <h2>Credits and license</h2>
+  <p>These slides were written for SemiAcademy's <em>Quantum Computing Intermediate</em> course, developed through the Intel Semiconductor Education Program at Central State University (ISEP-CSU).</p>
+  <p>License: <strong>Creative Commons Attribution 4.0 International (CC BY 4.0)</strong>, https://creativecommons.org/licenses/by/4.0/. You may copy, adapt and share them, with credit.</p>
+  <p>Suggested credit: "Module 5 slides, Quantum Computing Intermediate, SemiAcademy / ISEP-CSU, CC BY 4.0."</p>
+  <p class="small">The H₂ Hamiltonian is the one used in IBM Quantum Learning, <em>Variational Algorithm Design</em> (CC BY-SA 4.0). All results were computed for these slides with qsim 1.9.0 and checked with Qiskit 2.5.2. Source of these slides: github.com/CSU-Physics/quantum-computing-notebooks (media/level2/m5-slides.html).</p>
+  <div class="foot"><span>Module 5 · Variational algorithms</span><span>18</span></div>
+</section>

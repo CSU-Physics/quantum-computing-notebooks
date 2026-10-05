@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Module 5 Explorer: VQE and QAOA</title>
+<style>
+  :root { --maroon:#99004C; --ink:#24313D; --muted:#6A626B; --line:#E4DCE0; --tint:#F8F4F6; --gold:#C9A227; --ok:#2E7D4F; --bad:#B3261E; --grey:#B9AEB4; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:#fff; color:var(--ink); font-family:"Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size:15px; }
+  .tabs { display:flex; border-bottom:2px solid var(--line); background:var(--tint); }
+  .tabs button { flex:1; border:0; background:none; padding:10px 8px; font-size:15px; cursor:pointer; color:var(--muted); border-bottom:3px solid transparent; }
+  .tabs button.on { color:var(--maroon); border-bottom-color:var(--maroon); font-weight:600; background:#fff; }
+  .tool { display:none; padding:12px 16px; }
+  .tool.on { display:block; }
+  h2 { font-family:Georgia, serif; color:var(--maroon); font-size:19px; margin:0 0 4px; }
+  .hint { color:var(--muted); margin:0 0 10px; line-height:1.45; }
+  .grid { display:grid; grid-template-columns: 280px 1fr; gap:14px; align-items:start; }
+  @media (max-width: 660px) { .grid { grid-template-columns: 1fr; } }
+  .box { border:1px solid var(--line); border-radius:6px; padding:10px 12px; min-width:0; }
+  .box h3 { margin:0 0 6px; font-size:14.5px; color:var(--maroon); }
+  label { display:flex; justify-content:space-between; align-items:center; margin:8px 0 2px; font-size:14px; gap:8px; }
+  input[type=range] { width:100%; }
+  select { font-size:14px; padding:3px 6px; }
+  .row { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; align-items:center; }
+  button.act { border:2px solid var(--ink); background:#fff; color:var(--ink); padding:4px 9px; border-radius:5px; font-size:13.5px; cursor:pointer; }
+  button.act.on { background:var(--maroon); border-color:var(--maroon); color:#fff; }
+  .mono { font-family: Consolas, "Courier New", monospace; }
+  .note { margin-top:8px; padding:7px 10px; border-radius:4px; font-size:13.5px; background:var(--tint); color:var(--ink); line-height:1.45; }
+  .stats { display:grid; grid-template-columns: 1fr auto; gap:4px 10px; font-size:13.5px; margin-top:8px; }
+  .stats span.v { font-family:Consolas, monospace; text-align:right; }
+  table.sh { border-collapse:collapse; font-size:13px; width:100%; margin-top:6px; }
+  table.sh td, table.sh th { border:1px solid var(--line); padding:3px 6px; text-align:left; }
+  svg.chart { width:100%; height:auto; display:block; }
+  .good { color:var(--ok); font-weight:600; } .far { color:var(--bad); font-weight:600; }
+  .credit { color:var(--muted); font-size:12px; padding:8px 16px 12px; border-top:1px solid var(--line); }
+</style>
+</head>
+<body>
+<div class="tabs" role="tablist">
+  <button type="button" data-t="vqe" role="tab">1. VQE for H₂</button>
+  <button type="button" data-t="qaoa" role="tab">2. QAOA landscape</button>
+</div>
+
+<!-- TOOL 1 -->
+<section class="tool" id="t-vqe">
+  <h2>Can you find the ground energy of H₂ by hand?</h2>
+  <p class="hint">The ansatz of the lab: layer 1 is RY(θ₀) on qubit 0 and RY(θ₁) on qubit 1; layer 2 adds a CNOT, then RY(θ₂) and RY(θ₃). Move the angles to lower the energy ⟨ψ|H|ψ⟩. The exact lowest energy is −1.857275 hartree; chemical accuracy means within 1.6 millihartree.</p>
+  <div class="grid">
+    <div class="box">
+      <h3>Ansatz</h3>
+      <div class="row"><button type="button" class="act" id="L1">1 layer</button><button type="button" class="act" id="L2">2 layers</button></div>
+      <label for="t0">θ₀ <span class="mono" id="t0v"></span></label><input type="range" id="t0" min="0" max="6.2832" step="0.005">
+      <label for="t1">θ₁ <span class="mono" id="t1v"></span></label><input type="range" id="t1" min="0" max="6.2832" step="0.005">
+      <div id="l2box">
+        <label for="t2">θ₂ <span class="mono" id="t2v"></span></label><input type="range" id="t2" min="0" max="6.2832" step="0.005">
+        <label for="t3">θ₃ <span class="mono" id="t3v"></span></label><input type="range" id="t3" min="0" max="6.2832" step="0.005">
+      </div>
+      <div class="row"><button type="button" class="act" id="hf">Set |01⟩ (θ₀ = π)</button><button type="button" class="act" id="opt">Let an optimizer finish</button></div>
+      <div class="stats" id="st1"></div>
+    </div>
+    <div class="box">
+      <h3>The state and its energy, term by term</h3>
+      <svg class="chart" id="amp" viewBox="0 0 520 190" role="img" aria-label="Amplitudes of the four basis states"></svg>
+      <table class="sh" id="terms"></table>
+      <div class="note" id="msg1"></div>
+    </div>
+  </div>
+</section>
+
+<!-- TOOL 2 -->
+<section class="tool" id="t-qaoa">
+  <h2>One QAOA layer: the landscape and its hills</h2>
+  <p class="hint">Each square is one choice of the cost angle γ and the mixer angle β; brighter means a larger expected cut. Click anywhere to start a local optimizer there, and watch which hill it climbs.</p>
+  <div class="grid">
+    <div class="box">
+      <h3>Graph</h3>
+      <select id="gsel" aria-label="Graph">
+        <option value="course">course graph: square with a diagonal</option>
+        <option value="square">square (4-cycle)</option>
+        <option value="paw">triangle with a tail</option>
+        <option value="star">star</option>
+        <option value="k4">all 6 edges (K4)</option>
+      </select>
+      <svg class="chart" id="gpic" viewBox="0 0 260 190" role="img" aria-label="The graph"></svg>
+      <div class="stats" id="st2"></div>
+      <div class="row"><button type="button" class="act" id="best">Go to the best grid point</button><button type="button" class="act" id="clr">Clear paths</button></div>
+    </div>
+    <div class="box">
+      <h3>Expected cut over (γ, β)</h3>
+      <svg class="chart" id="land" viewBox="0 0 560 330" role="img" aria-label="Expected cut over gamma and beta"></svg>
+      <table class="sh" id="probs"></table>
+      <div class="note" id="msg2"></div>
+    </div>
+  </div>
+</section>
+
+<div class="credit">Module 5 explorer · Quantum Computing Intermediate · SemiAcademy / ISEP-CSU · CC BY 4.0. Everything is computed exactly in your browser (state vectors of 2 and 4 qubits). The H₂ Hamiltonian is the one used in IBM Quantum Learning, Variational Algorithm Design (CC BY-SA 4.0). The optimizer here is a simple pattern search, not COBYLA, so its paths differ from the lab's. This is a practice tool: the graded values come from the lab notebook.</div>
+
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var NS = 'http://www.w3.org/2000/svg';
+  function sv(p, tag, a, txt) { var e = document.createElementNS(NS, tag); for (var k in a) e.setAttribute(k, a[k]); if (txt !== undefined) e.textContent = txt; p.appendChild(e); return e; }
+  var tabs = document.querySelectorAll('.tabs button');
+  function openTab(t) {
+    tabs.forEach(function (b) { b.classList.toggle('on', b.dataset.t === t); });
+    document.querySelectorAll('.tool').forEach(function (s) { s.classList.toggle('on', s.id === 't-' + t); });
+  }
+  tabs.forEach(function (b) { b.onclick = function () { openTab(b.dataset.t); }; });
+  function fromHash() { openTab(location.hash.indexOf('qaoa') >= 0 ? 'qaoa' : 'vqe'); }
+  window.addEventListener('hashchange', fromHash);
+  fromHash();
+
+  // ---------------------------------------------------------------- tool 1: VQE (real amplitudes, 2 qubits)
+  // basis index = 2*q1 + q0 (qubit 0 is the rightmost bit)
+  var TERMS = [['II', -1.052373245772859], ['IZ', 0.39793742484318045], ['ZI', -0.39793742484318045], ['ZZ', -0.01128010425623538], ['XX', 0.18093119978423156]];
+  var EXACT = -1.857275030202382;
+  function ry(psi, q, t) {
+    var c = Math.cos(t / 2), s = Math.sin(t / 2), out = psi.slice();
+    for (var i = 0; i < 4; i++) { if ((i >> q) & 1) continue; var j = i | (1 << q); out[i] = c * psi[i] - s * psi[j]; out[j] = s * psi[i] + c * psi[j]; }
+    return out;
+  }
+  function cx01(psi) { return [psi[0], psi[3], psi[2], psi[1]]; }   // control 0, target 1: swaps |01> and |11>
+  function state(th, layers) {
+    var psi = [1, 0, 0, 0];
+    psi = ry(psi, 0, th[0]); psi = ry(psi, 1, th[1]);
+    if (layers > 1) { psi = cx01(psi); psi = ry(psi, 0, th[2]); psi = ry(psi, 1, th[3]); }
+    return psi;
+  }
+  function pauliEv(psi, lab) {
+    var e = 0;
+    for (var i = 0; i < 4; i++) {
+      var j = i, sign = 1;
+      for (var q = 0; q < 2; q++) { var ch = lab[1 - q], b = (i >> q) & 1; if (ch === 'Z' && b) sign = -sign; if (ch === 'X') j ^= (1 << q); }
+      e += psi[j] * sign * psi[i];
+    }
+    return e;
+  }
+  function energy(th, layers) { var psi = state(th, layers), e = 0; TERMS.forEach(function (t) { e += t[1] * pauliEv(psi, t[0]); }); return e; }
+  var layers = 1;
+  function th() { return [+$('t0').value, +$('t1').value, +$('t2').value, +$('t3').value]; }
+  function setTh(v) { ['t0', 't1', 't2', 't3'].forEach(function (id, i) { var x = ((v[i] % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI); $(id).value = x; }); }
+  function draw1() {
+    $('L1').classList.toggle('on', layers === 1); $('L2').classList.toggle('on', layers === 2);
+    $('l2box').style.display = layers === 2 ? 'block' : 'none';
+    var t = th(), psi = state(t, layers), e = energy(t, layers), err = 1000 * (e - EXACT);
+    ['t0', 't1', 't2', 't3'].forEach(function (id, i) { $(id + 'v').textContent = t[i].toFixed(3); });
+    $('st1').innerHTML = '<span>energy (hartree)</span><span class="v">' + e.toFixed(6) + '</span><span>error</span><span class="v ' + (err < 1.6 ? 'good' : 'far') + '">' + err.toFixed(2) + ' mHa</span>' +
+      '<span>total with nuclear repulsion</span><span class="v">' + (e + 0.7199689944).toFixed(6) + '</span>';
+    var svg = $('amp'); svg.innerHTML = '';
+    var x0 = 40, yb = 95, sc = 70, labs = ['|00⟩', '|01⟩', '|10⟩', '|11⟩'];
+    sv(svg, 'line', { x1: x0, y1: yb, x2: 510, y2: yb, stroke: '#24313D', 'stroke-width': 1.5 });
+    sv(svg, 'text', { x: x0 - 6, y: yb - sc + 4, 'font-size': 11, 'text-anchor': 'end', fill: '#6A626B' }, '+1');
+    sv(svg, 'text', { x: x0 - 6, y: yb + sc + 4, 'font-size': 11, 'text-anchor': 'end', fill: '#6A626B' }, '−1');
+    for (var i = 0; i < 4; i++) {
+      var a = psi[i], x = x0 + 25 + i * 115, h = Math.abs(a) * sc;
+      sv(svg, 'rect', { x: x, y: a >= 0 ? yb - h : yb, width: 70, height: Math.max(h, 0.5), fill: '#99004C' });
+      sv(svg, 'text', { x: x + 35, y: 186, 'font-size': 14, 'text-anchor': 'middle', fill: '#24313D' }, labs[i] + '  ' + a.toFixed(3));
+    }
+    var rows = '<tr><th>Pauli</th><th>coefficient</th><th>⟨P⟩</th><th>coefficient × ⟨P⟩</th></tr>';
+    TERMS.forEach(function (tm) { var ev = pauliEv(psi, tm[0]); rows += '<tr><td class="mono">' + tm[0] + '</td><td>' + tm[1].toFixed(5) + '</td><td>' + ev.toFixed(4) + '</td><td>' + (tm[1] * ev).toFixed(5) + '</td></tr>'; });
+    $('terms').innerHTML = rows;
+    var msg;
+    if (layers === 1) msg = 'With one layer the state is a product: the amplitudes of |00⟩, |01⟩, |10⟩ and |11⟩ always satisfy a₀₀·a₁₁ = a₀₁·a₁₀. The lowest energy you can reach is −1.836968 (|01⟩), 20.3 mHa too high: no setting of θ₀ and θ₁ does better.';
+    else msg = err < 1.6 ? 'Within chemical accuracy. The ground state is about 0.994|01⟩ − 0.112|10⟩: mostly |01⟩, with a little |10⟩ mixed in by the CNOT. The XX term is what rewards that mixing.' : 'Two layers can reach the exact energy. Start from |01⟩ and look for a small |10⟩ component with the opposite sign of |01⟩, or let the optimizer finish.';
+    $('msg1').textContent = msg;
+  }
+  function patternSearch(f, x, step, minStep, maxIter, path) {
+    var fx = f(x), it = 0;
+    while (step > minStep && it < maxIter) {
+      var improved = false;
+      for (var i = 0; i < x.length; i++) {
+        for (var s = -1; s <= 1; s += 2) {
+          var y = x.slice(); y[i] += s * step; var fy = f(y);
+          if (fy < fx - 1e-12) { x = y; fx = fy; improved = true; if (path) path.push(x.slice()); }
+        }
+      }
+      if (!improved) step /= 2;
+      it++;
+    }
+    return { x: x, f: fx };
+  }
+  ['t0', 't1', 't2', 't3'].forEach(function (id) { $(id).oninput = draw1; });
+  $('L1').onclick = function () { layers = 1; draw1(); };
+  $('L2').onclick = function () { layers = 2; draw1(); };
+  $('hf').onclick = function () { setTh([Math.PI, 0, 0, 0]); draw1(); };
+  $('opt').onclick = function () {
+    var n = layers === 1 ? 2 : 4, t = th().slice(0, n);
+    var r = patternSearch(function (x) { return energy(x.concat([0, 0, 0, 0]).slice(0, 4), layers); }, t, 0.4, 1e-6, 4000);
+    setTh(r.x.concat([0, 0]).slice(0, 4).map(function (v, i) { return i < n ? v : th()[i]; })); draw1();
+  };
+  setTh([0.4, 0.3, 0, 0]); draw1();
+
+  // ---------------------------------------------------------------- tool 2: QAOA, one layer, 4 nodes
+  var GRAPHS = { course: [[0, 1], [1, 2], [2, 3], [3, 0], [0, 2]], square: [[0, 1], [1, 2], [2, 3], [3, 0]], paw: [[0, 1], [1, 2], [2, 0], [2, 3]],
+    star: [[0, 1], [0, 2], [0, 3]], k4: [[0, 1], [0, 2], [0, 3], [1, 2], [1, 3], [2, 3]] };
+  var NG = 61, NB = 31, edges = GRAPHS.course, cutv = [], gridv = [], paths = [], sel = null;
+  function cuts() { cutv = []; for (var k = 0; k < 16; k++) { var c = 0; edges.forEach(function (e) { if (((k >> e[0]) & 1) !== ((k >> e[1]) & 1)) c++; }); cutv.push(c); } }
+  function qaoaProbs(g, b) {
+    // |+>^4, cost phase e^{-i g sum ZZ}, mixer e^{-i b X} on each qubit
+    var re = [], im = [], n = 16, amp = 0.25;
+    for (var k = 0; k < n; k++) { var z = edges.length - 2 * cutv[k]; re.push(amp * Math.cos(-g * z)); im.push(amp * Math.sin(-g * z)); }
+    var c = Math.cos(b), s = Math.sin(b);
+    for (var q = 0; q < 4; q++) {
+      for (var i = 0; i < n; i++) {
+        if ((i >> q) & 1) continue; var j = i | (1 << q);
+        var ar = re[i], ai = im[i], br = re[j], bi = im[j];
+        // [c, -i s; -i s, c]
+        re[i] = c * ar + s * bi; im[i] = c * ai - s * br;
+        re[j] = s * ai + c * br; im[j] = -s * ar + c * bi;
+      }
+    }
+    var p = []; for (var k2 = 0; k2 < n; k2++) p.push(re[k2] * re[k2] + im[k2] * im[k2]);
+    return p;
+  }
+  function expCut(g, b) { var p = qaoaProbs(g, b), e = 0; for (var k = 0; k < 16; k++) e += p[k] * cutv[k]; return e; }
+  function wrapG(g) { return ((g % Math.PI) + Math.PI) % Math.PI; }
+  function wrapB(b) { var P = Math.PI / 2; return ((b % P) + P) % P; }
+  var x0 = 50, x1 = 540, yt = 10, yb = 280;
+  function GX(g) { return x0 + (x1 - x0) * wrapG(g) / Math.PI; }
+  function BY(b) { return yb - (yb - yt) * wrapB(b) / (Math.PI / 2); }
+  function color(t) {
+    var st = [[0, 68, 1, 84], [0.25, 59, 82, 139], [0.5, 33, 145, 140], [0.75, 94, 201, 98], [1, 253, 231, 37]];
+    for (var i = 1; i < st.length; i++) if (t <= st[i][0]) { var a = st[i - 1], b2 = st[i], f = (t - a[0]) / (b2[0] - a[0]); return 'rgb(' + [1, 2, 3].map(function (k) { return Math.round(a[k] + f * (b2[k] - a[k])); }).join(',') + ')'; }
+    return 'rgb(253,231,37)';
+  }
+  function buildGrid() { gridv = []; for (var bi = 0; bi < NB; bi++) { var row = []; for (var gi = 0; gi < NG; gi++) row.push(expCut(Math.PI * gi / (NG - 1), Math.PI / 2 * bi / (NB - 1))); gridv.push(row); } }
+  function drawGraph() {
+    var svg = $('gpic'); svg.innerHTML = '';
+    var P = [[60, 35], [200, 35], [200, 140], [60, 140]];
+    var best = Math.max.apply(null, cutv), bk = cutv.indexOf(best);
+    edges.forEach(function (e) { var cut = ((bk >> e[0]) & 1) !== ((bk >> e[1]) & 1);
+      sv(svg, 'line', { x1: P[e[0]][0], y1: P[e[0]][1], x2: P[e[1]][0], y2: P[e[1]][1], stroke: cut ? '#C9A227' : '#24313D', 'stroke-width': cut ? 4 : 2.5, 'stroke-dasharray': cut ? '7 5' : '' }); });
+    for (var q = 0; q < 4; q++) { var inA = (bk >> q) & 1;
+      sv(svg, 'circle', { cx: P[q][0], cy: P[q][1], r: 18, fill: inA ? '#99004C' : '#B9AEB4', stroke: '#24313D', 'stroke-width': 2 });
+      sv(svg, 'text', { x: P[q][0], y: P[q][1] + 6, 'font-size': 16, 'text-anchor': 'middle', fill: '#fff' }, String(q)); }
+    sv(svg, 'text', { x: 130, y: 182, 'font-size': 12, 'text-anchor': 'middle', fill: '#6A626B' }, 'a maximum cut (dashed edges are cut)');
+  }
+  function drawLand() {
+    var svg = $('land'); svg.innerHTML = '';
+    var lo = Infinity, hi = -Infinity;
+    gridv.forEach(function (r) { r.forEach(function (v) { lo = Math.min(lo, v); hi = Math.max(hi, v); }); });
+    var cw = (x1 - x0) / NG, ch = (yb - yt) / NB;
+    for (var bi = 0; bi < NB; bi++) for (var gi = 0; gi < NG; gi++) {
+      var r = sv(svg, 'rect', { x: x0 + gi * cw, y: yb - (bi + 1) * ch, width: cw + 0.6, height: ch + 0.6, fill: color((gridv[bi][gi] - lo) / (hi - lo || 1)) });
+    }
+    [[0, '0'], [Math.PI / 2, 'π/2'], [Math.PI, 'π']].forEach(function (t) { sv(svg, 'text', { x: x0 + (x1 - x0) * t[0] / Math.PI, y: yb + 16, 'font-size': 12, 'text-anchor': 'middle' }, t[1]); });
+    [[0, '0'], [Math.PI / 4, 'π/4'], [Math.PI / 2, 'π/2']].forEach(function (t) { sv(svg, 'text', { x: x0 - 6, y: yb - (yb - yt) * t[0] / (Math.PI / 2) + 4, 'font-size': 12, 'text-anchor': 'end' }, t[1]); });
+    sv(svg, 'text', { x: (x0 + x1) / 2, y: 318, 'font-size': 13, 'text-anchor': 'middle', fill: '#6A626B' }, 'γ (cost angle) · β (mixer angle) up · dark ' + lo.toFixed(2) + ', bright ' + hi.toFixed(2));
+    paths.forEach(function (pth) {
+      var pts = pth.map(function (p) { return GX(p[0]).toFixed(1) + ',' + BY(p[1]).toFixed(1); });
+      // draw segments that do not wrap around the plot
+      for (var i = 1; i < pth.length; i++) {
+        var a = [GX(pth[i - 1][0]), BY(pth[i - 1][1])], b2 = [GX(pth[i][0]), BY(pth[i][1])];
+        if (Math.abs(a[0] - b2[0]) < 100 && Math.abs(a[1] - b2[1]) < 100) sv(svg, 'line', { x1: a[0], y1: a[1], x2: b2[0], y2: b2[1], stroke: '#fff', 'stroke-width': 2 });
+      }
+      sv(svg, 'circle', { cx: GX(pth[0][0]), cy: BY(pth[0][1]), r: 4, fill: '#fff' });
+      var e = pth[pth.length - 1]; sv(svg, 'text', { x: GX(e[0]), y: BY(e[1]) + 7, 'font-size': 20, 'text-anchor': 'middle', fill: '#ff3b3b' }, '★');
+    });
+    svg.onclick = function (ev) {
+      var r = svg.getBoundingClientRect(), sx = 560 / r.width, px = (ev.clientX - r.left) * sx, py = (ev.clientY - r.top) * sx;
+      if (px < x0 || px > x1 || py < yt || py > yb) return;
+      var g = Math.PI * (px - x0) / (x1 - x0), b = Math.PI / 2 * (yb - py) / (yb - yt);
+      climb([g, b]);
+    };
+  }
+  function climb(start) {
+    var path = [start.slice()];
+    var r = patternSearch(function (x) { return -expCut(x[0], x[1]); }, start.slice(), 0.2, 1e-5, 3000, path);
+    paths.push(path); sel = r.x; drawLand(); report();
+  }
+  function report() {
+    var best = Math.max.apply(null, cutv), avg = cutv.reduce(function (a, b) { return a + b; }, 0) / 16, gmax = -1;
+    gridv.forEach(function (r) { r.forEach(function (v) { gmax = Math.max(gmax, v); }); });
+    var html = '<span>edges</span><span class="v">' + edges.length + '</span><span>maximum cut (brute force)</span><span class="v">' + best + '</span>' +
+      '<span>random split, average</span><span class="v">' + avg.toFixed(2) + '</span><span>best on the grid</span><span class="v">' + gmax.toFixed(3) + '</span>';
+    if (sel) html += '<span>this climb ended at</span><span class="v">' + expCut(sel[0], sel[1]).toFixed(3) + '</span>';
+    $('st2').innerHTML = html;
+    if (sel) {
+      var p = qaoaProbs(sel[0], sel[1]), order = p.map(function (v, k) { return [v, k]; }).sort(function (a, b) { return b[0] - a[0]; }).slice(0, 5);
+      var rows = '<tr><th>bit string</th><th>probability</th><th>cut</th></tr>';
+      order.forEach(function (o) { var s = ('0000' + o[1].toString(2)).slice(-4); rows += '<tr><td class="mono">' + s + '</td><td>' + o[0].toFixed(3) + '</td><td>' + cutv[o[1]] + (cutv[o[1]] === best ? ' (maximum)' : '') + '</td></tr>'; });
+      $('probs').innerHTML = rows;
+      var pm = 0; for (var k = 0; k < 16; k++) if (cutv[k] === best) pm += p[k];
+      var e = expCut(sel[0], sel[1]);
+      $('msg2').textContent = 'γ = ' + wrapG(sel[0]).toFixed(3) + ', β = ' + wrapB(sel[1]).toFixed(3) + ': expected cut ' + e.toFixed(3) + ', and a maximum cut comes out ' + (100 * pm).toFixed(0) + '% of the time. ' +
+        (e < gmax - 0.01 ? 'This is a local optimum: the climb stopped on a lower hill. Click somewhere else, or go to the best grid point.' : 'This is the highest hill for one layer; more layers would do better.');
+    } else { $('probs').innerHTML = ''; $('msg2').textContent = 'Click on the landscape to start a climb.'; }
+  }
+  function loadGraph() { edges = GRAPHS[$('gsel').value]; cuts(); buildGrid(); paths = []; sel = null; drawGraph(); drawLand(); report(); }
+  $('gsel').onchange = loadGraph;
+  $('clr').onclick = function () { paths = []; sel = null; drawLand(); report(); };
+  $('best').onclick = function () {
+    var bb = -1, at = null;
+    for (var bi = 0; bi < NB; bi++) for (var gi = 0; gi < NG; gi++) if (gridv[bi][gi] > bb + 1e-9) { bb = gridv[bi][gi]; at = [Math.PI * gi / (NG - 1), Math.PI / 2 * bi / (NB - 1)]; }
+    climb(at);
+  };
+  loadGraph();
+  climb([0.5, 0.5]);
+})();
+</script>
+</body>
+</html>
