@@ -18,6 +18,9 @@ QuantumCircuit.compose (version 1.4.0) joins circuits as in Qiskit.
 Statevector.probabilities(qargs) and probabilities_dict(qargs) (version 1.6.0) give the probabilities
 of measuring only some qubits, as in Qiskit; qargs[0] is the rightmost bit of a result.
 
+Multi-controlled gates (version 1.7.0): ccz(c1, c2, target) and mcx(control_qubits, target_qubit) work
+as in Qiskit; Grover oracles and diffusers on 3 and 4 qubits use them.
+
 Dynamic circuits (version 1.5.0): `with qc.if_test((clbit, value)):` applies the gates inside the
 block only when that classical bit holds that value, as in Qiskit 2. An `else` block works too:
 `with qc.if_test((0, 1)) as else_: ...` then `with else_: ...`.
@@ -38,7 +41,7 @@ __all__ = [
     "NoiseModel", "QuantumError", "ReadoutError", "depolarizing_error", "pauli_error",
     "amplitude_damping_error", "phase_damping_error", "thermal_relaxation_error", "partial_trace",
 ]
-__version__ = "1.6.0"
+__version__ = "1.7.0"
 
 
 class CircuitError(Exception):
@@ -132,6 +135,10 @@ class Instruction:
             return _controlled(_rz(self.params[0]))
         if n == "ccx":
             return _controlled(_FIXED["x"], 2)
+        if n == "ccz":
+            return _controlled(_FIXED["z"], 2)
+        if n == "mcx":
+            return _controlled(_FIXED["x"], len(self.qubits) - 1)
         if n == "swap":
             return _SWAP
         raise CircuitError(f"'{n}' has no matrix")
@@ -300,6 +307,14 @@ class QuantumCircuit:
     def crz(self, phi, control, target): return self._two("crz", control, target, (float(phi),))
     def swap(self, a, b): return self._two("swap", a, b)
     def ccx(self, c1, c2, target): return self._add("ccx", [int(c1), int(c2), int(target)])
+    def ccz(self, c1, c2, target): return self._add("ccz", [int(c1), int(c2), int(target)])
+
+    def mcx(self, control_qubits, target_qubit, ancilla_qubits=None, mode=None):
+        """X on target_qubit when every qubit in control_qubits is 1 (Qiskit's mcx; no ancillas are needed here)."""
+        controls = [int(q) for q in _as_list(control_qubits)]
+        if not controls:
+            raise CircuitError("mcx needs at least one control qubit.")
+        return self._add("mcx", controls + [int(target_qubit)])
 
     # ------------------------------------------------------------ non-unitary operations
     def barrier(self, *qubits):
@@ -497,19 +512,19 @@ class _TextDrawing:
             if inst.name == "barrier":
                 col = ["░" if q in qs else "─" for q in range(n)]
                 w = 1
-            elif inst.name in ("cx", "cy", "cz", "ch", "cp", "crz", "ccx", "swap"):
+            elif inst.name in ("cx", "cy", "cz", "ch", "cp", "crz", "ccx", "ccz", "mcx", "swap"):
                 lo, hi = min(qs), max(qs)
                 tgt = qs[-1]
                 if inst.name == "swap":
                     marks = {qs[0]: "X", qs[1]: "X"}
-                elif inst.name == "cz":
-                    marks = {qs[0]: "■", qs[1]: "■"}
+                elif inst.name in ("cz", "ccz"):
+                    marks = {q: "■" for q in qs}
                 else:
-                    sym = {"cx": "X", "ccx": "X", "cy": "Y", "ch": "H",
+                    sym = {"cx": "X", "ccx": "X", "mcx": "X", "cy": "Y", "ch": "H",
                            "cp": f"P({inst.params[0]:.3g})" if inst.params else "P",
                            "crz": f"RZ({inst.params[0]:.3g})" if inst.params else "RZ"}[inst.name]
                     marks = {q: "■" for q in qs[:-1]}
-                    marks[tgt] = "⊕" if inst.name in ("cx", "ccx") else sym
+                    marks[tgt] = "⊕" if inst.name in ("cx", "ccx", "mcx") else sym
                 w = max(len(m) for m in marks.values())
                 col = []
                 for q in range(n):
@@ -526,7 +541,7 @@ class _TextDrawing:
             for q in range(n):
                 rows[q] += "─" + col[q] + "─"
             vert = set()
-            if inst.name in ("cx", "cy", "cz", "ch", "cp", "crz", "ccx", "swap"):
+            if inst.name in ("cx", "cy", "cz", "ch", "cp", "crz", "ccx", "ccz", "mcx", "swap"):
                 vert = set(range(min(qs), max(qs)))
             for q in range(n):
                 mid = ("│".center(w)) if q in vert else " " * w
