@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Module 1 Slides: The QFT and Phase Estimation</title>
+<style>
+  :root { --maroon:#99004C; --ink:#24313D; --muted:#6A626B; --line:#E4DCE0; --tint:#F8F4F6; --gold:#C9A227; --ok:#2E7D4F; }
+  * { box-sizing:border-box; }
+  html, body { margin:0; height:100%; background:#2B2230; font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color:var(--ink); }
+  #viewport { position:absolute; inset:0 0 44px 0; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+  #stage { width:1280px; height:720px; flex-shrink:0; position:relative; transform-origin:center center; }
+  .slide { position:absolute; inset:0; background:#fff; padding:56px 72px 64px; display:none; flex-direction:column; border-top:10px solid var(--maroon); }
+  .slide.on { display:flex; }
+  .slide h1 { font-family: Georgia, serif; color:var(--maroon); font-size:56px; margin:0 0 18px; line-height:1.1; }
+  .slide h2 { font-family: Georgia, serif; color:var(--maroon); font-size:40px; margin:0 0 22px; line-height:1.15; }
+  .slide p, .slide li { font-size:27px; line-height:1.45; margin:0 0 14px; }
+  .slide ul { margin:0 0 10px 0; padding-left:34px; }
+  .kicker { font-size:20px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); margin-bottom:10px; }
+  .eq { background:var(--tint); border-left:6px solid var(--maroon); padding:16px 24px; font-size:34px; margin:10px 0 18px; font-family: Georgia, serif; }
+  .small { font-size:20px !important; color:var(--muted); }
+  .cols { display:flex; gap:40px; align-items:flex-start; flex:1; }
+  .cols > div { flex:1; }
+  .card { border:2px solid var(--line); border-radius:10px; padding:18px 22px; }
+  .card h3 { margin:0 0 8px; font-size:27px; color:var(--maroon); }
+  .card p { font-size:23px; margin:0; }
+  table { border-collapse:collapse; font-size:26px; }
+  th, td { border:1px solid var(--line); padding:10px 18px; text-align:left; }
+  th { background:var(--tint); }
+  .foot { position:absolute; left:72px; right:72px; bottom:20px; display:flex; justify-content:space-between; font-size:15px; color:var(--muted); }
+  .reveal { margin-top:10px; }
+  .reveal button { font-size:22px; padding:8px 18px; border:2px solid var(--maroon); background:#fff; color:var(--maroon); border-radius:6px; cursor:pointer; }
+  .reveal .ans { display:none; margin-top:14px; background:#EEF6F0; border-left:6px solid var(--ok); padding:12px 20px; font-size:25px; line-height:1.45; }
+  .reveal.open .ans { display:block; }
+  .reveal.open button { display:none; }
+  .title-slide { background: linear-gradient(135deg, #fff 0%, #fff 58%, var(--tint) 58%); }
+  #bar { position:absolute; left:0; right:0; bottom:0; height:44px; background:#1E1722; display:flex; align-items:center; justify-content:center; gap:10px; color:#fff; font-size:14px; }
+  #bar button { background:#3A2F40; color:#fff; border:0; border-radius:4px; padding:7px 14px; font-size:14px; cursor:pointer; }
+  #bar button:hover { background:var(--maroon); }
+  #count { min-width:70px; text-align:center; }
+  .slide code { font-family: Consolas, "Courier New", monospace; font-size:0.9em; }
+  svg text { font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  @media print {
+    @page { size: 1280px 720px; margin:0; }
+    html, body { background:#fff; height:auto; }
+    #bar { display:none; }
+    #viewport { position:static; display:block; }
+    #stage { transform:none !important; width:1280px; height:auto; }
+    .slide { display:flex !important; position:relative; width:1280px; height:720px; page-break-after:always; break-after:page; }
+    .reveal .ans { display:block !important; }
+    .reveal button { display:none !important; }
+  }
+</style>
+</head>
+<body>
+<div id="viewport"><div id="stage">
+
+
+<!-- 1 -->
+<section class="slide title-slide">
+  <div class="kicker">Quantum Computing Intermediate · Module 1</div>
+  <h1>The quantum Fourier transform and phase estimation</h1>
+  <p style="font-size:30px;max-width:560px">Turn a pattern of phases into a number you can measure, and use it to read a gate's eigenphase into a register of qubits.</p>
+  <div style="position:absolute;right:70px;top:200px;width:400px"><svg width="440" height="192" viewBox="0 0 440 192" aria-label="Phases of QFT of |3&gt; on 3 qubits"><circle cx="44.0" cy="44.0" r="40.0" fill="#F8F4F6" stroke="#B9AEB4" stroke-width="2"/><line x1="44.0" y1="44.0" x2="84.0" y2="44.0" stroke="#E4DCE0" stroke-width="2"/><line x1="44.0" y1="44.0" x2="80.0" y2="44.0" stroke="#99004C" stroke-width="5.5" stroke-linecap="round"/><circle cx="80.0" cy="44.0" r="6.3" fill="#99004C"/><circle cx="154.0" cy="44.0" r="40.0" fill="#F8F4F6" stroke="#B9AEB4" stroke-width="2"/><line x1="154.0" y1="44.0" x2="194.0" y2="44.0" stroke="#E4DCE0" stroke-width="2"/><line x1="154.0" y1="44.0" x2="128.5" y2="18.5" stroke="#99004C" stroke-width="5.5" stroke-linecap="round"/><circle cx="128.5" cy="18.5" r="6.3" fill="#99004C"/><circle cx="264.0" cy="44.0" r="40.0" fill="#F8F4F6" stroke="#B9AEB4" stroke-width="2"/><line x1="264.0" y1="44.0" x2="304.0" y2="44.0" stroke="#E4DCE0" stroke-width="2"/><line x1="264.0" y1="44.0" x2="264.0" y2="80.0" stroke="#99004C" stroke-width="5.5" stroke-linecap="round"/><circle cx="264.0" cy="80.0" r="6.3" fill="#99004C"/><circle cx="374.0" cy="44.0" r="40.0" fill="#F8F4F6" stroke="#B9AEB4" stroke-width="2"/><line x1="374.0" y1="44.0" x2="414.0" y2="44.0" stroke="#E4DCE0" stroke-width="2"/><line x1="374.0" y1="44.0" x2="399.5" y2="18.5" stroke="#99004C" stroke-width="5.5" stroke-linecap="round"/><circle cx="399.5" cy="18.5" r="6.3" fill="#99004C"/><circle cx="44.0" cy="140.0" r="40.0" fill="#F8F4F6" stroke="#B9AEB4" stroke-width="2"/><line x1="44.0" y1="140.0" x2="84.0" y2="140.0" stroke="#E4DCE0" stroke-width="2"/><line x1="44.0" y1="140.0" x2="8.0" y2="140.0" stroke="#99004C" stroke-width="5.5" stroke-linecap="round"/><circle cx="8.0" cy="140.0" r="6.3" fill="#99004C"/><circle cx="154.0" cy="140.0" r="40.0" fill="#F8F4F6" stroke="#B9AEB4" stroke-width="2"/><line x1="154.0" y1="140.0" x2="194.0" y2="140.0" stroke="#E4DCE0" stroke-width="2"/><line x1="154.0" y1="140.0" x2="179.5" y2="165.5" stroke="#99004C" stroke-width="5.5" stroke-linecap="round"/><circle cx="179.5" cy="165.5" r="6.3" fill="#99004C"/><circle cx="264.0" cy="140.0" r="40.0" fill="#F8F4F6" stroke="#B9AEB4" stroke-width="2"/><line x1="264.0" y1="140.0" x2="304.0" y2="140.0" stroke="#E4DCE0" stroke-width="2"/><line x1="264.0" y1="140.0" x2="264.0" y2="104.0" stroke="#99004C" stroke-width="5.5" stroke-linecap="round"/><circle cx="264.0" cy="104.0" r="6.3" fill="#99004C"/><circle cx="374.0" cy="140.0" r="40.0" fill="#F8F4F6" stroke="#B9AEB4" stroke-width="2"/><line x1="374.0" y1="140.0" x2="414.0" y2="140.0" stroke="#E4DCE0" stroke-width="2"/><line x1="374.0" y1="140.0" x2="348.5" y2="165.5" stroke="#99004C" stroke-width="5.5" stroke-linecap="round"/><circle cx="348.5" cy="165.5" r="6.3" fill="#99004C"/></svg></div>
+  <div class="foot"><span>SemiAcademy · ISEP-CSU</span><span>CC BY 4.0</span></div>
+</section>
+
+<!-- 2 -->
+<section class="slide">
+  <h2>By the end of this module you can</h2>
+  <ul>
+    <li>find the <strong>eigenvalues and eigenphases</strong> of a gate, and explain why a unitary's eigenvalues have size 1;</li>
+    <li>state what the <strong>quantum Fourier transform</strong> does to a basis state;</li>
+    <li>build the <strong>QFT circuit</strong> from H, controlled-phase and swap gates, and check it against the DFT matrix;</li>
+    <li>build <strong>phase estimation</strong> from phase kickback and the inverse QFT;</li>
+    <li>predict when an estimate is exact and how its precision grows with the number of <strong>counting qubits</strong>.</li>
+  </ul>
+  <p class="small" style="margin-top:24px">Course outcome 1: build and explain the QFT, and use phase estimation in prepared circuits. Module 3 uses phase estimation in Shor's algorithm.</p>
+  <div class="foot"><span>Module 1 · The QFT and phase estimation</span><span>2</span></div>
+</section>
+
+<!-- 3 -->
+<section class="slide">
+  <h2>Eigenvalues and eigenphases</h2>
+  <div class="cols">
+    <div style="flex:0 0 640px">
+      <p>An <strong>eigenvector</strong> of a gate U is a state that U only multiplies by a number:</p>
+      <div class="eq">U|ψ⟩ = λ|ψ⟩</div>
+      <p>A unitary gate keeps lengths, so |λ| = 1 and we can write λ = e<sup>2πiφ</sup> with 0 ≤ φ &lt; 1. The number φ is the <strong>eigenphase</strong>.</p>
+    </div>
+    <div>
+      <table style="font-size:23px">
+        <tr><th>Gate</th><th>Eigenvector</th><th>φ</th></tr>
+        <tr><td>Z</td><td>|0⟩, |1⟩</td><td>0, 1/2</td></tr>
+        <tr><td>S</td><td>|0⟩, |1⟩</td><td>0, 1/4</td></tr>
+        <tr><td>T</td><td>|0⟩, |1⟩</td><td>0, 1/8</td></tr>
+        <tr><td>P(2πφ)</td><td>|1⟩</td><td>φ</td></tr>
+      </table>
+      <p class="small" style="margin-top:10px">In the lab, NumPy's <code>np.linalg.eigvals</code> finds them.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Module 1 · The QFT and phase estimation</span><span>3</span></div>
+</section>
+
+<!-- 4 -->
+<section class="slide">
+  <h2>Pause and predict</h2>
+  <p>What are the eigenphases of the Hadamard gate H? (Hint: H·H = I.)</p>
+  <div class="reveal"><button type="button">Show the answer</button>
+    <div class="ans">0 and 1/2. Since H·H = I, each eigenvalue λ satisfies λ² = 1, so λ = +1 or −1: e<sup>2πi·0</sup> and e<sup>2πi·(1/2)</sup>. The eigenvectors are cos(π/8)|0⟩ + sin(π/8)|1⟩ and the state orthogonal to it.</div></div>
+  <div class="foot"><span>Module 1 · The QFT and phase estimation</span><span>4</span></div>
+</section>
+
+<!-- 5 -->
+<section class="slide">
+  <h2>The quantum Fourier transform</h2>
+  <p>The QFT on n qubits applies the discrete Fourier transform (DFT) to the amplitudes. A basis state |j⟩ becomes</p>
+  <div class="eq">QFT|j⟩ = (1/√2ⁿ) Σ<sub>k</sub> e<sup>2πi·j·k/2ⁿ</sup> |k⟩</div>
+  <ul>
+    <li style="font-size:25px">Every output amplitude has the same size, 1/√2ⁿ.</li>
+    <li style="font-size:25px">The phase of |k⟩ grows by j/2ⁿ of a full turn from one k to the next: the number j becomes a <strong>rate of turning</strong>.</li>
+    <li style="font-size:25px">The QFT is unitary, so the inverse QFT turns the phase pattern back into |j⟩.</li>
+  </ul>
+  <div class="foot"><span>Module 1 · The QFT and phase estimation</span><span>5</span></div>
+</section>
+
+<!-- 6 -->
+<section class="slide">
+  <h2>QFT|3⟩ on three qubits</h2>
+  <p style="font-size:25px">j = 3, 2ⁿ = 8: each amplitude turns 3/8 of a turn (135°) more than the one before. Phase 0 points right.</p>
+  <div style="margin:8px 0 6px"><svg width="1120" height="144" viewBox="0 0 1120 144" aria-label="Phases of QFT of |3&gt; on 3 qubits"><circle cx="56.0" cy="56.0" r="52.0" fill="#F8F4F6" stroke="#B9AEB4" stroke-width="2"/><line x1="56.0" y1="56.0" x2="108.0" y2="56.0" stroke="#E4DCE0" stroke-width="2"/><line x1="56.0" y1="56.0" x2="102.8" y2="56.0" stroke="#99004C" stroke-width="7.0" stroke-linecap="round"/><circle cx="102.8" cy="56.0" r="8.0" fill="#99004C"/><text x="56.0" y="132.0" font-size="18" text-anchor="middle" fill="#24313D">|000⟩ 0°</text><circle cx="196.0" cy="56.0" r="52.0" fill="#F8F4F6" stroke="#B9AEB4" stroke-width="2"/><line x1="196.0" y1="56.0" x2="248.0" y2="56.0" stroke="#E4DCE0" stroke-width="2"/><line x1="196.0" y1="56.0" x2="162.9" y2="22.9" stroke="#99004C" stroke-width="7.0" stroke-linecap="round"/><circle cx="162.9" cy="22.9" r="8.0" fill="#99004C"/><text x="196.0" y="132.0" font-size="18" text-anchor="middle" fill="#24313D">|001⟩ 135°</text><circle cx="336.0" cy="56.0" r="52.0" fill="#F8F4F6" stroke="#B9AEB4" stroke-width="2"/><line x1="336.0" y1="56.0" x2="388.0" y2="56.0" stroke="#E4DCE0" stroke-width="2"/><line x1="336.0" y1="56.0" x2="336.0" y2="102.8" stroke="#99004C" stroke-width="7.0" stroke-linecap="round"/><circle cx="336.0" cy="102.8" r="8.0" fill="#99004C"/><text x="336.0" y="132.0" font-size="18" text-anchor="middle" fill="#24313D">|010⟩ 270°</text><circle cx="476.0" cy="56.0" r="52.0" fill="#F8F4F6" stroke="#B9AEB4" stroke-width="2"/><line x1="476.0" y1="56.0" x2="528.0" y2="56.0" stroke="#E4DCE0" stroke-width="2"/><line x1="476.0" y1="56.0" x2="509.1" y2="22.9" stroke="#99004C" stroke-width="7.0" stroke-linecap="round"/><circle cx="509.1" cy="22.9" r="8.0" fill="#99004C"/><text x="476.0" y="132.0" font-size="18" text-anchor="middle" fill="#24313D">|011⟩ 45°</text><circle cx="616.0" cy="56.0" r="52.0" fill="#F8F4F6" stroke="#B9AEB4" stroke-width="2"/><line x1="616.0" y1="56.0" x2="668.0" y2="56.0" stroke="#E4DCE0" stroke-width="2"/><line x1="616.0" y1="56.0" x2="569.2" y2="56.0" stroke="#99004C" stroke-width="7.0" stroke-linecap="round"/><circle cx="569.2" cy="56.0" r="8.0" fill="#99004C"/><text x="616.0" y="132.0" font-size="18" text-anchor="middle" fill="#24313D">|100⟩ 180°</text><circle cx="756.0" cy="56.0" r="52.0" fill="#F8F4F6" stroke="#B9AEB4" stroke-width="2"/><line x1="756.0" y1="56.0" x2="808.0" y2="56.0" stroke="#E4DCE0" stroke-width="2"/><line x1="756.0" y1="56.0" x2="789.1" y2="89.1" stroke="#99004C" stroke-width="7.0" stroke-linecap="round"/><circle cx="789.1" cy="89.1" r="8.0" fill="#99004C"/><text x="756.0" y="132.0" font-size="18" text-anchor="middle" fill="#24313D">|101⟩ 315°</text><circle cx="896.0" cy="56.0" r="52.0" fill="#F8F4F6" stroke="#B9AEB4" stroke-width="2"/><line x1="896.0" y1="56.0" x2="948.0" y2="56.0" stroke="#E4DCE0" stroke-width="2"/><line x1="896.0" y1="56.0" x2="896.0" y2="9.2" stroke="#99004C" stroke-width="7.0" stroke-linecap="round"/><circle cx="896.0" cy="9.2" r="8.0" fill="#99004C"/><text x="896.0" y="132.0" font-size="18" text-anchor="middle" fill="#24313D">|110⟩ 90°</text><circle cx="1036.0" cy="56.0" r="52.0" fill="#F8F4F6" stroke="#B9AEB4" stroke-width="2"/><line x1="1036.0" y1="56.0" x2="1088.0" y2="56.0" stroke="#E4DCE0" stroke-width="2"/><line x1="1036.0" y1="56.0" x2="1002.9" y2="89.1" stroke="#99004C" stroke-width="7.0" stroke-linecap="round"/><circle cx="1002.9" cy="89.1" r="8.0" fill="#99004C"/><text x="1036.0" y="132.0" font-size="18" text-anchor="middle" fill="#24313D">|111⟩ 225°</text></svg></div>
+  <p class="small">These are the phases your <code>qft3()</code> prints in lab Step 3: 0°, 135°, 270°, 45°, 180°, 315°, 90°, 225°. Measuring gives each k with probability 1/8: the information is only in the phases.</p>
+  <div class="foot"><span>Module 1 · The QFT and phase estimation</span><span>6</span></div>
+</section>
+
+<!-- 7 -->
+<section class="slide">
+  <h2>The QFT circuit for three qubits</h2>
+  <svg width="1100" height="300" viewBox="0 0 1100 300" aria-label="QFT circuit on three qubits: H on qubit 2, controlled phases pi/2 from qubit 1 and pi/4 from qubit 0; H on qubit 1, controlled phase pi/2 from qubit 0; H on qubit 0; swap qubits 0 and 2">
+    <g font-size="24" fill="#24313D" stroke-width="3">
+      <text x="0" y="78">q2</text><text x="0" y="168">q1</text><text x="0" y="258">q0</text>
+      <line x1="50" y1="70" x2="1060" y2="70" stroke="#24313D"/><line x1="50" y1="160" x2="1060" y2="160" stroke="#24313D"/><line x1="50" y1="250" x2="1060" y2="250" stroke="#24313D"/>
+      <rect x="90" y="46" width="48" height="48" rx="5" fill="#fff" stroke="#99004C"/><text x="114" y="79" text-anchor="middle" fill="#99004C">H</text>
+      <circle cx="220" cy="160" r="8" fill="#24313D"/><line x1="220" y1="94" x2="220" y2="160" stroke="#24313D"/>
+      <rect x="182" y="46" width="76" height="48" rx="5" fill="#fff" stroke="#24313D"/><text x="220" y="78" text-anchor="middle" font-size="21">P(π/2)</text>
+      <circle cx="340" cy="250" r="8" fill="#24313D"/><line x1="340" y1="94" x2="340" y2="250" stroke="#24313D"/>
+      <rect x="302" y="46" width="76" height="48" rx="5" fill="#fff" stroke="#24313D"/><text x="340" y="78" text-anchor="middle" font-size="21">P(π/4)</text>
+      <rect x="440" y="136" width="48" height="48" rx="5" fill="#fff" stroke="#99004C"/><text x="464" y="169" text-anchor="middle" fill="#99004C">H</text>
+      <circle cx="570" cy="250" r="8" fill="#24313D"/><line x1="570" y1="184" x2="570" y2="250" stroke="#24313D"/>
+      <rect x="532" y="136" width="76" height="48" rx="5" fill="#fff" stroke="#24313D"/><text x="570" y="168" text-anchor="middle" font-size="21">P(π/2)</text>
+      <rect x="680" y="226" width="48" height="48" rx="5" fill="#fff" stroke="#99004C"/><text x="704" y="259" text-anchor="middle" fill="#99004C">H</text>
+      <line x1="840" y1="70" x2="840" y2="250" stroke="#24313D"/>
+      <g stroke="#24313D" stroke-width="3"><line x1="828" y1="58" x2="852" y2="82"/><line x1="852" y1="58" x2="828" y2="82"/><line x1="828" y1="238" x2="852" y2="262"/><line x1="852" y1="238" x2="828" y2="262"/></g>
+      <text x="320" y="292" font-size="19" fill="#8A6D00" text-anchor="middle">qubit 2</text>
+      <text x="570" y="292" font-size="19" fill="#8A6D00" text-anchor="middle">qubit 1</text>
+      <text x="704" y="292" font-size="19" fill="#8A6D00" text-anchor="middle">qubit 0</text>
+      <text x="840" y="292" font-size="19" fill="#8A6D00" text-anchor="middle">swap</text>
+    </g>
+  </svg>
+  <p class="small">The controlled phase between qubits k and j has angle π/2<sup>j − k</sup>. In code: <code>qc.cp(math.pi / 2**(j - k), k, j)</code>.</p>
+  <div class="foot"><span>Module 1 · The QFT and phase estimation</span><span>7</span></div>
+</section>
+
+<!-- 8 -->
+<section class="slide">
+  <h2>Why the swaps?</h2>
+  <div class="cols">
+    <div style="flex:0 0 640px">
+      <p style="font-size:25px">Each stage puts one bit of the answer's phase pattern on a qubit, but the circuit fills the qubits in reverse order: the highest qubit ends up holding what belongs on qubit 0.</p>
+      <p style="font-size:25px">The swaps at the end reverse the order, qubit i with qubit n − 1 − i. Without them the circuit is the DFT with its output bits reversed.</p>
+    </div>
+    <div>
+      <div class="card"><h3>A common mistake</h3><p>Leaving out the swaps. The lab's check cell recognises this case and says so. Writing the angles with a minus sign gives the <strong>inverse</strong> QFT, which it also recognises.</p></div>
+    </div>
+  </div>
+  <div class="foot"><span>Module 1 · The QFT and phase estimation</span><span>8</span></div>
+</section>
+
+<!-- 9 -->
+<section class="slide">
+  <h2>How big is the QFT?</h2>
+  <table style="font-size:24px">
+    <tr><th>n qubits</th><th>H gates</th><th>controlled phases n(n − 1)/2</th><th>swaps</th><th>amplitudes 2ⁿ</th></tr>
+    <tr><td>3</td><td>3</td><td>3</td><td>1</td><td>8</td></tr>
+    <tr><td>5</td><td>5</td><td>10</td><td>2</td><td>32</td></tr>
+    <tr><td>20</td><td>20</td><td>190</td><td>10</td><td>1,048,576</td></tr>
+  </table>
+  <p style="margin-top:16px;font-size:25px">About n²/2 gates for 2ⁿ amplitudes. The classical fast Fourier transform needs about n·2ⁿ steps. But the QFT's output is a quantum state: you cannot read all 2ⁿ amplitudes, only measure it. It helps only inside an algorithm that needs one measurement, such as phase estimation.</p>
+  <div class="foot"><span>Module 1 · The QFT and phase estimation</span><span>9</span></div>
+</section>
+
+<!-- 10 -->
+<section class="slide">
+  <h2>Phase kickback, again</h2>
+  <div class="cols">
+    <div style="flex:0 0 620px">
+      <p style="font-size:25px">Put the target in an eigenvector |ψ⟩ of U, and the control in |+⟩. A controlled-U gives</p>
+      <div class="eq" style="font-size:28px">(|0⟩ + e<sup>2πiφ</sup>|1⟩)/√2 ⊗ |ψ⟩</div>
+      <p style="font-size:25px">The target is unchanged; the eigenphase has moved onto the control qubit. This is the same kickback as in Bernstein-Vazirani (Level 1, Module 6), now with any phase instead of a sign.</p>
+    </div>
+    <div>
+      <div class="card"><h3>Powers of U</h3><p>U<sup>2ᵏ</sup> has eigenphase 2ᵏ·φ. Counting qubit k controls U<sup>2ᵏ</sup>, so it picks up e<sup>2πi·2ᵏφ</sup>. For the phase gate this is one gate: <code>cp(2π·φ·2ᵏ, k, t)</code>.</p></div>
+    </div>
+  </div>
+  <div class="foot"><span>Module 1 · The QFT and phase estimation</span><span>10</span></div>
+</section>
+
+<!-- 11 -->
+<section class="slide">
+  <h2>The phase estimation circuit</h2>
+  <svg width="1120" height="330" viewBox="0 0 1120 330" aria-label="Phase estimation circuit with three counting qubits: H gates, controlled U, U squared and U to the fourth, inverse QFT, measurements; the target starts in the eigenvector">
+    <g font-size="23" fill="#24313D" stroke-width="3">
+      <text x="0" y="58">counting 0</text><text x="0" y="128">counting 1</text><text x="0" y="198">counting 2</text><text x="0" y="288">target |ψ⟩</text>
+      <line x1="130" y1="50" x2="884" y2="50" stroke="#24313D"/><line x1="130" y1="120" x2="884" y2="120" stroke="#24313D"/><line x1="130" y1="190" x2="884" y2="190" stroke="#24313D"/><line x1="130" y1="280" x2="1060" y2="280" stroke="#24313D"/>
+      <rect x="150" y="28" width="44" height="44" rx="5" fill="#fff" stroke="#99004C"/><text x="172" y="58" text-anchor="middle" fill="#99004C">H</text>
+      <rect x="150" y="98" width="44" height="44" rx="5" fill="#fff" stroke="#99004C"/><text x="172" y="128" text-anchor="middle" fill="#99004C">H</text>
+      <rect x="150" y="168" width="44" height="44" rx="5" fill="#fff" stroke="#99004C"/><text x="172" y="198" text-anchor="middle" fill="#99004C">H</text>
+      <circle cx="270" cy="50" r="8" fill="#24313D"/><line x1="270" y1="50" x2="270" y2="258" stroke="#24313D"/><rect x="240" y="258" width="60" height="44" rx="5" fill="#fff" stroke="#24313D"/><text x="270" y="288" text-anchor="middle">U</text>
+      <circle cx="380" cy="120" r="8" fill="#24313D"/><line x1="380" y1="120" x2="380" y2="258" stroke="#24313D"/><rect x="345" y="258" width="70" height="44" rx="5" fill="#fff" stroke="#24313D"/><text x="380" y="288" text-anchor="middle">U²</text>
+      <circle cx="500" cy="190" r="8" fill="#24313D"/><line x1="500" y1="190" x2="500" y2="258" stroke="#24313D"/><rect x="465" y="258" width="70" height="44" rx="5" fill="#fff" stroke="#24313D"/><text x="500" y="288" text-anchor="middle">U⁴</text>
+      <rect x="590" y="28" width="170" height="184" rx="8" fill="#F8F4F6" stroke="#99004C"/><text x="675" y="126" text-anchor="middle" fill="#99004C">QFT†</text>
+      <rect x="820" y="28" width="50" height="44" rx="5" fill="#fff" stroke="#24313D"/><text x="845" y="58" text-anchor="middle">M</text>
+      <rect x="820" y="98" width="50" height="44" rx="5" fill="#fff" stroke="#24313D"/><text x="845" y="128" text-anchor="middle">M</text>
+      <rect x="820" y="168" width="50" height="44" rx="5" fill="#fff" stroke="#24313D"/><text x="845" y="198" text-anchor="middle">M</text>
+      <text x="900" y="58" font-size="20">c0</text><text x="900" y="128" font-size="20">c1</text><text x="900" y="198" font-size="20">c2</text>
+      <text x="760" y="248" font-size="21" fill="#2E7D4F">result m = c2 c1 c0 (binary), φ ≈ m/8</text>
+    </g>
+  </svg>
+  <p class="small">Here U = P(2πφ) and |ψ⟩ = |1⟩ (prepared with an X gate). QFT† is <code>qft(t).inverse()</code>.</p>
+  <div class="foot"><span>Module 1 · The QFT and phase estimation</span><span>11</span></div>
+</section>
+
+<!-- 12 -->
+<section class="slide">
+  <h2>Why it works</h2>
+  <p>After the controlled powers, the counting register holds</p>
+  <div class="eq">(1/√2ᵗ) Σ<sub>j</sub> e<sup>2πi·φ·j</sup> |j⟩</div>
+  <p>Compare with QFT|x⟩ = (1/√2ᵗ) Σ<sub>j</sub> e<sup>2πi·x·j/2ᵗ</sup>|j⟩: it is the QFT of |x⟩ with x = φ·2ᵗ.</p>
+  <ul>
+    <li style="font-size:25px">If φ·2ᵗ is a whole number, the inverse QFT gives exactly |φ·2ᵗ⟩: every shot returns m = φ·2ᵗ.</li>
+    <li style="font-size:25px">Otherwise it gives a peak at the nearest whole numbers: the closest one with probability at least 4/π² ≈ 0.405.</li>
+  </ul>
+  <div class="foot"><span>Module 1 · The QFT and phase estimation</span><span>12</span></div>
+</section>
+
+<!-- 13 -->
+<section class="slide">
+  <h2>An exact case: the T gate</h2>
+  <div class="cols">
+    <div style="flex:0 0 620px">
+      <p>The T gate's eigenphase on |1⟩ is 1/8 = 0.001 in binary. It fits exactly in 3 bits.</p>
+      <p>With 3 counting qubits: 1,000 of 1,000 shots give <strong>001</strong>, so m = 1 and the estimate is 1/8 = 0.125.</p>
+      <p class="small">qsim, seed 7 (lab Step 6).</p>
+    </div>
+    <div>
+      <svg width="400" height="250" viewBox="0 0 400 250" aria-label="Histogram: all 1000 shots give 001">
+        <g font-size="18" fill="#24313D">
+          <line x1="40" y1="210" x2="380" y2="210" stroke="#24313D" stroke-width="2"/>
+          <rect x="94" y="20" width="30" height="190" fill="#99004C"/>
+          <text x="109" y="232" text-anchor="middle" font-size="15">001</text>
+          <text x="160" y="232" font-size="15" fill="#6A626B">000, 010, ... 111: 0 shots</text>
+          <text x="134" y="40" font-size="17">1000</text>
+        </g>
+      </svg>
+    </div>
+  </div>
+  <div class="foot"><span>Module 1 · The QFT and phase estimation</span><span>13</span></div>
+</section>
+
+<!-- 14 -->
+<section class="slide">
+  <h2>A phase of 1/3: no exact answer</h2>
+  <p style="font-size:25px">1/3 = 0.010101... in binary never ends. More counting qubits make the estimate finer:</p>
+  <table style="font-size:23px">
+    <tr><th>t</th><th>most likely m</th><th>estimate m/2ᵗ</th><th>error</th><th>probability of that m</th><th>largest possible error 1/2ᵗ⁺¹</th></tr>
+    <tr><td>3</td><td>3 of 8</td><td>0.375</td><td>0.0417</td><td>0.688</td><td>0.0625</td></tr>
+    <tr><td>4</td><td>5 of 16</td><td>0.3125</td><td>0.0208</td><td>0.685</td><td>0.0313</td></tr>
+    <tr><td>5</td><td>11 of 32</td><td>0.34375</td><td>0.0104</td><td>0.684</td><td>0.0156</td></tr>
+    <tr><td>6</td><td>21 of 64</td><td>0.328125</td><td>0.0052</td><td>0.684</td><td>0.0078</td></tr>
+  </table>
+  <p class="small" style="margin-top:10px">Exact probabilities from qsim (lab Step 7). Each extra qubit halves the error.</p>
+  <div class="foot"><span>Module 1 · The QFT and phase estimation</span><span>14</span></div>
+</section>
+
+<!-- 15 -->
+<section class="slide">
+  <h2>Pause and predict</h2>
+  <p>φ = 0.7 with 5 counting qubits. Which result m comes up most often, and what estimate does it give?</p>
+  <div class="reveal"><button type="button">Show the answer</button>
+    <div class="ans">φ·32 = 22.4, so the nearest whole number is m = 22 and the estimate is 22/32 = 0.6875 (error 0.0125). It is the most likely result, with probability 0.573; m = 23 (0.71875) comes next.</div></div>
+  <div class="foot"><span>Module 1 · The QFT and phase estimation</span><span>15</span></div>
+</section>
+
+<!-- 16 -->
+<section class="slide">
+  <h2>Where phase estimation is used</h2>
+  <div class="cols" style="flex:0 0 auto">
+    <div class="card"><h3>Shor's algorithm</h3><p>The period of a·x mod N appears as an eigenphase s/r. Phase estimation reads it, and continued fractions recover r. Module 3.</p></div>
+    <div class="card"><h3>Chemistry</h3><p>The energy of a molecule is an eigenvalue of its Hamiltonian; phase estimation of e<sup>−iHt</sup> reads it. It needs fault-tolerant hardware; Module 5's VQE works on today's machines.</p></div>
+    <div class="card"><h3>Counting and more</h3><p>Phase estimation of Grover's operator counts solutions (quantum counting), and it underlies many other algorithms.</p></div>
+  </div>
+  <p class="small" style="margin-top:22px">When you watch the video clips, compare each figure's qubit order with Qiskit's: in Qiskit, qubit 0 is the rightmost bit of a result.</p>
+  <div class="foot"><span>Module 1 · The QFT and phase estimation</span><span>16</span></div>
+</section>
+
+<!-- 17 -->
+<section class="slide">
+  <h2>Summary</h2>
+  <ul>
+    <li style="font-size:25px">A unitary's eigenvalues are e<sup>2πiφ</sup>; φ is the eigenphase.</li>
+    <li style="font-size:25px">QFT|j⟩ spreads |j⟩ into equal amplitudes whose phases turn at rate j/2ⁿ.</li>
+    <li style="font-size:25px">The QFT circuit: H, controlled phases π/2<sup>j − k</sup>, and swaps; about n²/2 gates.</li>
+    <li style="font-size:25px">Phase estimation: kickback from controlled U<sup>2ᵏ</sup>, then the inverse QFT, then measure m; φ ≈ m/2ᵗ.</li>
+    <li style="font-size:25px">Exact when φ has t binary digits; otherwise the closest estimate has probability at least 4/π².</li>
+  </ul>
+  <div class="eq" style="font-size:24px;margin-top:12px"><strong>Next:</strong> the Module 1 lab. You write <code>qft3()</code>, <code>qft(n)</code> and <code>phase_estimation()</code>, then estimate 1/8 and 1/3.</div>
+  <div class="foot"><span>Module 1 · The QFT and phase estimation</span><span>17</span></div>
+</section>
+
+<!-- 18 -->
+<section class="slide">
+  <h2>Credits and license</h2>
+  <p>These slides were written for SemiAcademy's <em>Quantum Computing Intermediate</em> course, developed through the Intel Semiconductor Education Program at Central State University (ISEP-CSU).</p>
+  <p>License: <strong>Creative Commons Attribution 4.0 International (CC BY 4.0)</strong>, https://creativecommons.org/licenses/by/4.0/. You may copy, adapt and share them, with credit.</p>
+  <p>Suggested credit: "Module 1 slides, Quantum Computing Intermediate, SemiAcademy / ISEP-CSU, CC BY 4.0."</p>
+  <p class="small">Source: github.com/CSU-Physics/quantum-computing-notebooks (media/level2/m1-slides.html). Print or save as PDF from your browser to get one slide per page.</p>
+  <div class="foot"><span>Module 1 · The QFT and phase estimation</span><span>18</span></div>
+</section>
+
+</div></div>
+<div id="bar">
+  <button type="button" id="prev" aria-label="Previous slide">◀ Prev</button>
+  <span id="count">1 / 18</span>
+  <button type="button" id="next" aria-label="Next slide">Next ▶</button>
+  <button type="button" id="full">Full screen</button>
+  <button type="button" id="print">Print / PDF</button>
+</div>
+<script>
+(function () {
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide')), i = 0;
+  var m = /[#&]s=?(\d+)/.exec(location.hash); if (m) i = Math.min(slides.length - 1, Math.max(0, parseInt(m[1], 10) - 1));
+  function show(n) {
+    i = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach(function (s, j) { s.classList.toggle('on', j === i); });
+    document.getElementById('count').textContent = (i + 1) + ' / ' + slides.length;
+    try { history.replaceState(null, '', '#s' + (i + 1)); } catch (e) {}
+  }
+  function fit() {
+    var vp = document.getElementById('viewport'), st = document.getElementById('stage');
+    var sc = Math.min(vp.clientWidth / 1280, vp.clientHeight / 720);
+    st.style.transform = 'scale(' + sc + ')';
+  }
+  document.getElementById('prev').onclick = function () { show(i - 1); };
+  document.getElementById('next').onclick = function () { show(i + 1); };
+  document.getElementById('full').onclick = function () { var d = document.documentElement; if (!document.fullscreenElement && d.requestFullscreen) d.requestFullscreen(); else if (document.exitFullscreen) document.exitFullscreen(); };
+  document.getElementById('print').onclick = function () { window.print(); };
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { show(i + 1); e.preventDefault(); }
+    if (e.key === 'ArrowLeft' || e.key === 'PageUp') { show(i - 1); e.preventDefault(); }
+    if (e.key === 'Home') show(0); if (e.key === 'End') show(slides.length - 1);
+  });
+  var tx = null;
+  document.addEventListener('touchstart', function (e) { tx = e.touches[0].clientX; }, { passive: true });
+  document.addEventListener('touchend', function (e) { if (tx === null) return; var dx = e.changedTouches[0].clientX - tx; if (Math.abs(dx) > 50) show(i + (dx < 0 ? 1 : -1)); tx = null; });
+  document.getElementById('stage').addEventListener('click', function (e) {
+    var b = e.target.closest('.reveal button'); if (b) b.parentNode.classList.add('open');
+  });
+  window.addEventListener('resize', fit);
+  fit(); show(i);
+})();
+</script>
+</body>
+</html>
