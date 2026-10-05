@@ -18,6 +18,11 @@ QuantumCircuit.compose (version 1.4.0) joins circuits as in Qiskit.
 Statevector.probabilities(qargs) and probabilities_dict(qargs) (version 1.6.0) give the probabilities
 of measuring only some qubits, as in Qiskit; qargs[0] is the rightmost bit of a result.
 
+Variational algorithms (version 1.9.0): Parameter, ParameterVector and QuantumCircuit.assign_parameters,
+the two-qubit gate rzz(theta, q1, q2), SparsePauliOp (Hamiltonians as sums of Pauli strings) and
+StatevectorEstimator (exact expectation values) work as in Qiskit; Module 5 builds VQE and QAOA with them.
+Parameter expressions must be linear, such as 2*theta or theta + 0.5.
+
 The controlled swap (version 1.8.0): cswap(control, target1, target2), also called the Fredkin gate, works
 as in Qiskit; the Module 3 order-finding circuits for N = 15 use it.
 
@@ -43,8 +48,9 @@ __all__ = [
     "plot_bloch_vector", "plot_bloch_multivector", "bloch_vectors", "Operator",
     "NoiseModel", "QuantumError", "ReadoutError", "depolarizing_error", "pauli_error",
     "amplitude_damping_error", "phase_damping_error", "thermal_relaxation_error", "partial_trace",
+    "Parameter", "ParameterVector", "ParameterExpression", "SparsePauliOp", "StatevectorEstimator",
 ]
-__version__ = "1.8.0"
+__version__ = "1.9.0"
 
 
 class CircuitError(Exception):
@@ -86,6 +92,172 @@ def _p(t):
 
 
 _PARAM = {"rx": _rx, "ry": _ry, "rz": _rz, "p": _p}
+
+
+def _rzz(t):
+    """exp(-i t/2 Z(x)Z), as Qiskit's RZZGate."""
+    a, b = np.exp(-1j * t / 2), np.exp(1j * t / 2)
+    return np.diag([a, b, b, a]).astype(complex)
+
+
+# ---------------------------------------------------------------- parameters
+class ParameterExpression:
+    """A value that is linear in one or more Parameters, such as 2*theta + 0.5 (Qiskit's ParameterExpression).
+
+    Use qc.assign_parameters(...) to replace the parameters with numbers before simulating."""
+
+    __slots__ = ("_terms", "_const")
+
+    def __init__(self, terms=None, const=0.0):
+        self._terms = dict(terms or {})
+        self._const = float(const)
+
+    @property
+    def parameters(self):
+        return set(p for p, c in self._terms.items() if c != 0)
+
+    def _combine(self, other, sign):
+        if isinstance(other, ParameterExpression):
+            terms = dict(self._terms)
+            for p, c in other._terms.items():
+                terms[p] = terms.get(p, 0.0) + sign * c
+            return ParameterExpression(terms, self._const + sign * other._const)
+        return ParameterExpression(self._terms, self._const + sign * float(other))
+
+    def __add__(self, other): return self._combine(other, 1)
+    def __radd__(self, other): return self._combine(other, 1)
+    def __sub__(self, other): return self._combine(other, -1)
+    def __rsub__(self, other): return (-self)._combine(other, 1)
+    def __neg__(self): return self * -1
+
+    def __mul__(self, other):
+        if isinstance(other, ParameterExpression):
+            raise CircuitError("qsim only supports expressions that are linear in the parameters, such as 2*theta + 0.5.")
+        k = float(other)
+        return ParameterExpression({p: c * k for p, c in self._terms.items()}, self._const * k)
+
+    def __rmul__(self, other): return self.__mul__(other)
+
+    def __truediv__(self, other):
+        if isinstance(other, ParameterExpression):
+            raise CircuitError("qsim only supports expressions that are linear in the parameters, such as theta/2.")
+        return self.__mul__(1.0 / float(other))
+
+    def bind(self, values):
+        """Replace parameters by numbers: values is a dict {Parameter: number}. Returns a float when nothing is left."""
+        terms, const = {}, self._const
+        for p, c in self._terms.items():
+            if p in values:
+                const += c * float(values[p])
+            elif c != 0:
+                terms[p] = c
+        return const if not terms else ParameterExpression(terms, const)
+
+    def __float__(self):
+        free = self.parameters
+        if free:
+            names = ", ".join(sorted(str(p) for p in free))
+            raise TypeError(f"Parameter expression with unbound parameters {{{names}}} is not numeric.")
+        return float(self._const)
+
+    def __str__(self):
+        parts = []
+        for p, c in sorted(self._terms.items(), key=lambda pc: _param_key(pc[0])):
+            if c == 0:
+                continue
+            mag = abs(c)
+            body = str(p) if mag == 1 else (f"{p}/{1 / mag:g}" if mag < 1 and float(1 / mag).is_integer() else f"{mag:g}*{p}")
+            parts.append(("-" if c < 0 else "+", body))
+        out = ""
+        if self._const != 0:
+            out = f"{self._const:g}"
+        for sign, body in parts:
+            if not out:
+                out = ("-" if sign == "-" else "") + body
+            else:
+                out += f" {sign} {body}"
+        return out or "0"
+
+    def __repr__(self):
+        return f"ParameterExpression({self})"
+
+
+class Parameter(ParameterExpression):
+    """A named, unbound circuit parameter, as in Qiskit: theta = Parameter("θ")."""
+
+    __slots__ = ("name",)
+
+    def __init__(self, name):
+        self.name = str(name)
+        ParameterExpression.__init__(self, {self: 1.0}, 0.0)
+
+    __hash__ = object.__hash__
+
+    def __eq__(self, other):
+        return self is other
+
+    def __str__(self):
+        return self.name
+
+    def __repr__(self):
+        return f"Parameter({self.name})"
+
+
+class ParameterVectorElement(Parameter):
+    __slots__ = ("vector", "index")
+
+    def __init__(self, vector, index):
+        self.vector, self.index = vector, index
+        Parameter.__init__(self, f"{vector.name}[{index}]")
+
+    __hash__ = object.__hash__
+
+    def __eq__(self, other):
+        return self is other
+
+    def __repr__(self):
+        return f"ParameterVectorElement({self.name})"
+
+
+class ParameterVector:
+    """A list of parameters named name[0], name[1], ...: theta = ParameterVector("θ", 4)."""
+
+    def __init__(self, name, length=0):
+        self.name = str(name)
+        self._params = [ParameterVectorElement(self, i) for i in range(int(length))]
+
+    @property
+    def params(self):
+        return list(self._params)
+
+    def __getitem__(self, key):
+        return self._params[key]
+
+    def __iter__(self):
+        return iter(self._params)
+
+    def __len__(self):
+        return len(self._params)
+
+    def __repr__(self):
+        return f"ParameterVector(name='{self.name}', length={len(self)})"
+
+
+def _param_key(p):
+    if isinstance(p, ParameterVectorElement):
+        return (p.vector.name, p.index)
+    return (p.name, -1)
+
+
+def _angle(x):
+    """A gate angle: a float, or a ParameterExpression that still holds parameters."""
+    if isinstance(x, ParameterExpression):
+        return x if x.parameters else float(x)
+    return float(x)
+
+
+def _fmt_param(x):
+    return str(x) if isinstance(x, ParameterExpression) else f"{x:.3g}"
 
 
 def _controlled(u, n_controls=1):
@@ -135,6 +307,11 @@ class Instruction:
 
     def matrix(self):
         n = self.name
+        free = [p for x in self.params if isinstance(x, ParameterExpression) for p in x.parameters]
+        if free:
+            names = ", ".join(sorted({str(p) for p in free}))
+            raise CircuitError(f"The circuit has parameters without values ({names}). "
+                               "Give them values first with qc.assign_parameters(...).")
         if n in _FIXED:
             return _FIXED[n]
         if n in _PARAM:
@@ -151,6 +328,8 @@ class Instruction:
             return _controlled(_p(self.params[0]))
         if n == "crz":
             return _controlled(_rz(self.params[0]))
+        if n == "rzz":
+            return _rzz(self.params[0])
         if n == "ccx":
             return _controlled(_FIXED["x"], 2)
         if n == "ccz":
@@ -300,10 +479,10 @@ class QuantumCircuit:
     def t(self, q): return self._one("t", q)
     def tdg(self, q): return self._one("tdg", q)
     def sx(self, q): return self._one("sx", q)
-    def rx(self, theta, q): return self._one("rx", q, (float(theta),))
-    def ry(self, theta, q): return self._one("ry", q, (float(theta),))
-    def rz(self, phi, q): return self._one("rz", q, (float(phi),))
-    def p(self, lam, q): return self._one("p", q, (float(lam),))
+    def rx(self, theta, q): return self._one("rx", q, (_angle(theta),))
+    def ry(self, theta, q): return self._one("ry", q, (_angle(theta),))
+    def rz(self, phi, q): return self._one("rz", q, (_angle(phi),))
+    def p(self, lam, q): return self._one("p", q, (_angle(lam),))
 
     # ------------------------------------------------------------ multi-qubit gates
     def _two(self, name, a, b, params=()):
@@ -323,8 +502,11 @@ class QuantumCircuit:
     def cy(self, control, target): return self._two("cy", control, target)
     def cz(self, control, target): return self._two("cz", control, target)
     def ch(self, control, target): return self._two("ch", control, target)
-    def cp(self, lam, control, target): return self._two("cp", control, target, (float(lam),))
-    def crz(self, phi, control, target): return self._two("crz", control, target, (float(phi),))
+    def cp(self, lam, control, target): return self._two("cp", control, target, (_angle(lam),))
+    def crz(self, phi, control, target): return self._two("crz", control, target, (_angle(phi),))
+    def rzz(self, theta, qubit1, qubit2):
+        """exp(-i theta/2 Z(x)Z) on two qubits, as in Qiskit; QAOA uses it for each edge of a graph."""
+        return self._two("rzz", qubit1, qubit2, (_angle(theta),))
     def swap(self, a, b): return self._two("swap", a, b)
     def ccx(self, c1, c2, target): return self._add("ccx", [int(c1), int(c2), int(target)])
     def ccz(self, c1, c2, target): return self._add("ccz", [int(c1), int(c2), int(target)])
@@ -383,6 +565,56 @@ class QuantumCircuit:
         if int(value) not in (0, 1):
             raise CircuitError("A single classical bit can only be compared with 0 or 1.")
         return _IfContext(self, (int(clbit), int(value)))
+
+    # ------------------------------------------------------------ parameters
+    @property
+    def parameters(self):
+        """The circuit's unbound parameters, sorted by name (vector elements by index), as in Qiskit."""
+        found = {}
+        for inst in self.data:
+            for x in inst.params:
+                if isinstance(x, ParameterExpression):
+                    for p in x.parameters:
+                        found[id(p)] = p
+        return sorted(found.values(), key=_param_key)
+
+    @property
+    def num_parameters(self):
+        return len(self.parameters)
+
+    def assign_parameters(self, parameters, inplace=False, strict=True):
+        """Give the parameters values: a list in the order of qc.parameters, or a dict {Parameter: value}
+        (a ParameterVector key takes a list). Returns a new circuit, or changes this one with inplace=True."""
+        params = self.parameters
+        if isinstance(parameters, dict):
+            values = {}
+            for k, v in parameters.items():
+                if isinstance(k, ParameterVector):
+                    v = list(np.ravel(v))
+                    if len(v) != len(k):
+                        raise ValueError(f"ParameterVector {k.name} has length {len(k)}, but {len(v)} values were given.")
+                    values.update(zip(k.params, v))
+                else:
+                    values[k] = v
+            missing = [k for k in values if not any(k is p for p in params)]
+            if missing and strict:
+                names = ", ".join(str(k) for k in missing)
+                raise CircuitError(f"'Cannot bind parameters ({names}) not present in the circuit.'")
+        else:
+            vals = list(np.ravel(np.asarray(parameters, dtype=float)))
+            if len(vals) != len(params):
+                raise ValueError("Mismatching number of values and parameters. For partial binding please pass a "
+                                 "mapping of {parameter: value} pairs.")
+            values = dict(zip(params, vals))
+        target = self if inplace else self.copy()
+        new = []
+        for inst in target.data:
+            if any(isinstance(x, ParameterExpression) for x in inst.params):
+                ps = tuple(x.bind(values) if isinstance(x, ParameterExpression) else x for x in inst.params)
+                inst = Instruction(inst.name, inst.qubits, inst.clbits, ps)
+            new.append(inst)
+        target.data = new
+        return None if inplace else target
 
     # ------------------------------------------------------------ circuit tools
     def append(self, inst):
@@ -449,7 +681,7 @@ class QuantumCircuit:
         for i in reversed(self.data):
             if i.name in ("measure", "reset", "if_else"):
                 raise CircuitError("A circuit with measurements, resets or if_test blocks has no inverse.")
-            if i.name in _PARAM or i.name in ("cp", "crz"):
+            if i.name in _PARAM or i.name in ("cp", "crz", "rzz"):
                 new.data.append(Instruction(i.name, i.qubits, (), (-i.params[0],)))
             elif i.name == "sx":
                 new.data.append(Instruction("rx", i.qubits, (), (-math.pi / 2,)))
@@ -524,7 +756,7 @@ class _TextDrawing:
 
         def label(inst):
             if inst.name in _PARAM:
-                return f"{inst.name.upper()}({inst.params[0]:.3g})"
+                return f"{inst.name.upper()}({_fmt_param(inst.params[0])})"
             if inst.name == "if_else":
                 c, v = inst.condition
                 return f"IF c{c}={v}" + (" / ELSE" if inst.false_body else "")
@@ -536,7 +768,7 @@ class _TextDrawing:
             if inst.name == "barrier":
                 col = ["░" if q in qs else "─" for q in range(n)]
                 w = 1
-            elif inst.name in ("cx", "cy", "cz", "ch", "cp", "crz", "ccx", "ccz", "mcx", "swap", "cswap"):
+            elif inst.name in ("cx", "cy", "cz", "ch", "cp", "crz", "ccx", "ccz", "mcx", "swap", "cswap", "rzz"):
                 lo, hi = min(qs), max(qs)
                 tgt = qs[-1]
                 if inst.name == "swap":
@@ -545,10 +777,12 @@ class _TextDrawing:
                     marks = {qs[0]: "■", qs[1]: "X", qs[2]: "X"}
                 elif inst.name in ("cz", "ccz"):
                     marks = {q: "■" for q in qs}
+                elif inst.name == "rzz":
+                    marks = {qs[0]: "■", qs[1]: f"ZZ({_fmt_param(inst.params[0])})"}
                 else:
                     sym = {"cx": "X", "ccx": "X", "mcx": "X", "cy": "Y", "ch": "H",
-                           "cp": f"P({inst.params[0]:.3g})" if inst.params else "P",
-                           "crz": f"RZ({inst.params[0]:.3g})" if inst.params else "RZ"}[inst.name]
+                           "cp": f"P({_fmt_param(inst.params[0])})" if inst.params else "P",
+                           "crz": f"RZ({_fmt_param(inst.params[0])})" if inst.params else "RZ"}[inst.name]
                     marks = {q: "■" for q in qs[:-1]}
                     marks[tgt] = "⊕" if inst.name in ("cx", "ccx", "mcx") else sym
                 w = max(len(m) for m in marks.values())
@@ -567,7 +801,7 @@ class _TextDrawing:
             for q in range(n):
                 rows[q] += "─" + col[q] + "─"
             vert = set()
-            if inst.name in ("cx", "cy", "cz", "ch", "cp", "crz", "ccx", "ccz", "mcx", "swap", "cswap"):
+            if inst.name in ("cx", "cy", "cz", "ch", "cp", "crz", "ccx", "ccz", "mcx", "swap", "cswap", "rzz"):
                 vert = set(range(min(qs), max(qs)))
             for q in range(n):
                 mid = ("│".center(w)) if q in vert else " " * w
@@ -628,6 +862,12 @@ def _pauli_matrix(label):
 
 
 def _as_operator(op, n):
+    if isinstance(op, SparsePauliOp):
+        if op.num_qubits != n:
+            raise ValueError(f"The operator acts on {op.num_qubits} qubits; the state has {n} qubits.")
+        return op.to_matrix()
+    if isinstance(op, Operator):
+        op = op.data
     if isinstance(op, str):
         if len(op) != n:
             raise ValueError(f"The Pauli label {op!r} has {len(op)} letters; the state has {n} qubits.")
@@ -801,6 +1041,8 @@ class Operator:
     def __init__(self, data):
         if isinstance(data, Operator):
             m = data.data.copy()
+        elif isinstance(data, SparsePauliOp):
+            m = data.to_matrix()
         elif isinstance(data, QuantumCircuit):
             n = data.num_qubits
             dim = 2 ** n
@@ -897,6 +1139,316 @@ class Operator:
         rows = ",\n          ".join("[" + ", ".join(_fmt_complex(x) for x in r) + "]" for r in self.data)
         dims = tuple([2] * self.num_qubits)
         return f"Operator([{rows}],\n         input_dims={dims}, output_dims={dims})"
+
+
+class _PauliList(list):
+    """The Pauli labels of a SparsePauliOp (a plain list of strings that prints like Qiskit's PauliList)."""
+
+    def __repr__(self):
+        return "PauliList([" + ", ".join(repr(x) for x in self) + "])"
+
+    def __str__(self):
+        return "[" + ", ".join(repr(x) for x in self) + "]"
+
+
+class SparsePauliOp:
+    """An operator written as a sum of Pauli strings with coefficients, as in qiskit.quantum_info.SparsePauliOp.
+
+    SparsePauliOp.from_list([("ZZ", 1.0), ("XI", 0.5)]) is ZZ + 0.5 XI. In a label, qubit 0 is the rightmost letter.
+    """
+
+    def __init__(self, data, coeffs=None):
+        if isinstance(data, SparsePauliOp):
+            labels, c = list(data.paulis), data.coeffs.copy()
+        else:
+            labels = [data] if isinstance(data, str) else [str(x) for x in data]
+            c = None
+        if not labels:
+            raise ValueError("A SparsePauliOp needs at least one Pauli label.")
+        for lab in labels:
+            if not lab or any(ch not in "IXYZ" for ch in lab):
+                raise ValueError(f"{lab!r} is not a Pauli label: use only the letters I, X, Y and Z.")
+        if len({len(lab) for lab in labels}) != 1:
+            raise ValueError("All Pauli labels must have the same number of letters (one per qubit).")
+        if coeffs is not None:
+            c = np.asarray(coeffs, dtype=complex).reshape(-1)
+        elif c is None:
+            c = np.ones(len(labels), dtype=complex)
+        if len(c) != len(labels):
+            raise ValueError(f"{len(labels)} Pauli labels but {len(c)} coefficients.")
+        self._labels = labels
+        self.coeffs = c
+
+    @classmethod
+    def from_list(cls, obj, num_qubits=None):
+        obj = list(obj)
+        if not obj:
+            if num_qubits is None:
+                raise ValueError("from_list needs at least one term, or num_qubits.")
+            return cls(["I" * num_qubits], [0])
+        return cls([lab for lab, _ in obj], [c for _, c in obj])
+
+    @classmethod
+    def from_sparse_list(cls, obj, num_qubits):
+        """Terms (letters, qubits, coefficient): ("ZZ", [0, 2], 1.0) puts Z on qubits 0 and 2."""
+        labels, coeffs = [], []
+        for letters, qubits, c in obj:
+            if len(letters) != len(qubits):
+                raise ValueError(f"{letters!r} has {len(letters)} letters but {len(qubits)} qubit indices.")
+            lab = ["I"] * num_qubits
+            for ch, q in zip(letters, qubits):
+                if not 0 <= q < num_qubits:
+                    raise ValueError(f"Qubit index {q} is out of range for {num_qubits} qubits.")
+                lab[num_qubits - 1 - q] = ch
+            labels.append("".join(lab))
+            coeffs.append(c)
+        if not labels:
+            return cls(["I" * num_qubits], [0])
+        return cls(labels, coeffs)
+
+    @property
+    def num_qubits(self):
+        return len(self._labels[0])
+
+    @property
+    def paulis(self):
+        return _PauliList(self._labels)
+
+    @property
+    def size(self):
+        return len(self._labels)
+
+    def __len__(self):
+        return len(self._labels)
+
+    def to_list(self):
+        return [(lab, complex(c)) for lab, c in zip(self._labels, self.coeffs)]
+
+    def to_matrix(self, sparse=False):
+        dim = 2 ** self.num_qubits
+        m = np.zeros((dim, dim), dtype=complex)
+        for lab, c in zip(self._labels, self.coeffs):
+            m += c * _pauli_matrix(lab)
+        return m
+
+    def to_operator(self):
+        return Operator(self.to_matrix())
+
+    def simplify(self, atol=1e-8):
+        """Add up repeated Pauli strings and drop terms whose coefficient is about zero."""
+        acc = {}
+        for lab, c in zip(self._labels, self.coeffs):
+            acc[lab] = acc.get(lab, 0) + c
+        keep = [(lab, c) for lab, c in acc.items() if abs(c) > atol]
+        if not keep:
+            return SparsePauliOp(["I" * self.num_qubits], [0])
+        return SparsePauliOp([lab for lab, _ in keep], [c for _, c in keep])
+
+    def _check(self, other):
+        if not isinstance(other, SparsePauliOp):
+            raise TypeError("Both operands must be SparsePauliOp.")
+        if other.num_qubits != self.num_qubits:
+            raise ValueError(f"Cannot add operators on {self.num_qubits} and {other.num_qubits} qubits.")
+
+    def __add__(self, other):
+        if isinstance(other, (int, float)) and other == 0:
+            return SparsePauliOp(self)
+        self._check(other)
+        return SparsePauliOp(self._labels + list(other.paulis), np.concatenate([self.coeffs, other.coeffs]))
+
+    def __radd__(self, other):
+        if isinstance(other, (int, float)) and other == 0:     # so that sum([...]) works
+            return SparsePauliOp(self)
+        return self.__add__(other)
+
+    def __neg__(self):
+        return SparsePauliOp(self._labels, -self.coeffs)
+
+    def __sub__(self, other):
+        self._check(other)
+        return self + (-other)
+
+    def __mul__(self, other):
+        if isinstance(other, SparsePauliOp):
+            raise TypeError("Use a number to scale a SparsePauliOp; products of operators are not needed here.")
+        return SparsePauliOp(self._labels, self.coeffs * complex(other))
+
+    def __rmul__(self, other):
+        return self.__mul__(other)
+
+    def __truediv__(self, other):
+        return SparsePauliOp(self._labels, self.coeffs / complex(other))
+
+    def equiv(self, other, atol=1e-8):
+        """True if the two operators have the same matrix (the order of the terms does not matter)."""
+        if not isinstance(other, SparsePauliOp) or other.num_qubits != self.num_qubits:
+            return False
+        return bool(np.allclose(self.to_matrix(), other.to_matrix(), atol=atol))
+
+    def __eq__(self, other):
+        """True if the labels and coefficients are the same, in the same order (as in Qiskit; see equiv)."""
+        return (isinstance(other, SparsePauliOp) and self._labels == list(other.paulis)
+                and np.allclose(self.coeffs, other.coeffs))
+
+    __hash__ = None
+
+    def __repr__(self):
+        return (f"SparsePauliOp({self._labels!r},\n              coeffs="
+                + np.array2string(self.coeffs, separator=", ") + ")")
+
+
+# ---------------------------------------------------------------- the Estimator primitive
+class _DataBin:
+    def __init__(self, **kw):
+        self.__dict__.update(kw)
+
+    def keys(self):
+        return list(self.__dict__)
+
+    def __repr__(self):
+        return "DataBin(" + ", ".join(f"{k}={v!r}" for k, v in self.__dict__.items()) + ")"
+
+
+class _PubResult:
+    def __init__(self, data, metadata):
+        self.data = data
+        self.metadata = metadata
+
+    def __repr__(self):
+        return f"PubResult(data={self.data!r}, metadata={self.metadata!r})"
+
+
+class _PrimitiveResult(list):
+    def __init__(self, items, metadata=None):
+        list.__init__(self, items)
+        self.metadata = metadata or {"version": 2}
+
+    def __repr__(self):
+        return f"PrimitiveResult([{', '.join(repr(x) for x in self)}], metadata={self.metadata!r})"
+
+
+class _PrimitiveJob:
+    _count = 0
+
+    def __init__(self, result):
+        _PrimitiveJob._count += 1
+        self._result = result
+        self._id = f"qsim-job-{_PrimitiveJob._count}"
+
+    def result(self):
+        return self._result
+
+    def job_id(self):
+        return self._id
+
+    def status(self):
+        return "DONE"
+
+    def done(self):
+        return True
+
+
+def _obs_array(obs):
+    """Observables of a PUB as an object array (a single observable gives shape ())."""
+    def one(o):
+        if isinstance(o, SparsePauliOp):
+            return o
+        if isinstance(o, str):
+            return SparsePauliOp(o)
+        if isinstance(o, dict):
+            return SparsePauliOp.from_list(list(o.items()))
+        raise TypeError("An observable must be a SparsePauliOp or a Pauli label such as 'ZZ'.")
+
+    def walk(o):
+        if isinstance(o, (list, tuple)):
+            return [walk(x) for x in o]
+        return one(o)
+
+    w = walk(obs)
+    if not isinstance(w, list):
+        a = np.empty((), dtype=object)
+        a[()] = w
+        return a
+    shape, x = [], w
+    while isinstance(x, list):
+        shape.append(len(x))
+        x = x[0] if x else None
+    a = np.empty(tuple(shape), dtype=object)
+    for idx in np.ndindex(*shape):
+        v = w
+        for i in idx:
+            v = v[i]
+        a[idx] = v
+    return a
+
+
+class StatevectorEstimator:
+    """Exact expectation values, as qiskit.primitives.StatevectorEstimator.
+
+    estimator.run([(circuit, observable, parameter_values)]).result()[0].data.evs gives <psi|H|psi>.
+    observable can be a list (one value each); parameter_values can be one list of values or a 2-D array
+    (one row per set). With precision > 0, normal noise of that size is added, as in Qiskit.
+    """
+
+    def __init__(self, *, default_precision=0.0, seed=None):
+        self.default_precision = float(default_precision)
+        self.seed = seed
+        self._rng = np.random.default_rng(seed)
+
+    def run(self, pubs, *, precision=None):
+        if isinstance(pubs, tuple) or isinstance(pubs, QuantumCircuit):
+            raise ValueError("run() takes a list of PUBs: estimator.run([(circuit, observable, values)]).")
+        out = []
+        for pub in pubs:
+            if not isinstance(pub, (tuple, list)) or len(pub) < 2:
+                raise ValueError("Each PUB is a tuple (circuit, observables) or (circuit, observables, parameter_values).")
+            circ, obs = pub[0], pub[1]
+            vals = pub[2] if len(pub) > 2 else None
+            prec = pub[3] if len(pub) > 3 and pub[3] is not None else (self.default_precision if precision is None else precision)
+            if not isinstance(circ, QuantumCircuit):
+                raise TypeError("The first item of a PUB must be a QuantumCircuit.")
+            oa = _obs_array(obs)
+            for o in oa.flat:
+                if o.num_qubits != circ.num_qubits:
+                    raise ValueError(f"The observable has {o.num_qubits} qubits but the circuit has {circ.num_qubits}.")
+            npar = circ.num_parameters
+            if vals is None:
+                if npar:
+                    raise ValueError(f"The circuit has {npar} parameters; give their values as the third item of the PUB.")
+                va = np.zeros((0,))
+                pshape = ()
+            else:
+                va = np.asarray(vals, dtype=float)
+                if va.ndim == 0:
+                    va = va.reshape(1)
+                if va.shape[-1] != npar:
+                    raise ValueError(f"The circuit has {npar} parameters, but each set of values has {va.shape[-1]}.")
+                pshape = va.shape[:-1]
+            try:
+                shape = np.broadcast_shapes(oa.shape, pshape)
+            except ValueError:
+                raise ValueError(f"The observables (shape {oa.shape}) and parameter values (shape {pshape}) "
+                                 "cannot be broadcast together.") from None
+            mats = {}
+            evs = np.zeros(shape)
+            states = {}
+            for idx in np.ndindex(*shape) if shape else [()]:
+                oi = tuple(i if s > 1 else 0 for i, s in zip(idx[len(idx) - oa.ndim:], oa.shape)) if oa.ndim else ()
+                pi = tuple(i if s > 1 else 0 for i, s in zip(idx[len(idx) - len(pshape):], pshape)) if pshape else ()
+                if pi not in states:
+                    bound = circ.assign_parameters(va[pi]) if npar else circ
+                    states[pi] = _run_unitary(bound)
+                o = oa[oi]
+                if id(o) not in mats:
+                    mats[id(o)] = o.to_matrix()
+                psi = states[pi]
+                evs[idx] = float(np.real(np.vdot(psi, mats[id(o)] @ psi)))
+            if prec > 0:
+                evs = evs + self._rng.normal(0.0, prec, size=evs.shape)
+            stds = np.full(shape, float(prec))
+            data = _DataBin(evs=evs if shape else np.asarray(evs), stds=stds if shape else np.asarray(stds))
+            out.append(_PubResult(data, {"target_precision": float(prec), "circuit_metadata": {}}))
+        return _PrimitiveJob(_PrimitiveResult(out))
 
 
 def _fmt_complex(a):
