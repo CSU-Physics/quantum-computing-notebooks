@@ -114,7 +114,7 @@ def cross_svg(w=620, h=380):
         pts = " ".join(f"{X(q):.1f},{Y(v):.1f}" for q, v in zip(P2_GRID, grover_curves[it]))
         p.append(f'<polyline points="{pts}" fill="none" stroke="{col}" stroke-width="4"/>')
         yl = Y(grover_curves[it][-1])
-        p.append(f'<text x="{X(0.030) - 4:.1f}" y="{yl + (-12 if it == 1 else 22):.1f}" font-size="16" text-anchor="end" fill="{col if col != GREY else INK}">{lab}</text>')
+        p.append(f'<text x="{X(0.030) - 4:.1f}" y="{yl + (-20 if it == 1 else 22):.1f}" font-size="16" text-anchor="end" fill="{col if col != GREY else INK}">{lab}</text>')
     p.append(f'<line x1="{X(cross):.1f}" y1="{yt}" x2="{X(cross):.1f}" y2="{yb}" stroke="{INK}" stroke-dasharray="6 5"/>')
     p.append(f'<text x="{X(cross) + 6:.1f}" y="{yt + 16}" font-size="15">P2 = {cross}</text>')
     p.append(f'<line x1="{x0}" y1="{yb}" x2="{x1}" y2="{yb}" stroke="{INK}" stroke-width="2"/>')

@@ -139,7 +139,7 @@ def mirror_circuit(bits):
         code("""qc = mirror_circuit("1011")
 c = qc.copy()
 c.remove_final_measurements()
-print("without noise, mirror_circuit('1011') gives:", {k: round(float(v), 6) for k, v in Statevector(c).probabilities_dict().items() if v > 1e-9})
+print("without noise, mirror_circuit('1011') gives:", {str(k): round(float(v), 6) for k, v in Statevector(c).probabilities_dict().items() if v > 1e-9})
 print("gates:", dict(qc.count_ops()))"""),
         md("""**Why the barrier?** The transpiler's optimization passes look for gates that cancel, and a QFT followed by its inverse cancels completely. The table shows the saved 4-qubit circuit **without** the barrier, transpiled with seed 1: at level 3 every two-qubit gate is gone, only the three X gates remain, and the circuit tests nothing. A barrier tells the transpiler not to move or merge gates across it; it optimizes each half on its own."""
            + (" The cell transpiles your own circuit at level 3 too." if colab else "")),

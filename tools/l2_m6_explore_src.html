@@ -108,6 +108,7 @@
       <h3>Expected value of each choice</h3>
       <svg class="chart" id="b3" viewBox="0 0 560 260" role="img" aria-label="Bar chart of the expected value of each choice at the chosen P2"></svg>
       <svg class="chart" id="l3" viewBox="0 0 560 230" role="img" aria-label="Expected value of each choice against P2"></svg>
+      <div class="row" id="leg3" style="font-size:12.5px;margin-top:2px"></div>
       <div class="note" id="msg3"></div>
     </div>
   </div>
@@ -244,12 +245,12 @@
     e.keys.forEach(function (k, j) {
       var pts = e.grid.map(function (q, t) { return X(q).toFixed(1) + ',' + Y(e.vals[k][t]).toFixed(1); }).join(' ');
       sv(l, 'polyline', { points: pts, fill: 'none', stroke: COLORS[j % COLORS.length], 'stroke-width': j === best ? 3.5 : 2 });
-      sv(l, 'text', { x: x1 + 2, y: Y(e.vals[k][n - 1]) + 4, 'font-size': 11, fill: COLORS[j % COLORS.length], 'text-anchor': 'end' }, e.name(k));
     });
     sv(l, 'line', { x1: X(p2), y1: lt, x2: X(p2), y2: lb, stroke: '#24313D', 'stroke-dasharray': '5 4' });
     sv(l, 'line', { x1: x0, y1: lb, x2: x1, y2: lb, stroke: '#24313D', 'stroke-width': 1.5 });
     [0, e.grid[n - 1] / 2, e.grid[n - 1]].forEach(function (q) { sv(l, 'text', { x: X(q), y: lb + 16, 'font-size': 12, 'text-anchor': 'middle' }, q.toFixed(3)); });
     sv(l, 'text', { x: (x0 + x1) / 2, y: 226, 'font-size': 12, 'text-anchor': 'middle', fill: '#6A626B' }, 'P2 (the dashed line is the value chosen above)');
+    $('leg3').innerHTML = e.keys.map(function (k, j) { return '<span><span style="display:inline-block;width:14px;height:4px;vertical-align:middle;margin-right:4px;background:' + COLORS[j % COLORS.length] + '"></span>' + e.name(k) + (j === best ? ' (best)' : '') + '</span>'; }).join(' ');
     $('st3').innerHTML = '<span>P2</span><span class="v">' + p2.toFixed(3) + '</span><span>average gate error 0.75·P2</span><span class="v">' + (0.75 * p2).toFixed(4) + '</span>' +
       '<span>best choice</span><span class="v">' + e.name(e.keys[best]) + '</span>';
     var ideal = e.keys.map(function (k) { return e.vals[k][0]; }), ib = 0;

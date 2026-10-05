@@ -159,7 +159,8 @@ Open your **project quiz for this experiment** in Canvas. Question 1 shows your 
 The first cell runs 1 and 2 iterations on **your** noise model, 4,000 shots each, and keeps the 2-iteration counts as `my_counts`. The check cell then tests your three statistics functions and `grover_circuit()`, and checks that `my_counts` agree with your noise model by the 3σ rule. Only if everything passes does it print your **verification value**: 10,000 times the noise model's exact probability that 2 iterations find MARKED on your computer, rounded to a whole number."""),
         code("""MARKED = -1      # your number from Canvas, for example 5 (the string 101)
 P2 = 0.0         # your number from Canvas, for example 0.017
-READOUT = 0.0    # your number from Canvas, for example 0.015"""),
+READOUT = 0.0    # your number from Canvas, for example 0.015
+my_counts = {}   # filled by the next cell"""),
         code("""my_marked = format(int(MARKED), "03b")
 my_sim = AerSimulator(noise_model=course_noise_model(P2, READOUT))
 my_runs = {}

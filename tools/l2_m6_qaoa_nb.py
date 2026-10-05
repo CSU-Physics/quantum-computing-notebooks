@@ -178,7 +178,8 @@ Open your **project quiz for this experiment** in Canvas. Question 1 shows your 
 The first cell runs the circuit with the reference angles for LAYERS on **your** noise model with 4,000 shots and keeps the counts as `my_counts`. The check cell tests your three statistics functions, `qaoa_circuit()` and `mean_cut()`, and checks that `my_counts` agree with your noise model by the 3σ rule (for the mean cut, 3 SEM). Only if everything passes does it print your **verification value**: 1,000 times the noise model's exact expected cut on your computer, rounded to a whole number."""),
         code("""LAYERS = 0       # your number from Canvas: 1, 2 or 3
 P2 = 0.0         # your number from Canvas, for example 0.017
-READOUT = 0.0    # your number from Canvas, for example 0.015"""),
+READOUT = 0.0    # your number from Canvas, for example 0.015
+my_counts = {}   # filled by the next cell"""),
         code("""g, b = REFERENCE_ANGLES[int(LAYERS)]
 my_counts = AerSimulator(noise_model=course_noise_model(P2, READOUT)).run(
     measured(qaoa_circuit(g, b, EDGES, N)), shots=4000, seed_simulator=RUN_SEED + 100).result().get_counts()

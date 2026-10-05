@@ -173,7 +173,8 @@ Open your **project quiz for this experiment** in Canvas. Question 1 shows your 
 The first cell runs your circuit on **your** noise model with 4,000 shots and keeps the counts as `my_counts`. The check cell tests your three statistics functions, `qpe_circuit()` and `estimate_error()`, and checks that `my_counts` agree with your noise model by the 3σ rule. Only if everything passes does it print your **verification value**: 10,000 times the noise model's exact probability of the best estimate with COUNT counting qubits on your computer, rounded to a whole number."""),
         code("""COUNT = 0        # your number from Canvas, for example 5
 P2 = 0.0         # your number from Canvas, for example 0.017
-READOUT = 0.0    # your number from Canvas, for example 0.015"""),
+READOUT = 0.0    # your number from Canvas, for example 0.015
+my_counts = {}   # filled by the next cell"""),
         code("""qc = qpe_circuit(int(COUNT))
 my_expected = expected_probabilities(qc, P2, READOUT)
 my_best = format(best_estimate(int(COUNT)), f"0{int(COUNT)}b")
