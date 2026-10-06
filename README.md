@@ -85,7 +85,11 @@ Level 2 Module 4 (running on real hardware) needs the transpiler and Qiskit Aer,
 
 ## The check cells
 
-Each graded lab ends with a check cell. It tests the learner's circuit and, only if the tests pass, prints a verification value for the learner's own Canvas parameter. A Canvas formula question then checks that value. The check code is in `checks/`, with accuracy tests:
+Each graded lab ends with a check cell. It tests the learner's circuit and, only if the tests pass, prints a verification value for the learner's own Canvas parameter. A Canvas formula question then checks that value. The check code is in `checks/`,.
+
+Since 6 October 2026 the Level 2 notebooks no longer contain the check code. Each Level 2 check cell imports its check function from a copy of the check file in `content/level2/` (for example `content/level2/l2_m2_check.py`; the builders in `tools/` copy it there, see `tools/l2_hidden.py`). JupyterLite serves these files next to the notebooks, and the two Colab notebooks with a check cell download them from GitHub Pages. This keeps the course's reference solutions off the learner's screen. They remain readable in this public repository, so a verification value shows that the learner's code works, not that the learner wrote it alone.
+
+The accuracy tests:
 
 - `checks/test_ghz_check.py`: 10 correct and 12 wrong GHZ circuits, including classical mixtures with perfect counts. 0 wrong verdicts, in CPython and in Pyodide 0.27.7.
 - `checks/test_m0_check.py`: 3 correct and 7 wrong one-qubit circuits at three angles. 0 wrong verdicts.
