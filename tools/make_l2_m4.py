@@ -8,9 +8,11 @@ import nbformat as nbf
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+from l2_hidden import hidden_check  # noqa: E402
 CHECK = (ROOT / "checks" / "l2_m4_check.py").read_text().split('"""', 2)[2].lstrip()
-VERSION = "2026-10-05"
-PAGES = "https://csu-physics.github.io/quantum-computing-notebooks/files/level2/m4_saved_runs.json"
+VERSION = "2026-10-06"
+PAGES_DIR = "https://csu-physics.github.io/quantum-computing-notebooks/files/level2/"
+PAGES = PAGES_DIR + "m4_saved_runs.json"
 BROWSER_META = {"kernelspec": {"name": "python", "display_name": "Python (Pyodide)", "language": "python"},
                 "language_info": {"name": "python"}}
 COLAB_META = {"kernelspec": {"name": "python3", "display_name": "Python 3", "language": "python"},
@@ -49,7 +51,7 @@ SR_TASK = """def success_rate(counts, marked):
     # YOUR CODE HERE
     raise NotImplementedError("Complete success_rate() first.")"""
 
-CHECK_RUN = CHECK + '''
+CHECK_CALL = '''
 
 passed, messages, value = check_l2_module4(grover_circuit, two_qubit_count, success_rate, MARKED, SEED, saved)
 for m in messages:
@@ -58,6 +60,8 @@ if passed:
     print("\\nAll tests passed. Your verification value is", value)
 else:
     print("\\nNot yet: fix the item above and run this cell again.")'''
+CHECK_RUN = hidden_check(['l2_m4_check'], 'check_l2_module4', CHECK_CALL)
+CHECK_RUN_COLAB = hidden_check(['l2_m4_check'], 'check_l2_module4', CHECK_CALL, colab=True)
 
 INTRO_COMMON = """A circuit on paper is not yet a circuit a quantum computer can run. The **transpiler** rewrites it in the computer's **native gates**, places its qubits on physical qubits that are actually connected (**layout**), adds swaps where they are not (**routing**), and simplifies the result (**optimization**). Every extra two-qubit gate adds error, so how well this is done decides how often the answer comes out right.
 
@@ -104,7 +108,7 @@ md(f"""# Module 4 lab (browser version): running on real hardware
 
 **Quantum Computing Intermediate · Module 4 · about 90 minutes** · notebook version {VERSION}
 
-This is the **browser version** of the lab, for learners without a Google account. The transpiler and Qiskit Aer cannot run in a browser, so this version reads their results from a file saved with the same versions the Colab version uses (qiskit 2.5.2, qiskit-aer 0.17.2, qiskit-ibm-runtime 0.50.0). You write the same three functions and get the same lab-check answers as in Colab; the difference is that here you analyse the transpiler's output instead of running it.
+This is the **browser version** of the lab, for learners without a Google account. The transpiler and Qiskit Aer cannot run in a browser, so this version reads their results from a file saved with the same versions the Colab version uses (qiskit 2.5.2, qiskit-aer 0.17.2, qiskit-ibm-runtime 0.50.0). You write the same three functions and get the same lab-check answers as in Colab; the difference is that here you analyse the transpiler's output instead of running it. The saved runs are of the course's reference Grover circuit: here your own `grover_circuit()` is checked exactly (in Step 2 and in the check cell), but it is not transpiled or run with noise. The Colab version does both, so use it if you can.
 
 {INTRO_COMMON}
 
@@ -206,7 +210,7 @@ No IBM account is needed: FakePittsburgh runs entirely in this notebook. An opti
 The **Module 4 lab check** in Canvas asks for results from this notebook, so keep it open in a second tab. Run each code cell with **Shift + Enter**, in order. To keep your work, choose **File > Save a copy in Drive**."""),
 md("""## Step 0: install Qiskit and load the saved results
 
-This takes about a minute. The versions are fixed so that the results match the lab check. The second cell also downloads the course's saved results (used by the check cell in Step 6)."""),
+This takes about a minute. The versions are fixed so that the results match the lab check. The second cell also downloads the course's saved results (used by the check cell in Step 6) and the course's check file, `l2_m4_check.py`, which holds the reference Grover circuit used for the tables in Steps 3 to 5."""),
 code("""%pip install -q qiskit==2.5.2 qiskit-aer==0.17.2 qiskit-ibm-runtime==0.50.0"""),
 code(f"""import json, math, urllib.request
 import numpy as np
@@ -220,6 +224,8 @@ from qiskit_ibm_runtime.fake_provider import FakePittsburgh
 backend = FakePittsburgh()
 noisy = AerSimulator.from_backend(backend)
 saved = json.load(urllib.request.urlopen("{PAGES}"))
+urllib.request.urlretrieve("{PAGES_DIR}l2_m4_check.py", "l2_m4_check.py")
+from l2_m4_check import reference_grover    # the course's reference circuit, the same gates as Module 2's reference
 print("qiskit", qiskit.__version__, "| qiskit-aer", qiskit_aer.__version__, "| qiskit-ibm-runtime", qiskit_ibm_runtime.__version__)
 print("saved results made with", saved["versions"])"""),
 md(device_md(True)),
@@ -255,25 +261,7 @@ code(TQ_TASK + '''
 def instructions(circuit):
     """Prepared: a circuit as a list of (name, [qubit indices])."""
     return [(i.operation.name, [circuit.find_bit(q).index for q in i.qubits]) for i in circuit.data]'''),
-code("""def reference_grover(marked, iterations):
-    \"\"\"The course's reference circuit, written out as in Module 2.\"\"\"
-    n = len(marked)
-    qc = QuantumCircuit(n, n)
-    qc.h(range(n))
-    for _ in range(iterations):
-        zeros = [q for q in range(n) if marked[n - 1 - q] == "0"]
-        if zeros:
-            qc.x(zeros)
-        qc.h(n - 1); qc.mcx(list(range(n - 1)), n - 1); qc.h(n - 1)
-        if zeros:
-            qc.x(zeros)
-        qc.h(range(n)); qc.x(range(n))
-        qc.h(n - 1); qc.mcx(list(range(n - 1)), n - 1); qc.h(n - 1)
-        qc.x(range(n)); qc.h(range(n))
-    qc.measure(range(n), range(n))
-    return qc
-
-
+code("""# reference_grover() was loaded in Step 0 from l2_m4_check.py.
 isa = {}
 print("level  depth  gates  two-qubit  physical qubits  gates by kind")
 for lvl in range(4):
@@ -303,6 +291,14 @@ noisy_counts = {}
 for lvl in range(4):
     noisy_counts[lvl] = noisy.run(isa[lvl], shots=4000, seed_simulator=11).result().get_counts()
     print(f"level {lvl}: {two_qubit_count(instructions(isa[lvl])):3d} two-qubit gates   success rate {success_rate(noisy_counts[lvl], '101'):.4f}")"""),
+md("""### Step 4b: your own circuit on the noise model
+
+The table above uses the course's reference circuit so that everyone's numbers match. Now run **your** `grover_circuit("101", 2)`, transpiled at level 3 in Step 3b, on the same noise model with the same simulator seed. If your circuit has the same gates as the reference, the two success rates are identical. If it has more two-qubit gates, or the transpiler placed it on other physical qubits, expect a different rate. Each rate has a shot noise of about 0.005 (√(p(1 − p)/4000) for p near 0.89), so a difference smaller than about 0.02 can come from chance alone; Module 6 makes this rule precise. This step is not graded."""),
+code("""mine_counts = noisy.run(mine, shots=4000, seed_simulator=11).result().get_counts()
+mine_rate, ref_rate = success_rate(mine_counts, "101"), success_rate(noisy_counts[3], "101")
+print(f"your circuit at level 3:   {two_qubit_count(instructions(mine)):3d} two-qubit gates   success rate {mine_rate:.4f}")
+print(f"reference at level 3:      {two_qubit_count(instructions(isa[3])):3d} two-qubit gates   success rate {ref_rate:.4f}")
+print(f"difference {mine_rate - ref_rate:+.4f} (shot noise of each rate about {math.sqrt(ref_rate * (1 - ref_rate) / 4000):.4f})")"""),
 md("""**An error budget.** If every two-qubit gate fails with probability ε₂ and every readout with ε_r, the chance that nothing goes wrong is about (1 − ε₂)^(two-qubit gates) × (1 − ε_r)^3. Multiplied by the ideal probability, this gives a rough estimate of the success rate. The cell works it out twice:
 
 - with the **median** errors of the whole computer (the same ε for every gate);
@@ -330,7 +326,7 @@ md("""## Step 6: your personal check
 Open the **Module 4 lab check** in Canvas. Question 1 shows your own MARKED (0 to 7, the 3-bit string to search for) and SEED. Type them below and run the next two cells. The check cell tests `grover_circuit()`, `two_qubit_count()` and `success_rate()`. Only if every test passes does it print your **verification value**: in the course's saved runs, the number of shots out of 4,000 in which the reference Grover circuit for MARKED with 2 iterations, transpiled at level 3 with seed SEED, found MARKED on the noise model (seed SEED). The cell after it repeats that run live here, to show that this notebook reproduces it."""),
 code("""MARKED = -1    # your number from Canvas, for example 5 (the string 101)
 SEED = 0       # your seed from Canvas, for example 512"""),
-code(CHECK_RUN),
+code(CHECK_RUN_COLAB),
 code("""if passed:
     w = format(int(MARKED), "03b")
     live_isa = generate_preset_pass_manager(backend=backend, optimization_level=3, seed_transpiler=int(SEED)).run(reference_grover(w, 2))
@@ -339,7 +335,7 @@ code("""if passed:
           "| they match" if live == value else "| they differ: use the saved value printed above in Canvas")"""),
 md("""## Step 7 (optional): a real IBM quantum computer
 
-If you have an IBM Quantum account with an Open Plan instance (see **Set Up Your Tools** in Start Here), you can run the level-3 circuit on a real computer. Save your API key and instance as Colab secrets named `IBM_QUANTUM_API_KEY` and `IBM_QUANTUM_INSTANCE`; never type a key into a cell. The run uses a few seconds of quantum time, but the queue can take from seconds to hours. This step is not graded."""),
+If you have an IBM Quantum account with an Open Plan instance (see **Set Up Your Tools** in Start Here), you can run **your own** circuit, `grover_circuit("101", 2)` transpiled at level 3 for that computer, on real hardware and compare it with your noise-model result from Step 4b. A real computer can do better or worse than the noise model of FakePittsburgh: its calibration changes from day to day, and the least busy computer may not be ibm_pittsburgh. Save your API key and instance as Colab secrets named `IBM_QUANTUM_API_KEY` and `IBM_QUANTUM_INSTANCE`; never type a key into a cell. The run uses a few seconds of quantum time, but the queue can take from seconds to hours. This step is not graded."""),
 code("""RUN_ON_HARDWARE = False   # set to True to use your IBM Quantum account
 
 if RUN_ON_HARDWARE:
@@ -349,11 +345,12 @@ if RUN_ON_HARDWARE:
     service = QiskitRuntimeService(channel="ibm_quantum_platform", token=userdata.get("IBM_QUANTUM_API_KEY"),
                                    instance=userdata.get("IBM_QUANTUM_INSTANCE"))
     real = service.least_busy(operational=True, simulator=False, min_num_qubits=3)
-    real_isa = generate_preset_pass_manager(backend=real, optimization_level=3, seed_transpiler=11).run(reference_grover("101", 2))
+    real_isa = generate_preset_pass_manager(backend=real, optimization_level=3, seed_transpiler=11).run(grover_circuit("101", 2))
     job = Sampler(mode=real).run([real_isa], shots=4000)
     print("running on", real.name, "- job ID", job.job_id())
     real_counts = job.result()[0].data.c.get_counts()
-    print("success rate on", real.name, ":", round(success_rate(real_counts, "101"), 4))
+    print("your circuit on", real.name, ": success rate", round(success_rate(real_counts, "101"), 4),
+          "| on the FakePittsburgh noise model (Step 4b):", round(mine_rate, 4))
 else:
     print("Skipped. Set RUN_ON_HARDWARE = True to run on a real IBM computer.")"""),
 md(WHAT_NOTICE),

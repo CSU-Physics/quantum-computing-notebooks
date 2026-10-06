@@ -167,7 +167,7 @@
 <section class="slide">
   <h2>Error suppression and mitigation</h2>
   <div class="cols" style="gap:22px">
-    <div class="card"><h3>Suppression</h3><p>Change how the circuit runs so that fewer errors happen: <strong>dynamical decoupling</strong> (pulses on idle qubits) and <strong>Pauli twirling</strong> (random gates that turn coherent errors into simpler random ones).</p></div>
+    <div class="card"><h3>Suppression</h3><p>Change how the circuit runs: <strong>dynamical decoupling</strong> (pulses on idle qubits) makes fewer errors happen; <strong>Pauli twirling</strong> (random Pauli gates around each two-qubit gate) changes the kind of error, from coherent to random, without lowering its rate.</p></div>
     <div class="card"><h3>Mitigation</h3><p>Run extra circuits and correct the results afterwards: <strong>TREX</strong> (readout errors), <strong>zero-noise extrapolation</strong> (amplify the noise, extrapolate to zero), and <strong>PEA</strong> and <strong>PEC</strong> (learn the noise and cancel it).</p></div>
     <div class="card"><h3>The cost</h3><p>Mitigation needs more shots and circuits, and works on averages (expectation values) rather than single shots. It is not <strong>error correction</strong>, which protects each qubit with many physical qubits.</p></div>
   </div>

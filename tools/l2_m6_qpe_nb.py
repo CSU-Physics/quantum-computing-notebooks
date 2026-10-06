@@ -194,7 +194,7 @@ else:
     ]
     c += limits_and_summary(
         """- **A model, not a computer.** The course model has the same depolarizing error on every gate and qubit. A real computer has a different error on each qubit pair, drifts between calibrations, and has errors that repeat the same way every time (a phase that is slightly off), which add up instead of averaging out.
-- **No connectivity.** The inverse QFT has a `cp` between every pair of counting qubits. On a real chip most pairs are not connected, so the transpiler adds swaps (Module 4), and the best m would be smaller still.
+- **No connectivity.** The inverse QFT has a `cp` between every pair of counting qubits. On a real chip most pairs are not connected, so the transpiler adds swaps (Module 4), and the best m could well be smaller still.
 - **One phase.** 1/3 is a hard case: it is never an m-bit fraction. A phase such as 1/4 has an exact 2-bit answer, and its ideal probability is 1.
 - **Shot noise.** Each mean error is uncertain by its SEM; the data cannot rank two values of m whose difference is below 3σ_diff, even when the model can.""",
         "the Module 6 project quiz for this experiment, phase estimation with noise,")

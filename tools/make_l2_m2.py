@@ -5,11 +5,12 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "content" / "level2"
+from l2_hidden import hidden_check  # noqa: E402
 CHECK = (ROOT / "checks" / "l2_m2_check.py").read_text().split('"""', 2)[2].lstrip()
 META = {"kernelspec": {"name": "python", "display_name": "Python (Pyodide)", "language": "python"},
         "language_info": {"name": "python"}}
 NAME = "QC-L2-M2-lab-grover-search.ipynb"
-VERSION = "2026-10-05"
+VERSION = "2026-10-06"
 
 
 def md(s): return nbf.v4.new_markdown_cell(s)
@@ -220,6 +221,8 @@ md("""## Step 7: two marked items
 
 An oracle can mark several strings: compose one oracle per string, and each flips the sign of its own state. With s marked items out of N, sin θ = √(s/N). For s = 2 and N = 8, θ = 30°, so one iteration gives (2·1 + 1)·30° = 90°: certainty.
 
+**Counting oracle calls.** Here the oracle for the set {011, 110} is built from two single-string oracles, so as a circuit it costs about twice as many gates. In the query count of Grover's search, about (π/4)√(N/s) calls, the whole set oracle counts as **one** call: the speed-up is measured in calls to a black box that recognises any marked item at once, whatever circuit is inside it. How expensive that circuit is matters separately, on real hardware (Module 4).
+
 The diffuser is the same as before. Run the cell: it marks 011 and 110 and runs one iteration. The probability of getting one of the two marked strings should be 1. (This also previews a mini-project option, Grover on 2 or 3 qubits.)"""),
 code("""def oracle_two(w1, w2):
     \"\"\"An oracle that marks two strings: one phase oracle after the other.\"\"\"
@@ -241,7 +244,7 @@ md("""## Step 8: your personal check
 Open the **Module 2 lab check** in Canvas. Question 1 shows your own number MARKED (0 to 15) and seed SEED. Type them below and run the next two cells. The check cell tests `oracle()` on every string of 2, 3 and 4 qubits, `diffuser()` on 2 to 5 qubits, and `grover()` on eight cases. Only if every test passes does it print your **verification value**: the course's reference Grover circuit on 4 qubits searches for the 4-bit string of MARKED with 1, 2, 3, 4 and 5 iterations (1,000 shots each, seeded with your SEED), and the value is the total number of shots, out of 5,000, that found it. Type it into Canvas."""),
 code("""MARKED = -1    # your number from Canvas, for example 13 (the 4-bit string 1101)
 SEED = 0       # your seed from Canvas, for example 512"""),
-code(CHECK + '''
+code(hidden_check(['l2_m2_check'], 'check_l2_module2', '''
 
 passed, messages, value = check_l2_module2(oracle, diffuser, grover, MARKED, SEED)
 for m in messages:
@@ -249,7 +252,7 @@ for m in messages:
 if passed:
     print("\\nAll tests passed. Your verification value is", value)
 else:
-    print("\\nNot yet: fix the item above and run this cell again.")'''),
+    print("\\nNot yet: fix the item above and run this cell again.")''')),
 
 md("""## What you should notice
 

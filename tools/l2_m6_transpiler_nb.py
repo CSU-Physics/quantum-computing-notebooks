@@ -13,7 +13,9 @@ def cells(colab):
                "cannot run in a browser, so this version reads their results from a file saved with the same versions "
                f"that the [Colab version]({COLAB_URL}) installs (qiskit 2.5.2, qiskit-aer 0.17.2, qiskit-ibm-runtime "
                "0.50.0). You write the same functions and get the same quiz answers; the difference is that here you "
-               "analyse the transpiler's results instead of running it.")
+               "**analyse** the transpiler's saved runs instead of making them, and in Step 7b you make one noisy run "
+               "of your own circuit in the browser, with a simpler noise model. If you can use Colab, its version runs "
+               "the whole experiment itself.")
     c = [common_intro(
         "a transpiler comparison" + (" (Colab version)" if colab else " (browser version)"), 180,
         "Before a circuit runs on an IBM computer, the transpiler rewrites it in the computer's native gates, places it "
@@ -240,6 +242,36 @@ plt.figure(figsize=(6.5, 3.3))
 plt.errorbar(ns, means, yerr=[3 * s for s in sems], fmt="C0o-", capsize=4, label="level 3, mean of 10 seeds, ±3 SEM")
 plt.xticks(ns); plt.xlabel("qubits"); plt.ylabel("success fraction"); plt.legend(fontsize=8); plt.tight_layout(); plt.show()"""),
         md("""**What to notice.** The success falls from 0.968 with 3 qubits to 0.861 with 6, while the two-qubit gates grow from about 17 to 92: the QFT has a `cp` between every pair of qubits, so its gate count grows as n², and on a heavy-hex chip most pairs need swaps. The effective error per two-qubit gate is about 0.002, close to the computer's median `cz` error (0.0015) plus a share of the readout errors."""),
+        *([] if colab else [
+            md("""### Step 7b (browser version, not graded): a noisy run of your own circuit
+
+Everything above analyses runs that Qiskit's transpiler and Qiskit Aer made on the FakePittsburgh model; they cannot run in a browser. This step runs **your** `mirror_circuit()` for 4 qubits yourself, here, on a simpler noise model: the course model of the other three projects (a depolarizing error P2 after each two-qubit gate and P2/10 after each one-qubit gate; a 0 read as 1 with probability READOUT and a 1 read as 0 with probability 2·READOUT), with P2 = 0.002 (an average two-qubit gate error of 0.75 · P2 = 0.0015, the computer's median `cz` error) and READOUT = 0.0045, the computer's median readout error.
+
+Your circuit is **not transpiled** here: every qubit can interact with every other, so no swaps are added, and each `cp` counts as one two-qubit gate (on the real chip it becomes two `cz` gates). Compare the two results and say which differences between the two models could explain the gap."""),
+            code("""import math
+from qsim import AerSimulator, NoiseModel, ReadoutError, depolarizing_error
+
+
+def simple_noise_model(p2, readout):
+    \"\"\"Prepared: the course noise model of the other Module 6 projects.\"\"\"
+    nm = NoiseModel()
+    nm.add_all_qubit_quantum_error(depolarizing_error(p2 / 10, 1), ["h", "x", "rx", "ry", "rz", "p", "t", "tdg", "s", "sdg", "sx"])
+    nm.add_all_qubit_quantum_error(depolarizing_error(p2, 2), ["cx", "cz", "cp", "rzz", "swap"])
+    nm.add_all_qubit_readout_error(ReadoutError([[1 - readout, readout], [2 * readout, 1 - 2 * readout]]))
+    return nm
+
+
+bits4 = saved["widths"]["4"]
+mine = mirror_circuit(bits4)
+counts = AerSimulator(noise_model=simple_noise_model(0.002, 0.0045)).run(mine, shots=4000, seed_simulator=1).result().get_counts()
+f = success_fraction(counts, bits4)
+n2 = sum(1 for i in mine.data if len(i.qubits) == 2 and i.name != "barrier")
+m4, se4 = level_mean(4, 3)
+print(f"your circuit, simple model, no routing ({n2} two-qubit gates): {f:.4f} ± {shot_sigma(f, 4000):.4f}")
+print(f"saved FakePittsburgh runs, level 3, mean of 10 seeds:          {m4:.4f} ± {se4:.4f}")
+print(f"difference {f - m4:+.4f} = {(f - m4) / math.sqrt(shot_sigma(f, 4000) ** 2 + se4 ** 2):.1f} times its standard deviation")"""),
+            md("""**What to notice.** The two numbers are close (about 0.946 and 0.937; the difference is about 2 standard deviations, so not significant), yet the models are very different. Your untranspiled circuit has 16 two-qubit gates; transpiled for FakePittsburgh at level 3 the same circuit has about 35, because each `cp` becomes two `cz` gates and swaps are added. On the other hand, the simple model reads a 1 wrongly twice as often as a 0, and three of the four bits are 1, while FakePittsburgh's errors differ from qubit to qubit and include decoherence while qubits wait. These differences pull in opposite directions. Agreement between two models is therefore not evidence that either is right: it can hide compensating errors."""),
+        ]),
 
         md("""## Step 8: your verification value
 
@@ -254,7 +286,7 @@ for m in messages:
 if passed:
     print("\\nAll tests passed. Your verification value is", value)
 else:
-    print("\\nNot yet: fix the item above and run this cell again.")''')),
+    print("\\nNot yet: fix the item above and run this cell again.")''', colab=colab)),
     ]
     if colab:
         c += [code("""if passed:
@@ -264,7 +296,7 @@ else:
           "| they match" if live == value else "| they differ: use the saved value printed above in Canvas")""")]
     c += limits_and_summary(
         """- **One model of one computer.** FakePittsburgh is a snapshot of one calibration. The real `ibm_pittsburgh` is recalibrated daily, its errors drift, and the best qubits today may not be the best tomorrow; a level-3 advantage that comes from choosing good qubits depends on that snapshot.
-- **What the noise model leaves out.** Gate and readout errors and decoherence are in it; crosstalk between neighbouring qubits, leakage out of the qubit states, and errors that repeat the same way every time are not. On the real computer, results are usually somewhat worse than on its noise model.
+- **What the noise model leaves out.** Gate and readout errors and decoherence are in it; crosstalk between neighbouring qubits, leakage out of the qubit states, and errors that repeat the same way every time are not. So results on the real computer can differ from its noise model, often for the worse, and change from day to day.
 - **One kind of circuit.** A mirror circuit returns its input, which makes success easy to define. Circuits whose answer is a distribution (QAOA, phase estimation of 1/3) need other measures, and transpiler settings can rank differently for them.
 - **Ten seeds.** The seed-to-seed spread is itself estimated from 10 values, so it is uncertain too (by roughly a quarter of its size).""",
         "the Module 6 project quiz for this experiment, the transpiler comparison,")

@@ -210,8 +210,8 @@ plt.xticks(x, labels, rotation=90); plt.ylabel("fraction of shots"); plt.legend(
 - **σ here comes from the measurement itself**, √(f(1 − f)/4000), because no one knows the computer's exact expected value. A difference of more than 3σ from a prediction means that prediction does not describe this run.
 - **The ideal value** is always far away: a real computer is noisy.
 - **The course noise model** is several times noisier than IBM's current computers, so the real result is often **better** than it predicts.
-- **The computer's own noise model** is usually the closest prediction, but real results are often somewhat worse, sometimes by more than 3σ: the model leaves out crosstalk, leakage, drift since the last calibration and errors that repeat the same way every time.
+- **The computer's own noise model** is usually the closest prediction, but real results can differ from it, often for the worse and sometimes by more than 3σ, because the model leaves out crosstalk, leakage, drift since the last calibration and errors that repeat the same way every time.
 - A second run, an hour or a day later, can differ from the first by more than its σ: the computer itself changes. That uncertainty is not in σ.
 
-If you write the optional summary in your project notebook, this run fits under **Limits**: it shows how far a noise model is from a real computer."""),
+In your experiment summary (required, at the start of Module 7), this run fits under **Limits**: it shows how far a noise model is from a real computer."""),
     ]

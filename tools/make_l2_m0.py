@@ -5,11 +5,12 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "content" / "level2"
+from l2_hidden import hidden_check  # noqa: E402
 CHECK = (ROOT / "checks" / "l2_m0_check.py").read_text().split('"""', 2)[2].lstrip()
 META = {"kernelspec": {"name": "python", "display_name": "Python (Pyodide)", "language": "python"},
         "language_info": {"name": "python"}}
 NAME = "QC-L2-M0-lab-dynamic-circuits-teleportation.ipynb"
-VERSION = "2026-10-04"
+VERSION = "2026-10-06"
 
 
 def md(s): return nbf.v4.new_markdown_cell(s)
@@ -188,7 +189,7 @@ md("""## Step 6: your personal check
 Open the **Module 0 lab check** in Canvas. Question 1 shows your own angle THETA and seed SEED. Type them below and run the next two cells. The check cell tests `active_reset()` on six states (some entangled) and `bob_corrections()` on twelve random states. Only if every test passes does it print your **verification value**: the number of shots, out of 1,000, in which Bob measures 1 after receiving ry(THETA)|0⟩, run with your seed. Type it into Canvas."""),
 code("""THETA = 0.0   # your angle from Canvas, for example 1.25
 SEED = 0      # your seed from Canvas, for example 512"""),
-code(CHECK + '''
+code(hidden_check(['l2_m0_check'], 'check_l2_module0', '''
 
 passed, messages, value = check_l2_module0(active_reset, bob_corrections, THETA, SEED)
 for m in messages:
@@ -196,7 +197,7 @@ for m in messages:
 if passed:
     print("\\nAll tests passed. Your verification value is", value)
 else:
-    print("\\nNot yet: fix the item above and run this cell again.")'''),
+    print("\\nNot yet: fix the item above and run this cell again.")''')),
 md("""## What you should notice
 
 - A measurement in the middle of a circuit gives a result you can use at once, and it leaves the qubit in |0⟩ or |1⟩.

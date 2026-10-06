@@ -7,11 +7,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "content" / "level2"
 SRC = (ROOT / "checks" / "l2_m5_check.py").read_text()
+from l2_hidden import hidden_check  # noqa: E402
 CHECK = SRC.split('"""', 2)[2].lstrip()
 META = {"kernelspec": {"name": "python", "display_name": "Python (Pyodide)", "language": "python"},
         "language_info": {"name": "python"}}
 NAME = "QC-L2-M5-lab-vqe-qaoa.ipynb"
-VERSION = "2026-10-05"
+VERSION = "2026-10-06"
 
 
 def md(s): return nbf.v4.new_markdown_cell(s)
@@ -21,7 +22,7 @@ def code(s): return nbf.v4.new_code_cell(s)
 cells = [
 md(f"""# Module 5 lab: variational algorithms, VQE and QAOA
 
-**Quantum Computing Intermediate · Module 5 · about 90 minutes** · notebook version {VERSION}
+**Quantum Computing Intermediate · Module 5 · about 100 minutes** · notebook version {VERSION}
 
 A **variational algorithm** splits the work between two computers. A quantum circuit with adjustable angles (the **ansatz**) prepares a trial state; the quantum computer estimates its energy, an **expectation value** ⟨ψ(θ)|H|ψ(θ)⟩; a classical **optimizer** changes the angles to lower that energy, and the loop repeats.
 
@@ -244,7 +245,7 @@ md("""## Step 9: your personal check
 Open the **Module 5 lab check** in Canvas. Question 1 shows your own GAMMA and BETA (numbers from 0.10 to 1.50). Type them below and run the next two cells. The check cell tests `ansatz()`, `maxcut_hamiltonian()` and `qaoa_circuit()`. Only if every test passes does it print your **verification value**: 1,000 times the expected cut of one-layer QAOA on the course graph with your γ and β, rounded to a whole number."""),
 code("""GAMMA = 0.0    # your number from Canvas, for example 0.37
 BETA = 0.0     # your number from Canvas, for example 1.21"""),
-code(CHECK + '''
+code(hidden_check(['l2_m5_check'], 'check_l2_module5', '''
 
 passed, messages, value = check_l2_module5(ansatz, maxcut_hamiltonian, qaoa_circuit, GAMMA, BETA)
 for m in messages:
@@ -252,12 +253,12 @@ for m in messages:
 if passed:
     print("\\nAll tests passed. Your verification value is", value)
 else:
-    print("\\nNot yet: fix the item above and run this cell again.")'''),
+    print("\\nNot yet: fix the item above and run this cell again.")''')),
 
 md("""## What you should notice
 
 - A Hamiltonian is a sum of Pauli strings; its expectation value is the weighted sum of the strings' expectation values, which is what the Estimator computes.
-- A variational algorithm is a loop: a parameterized circuit prepares a trial state, the quantum computer estimates its energy, and a classical optimizer updates the angles. By the variational principle, the energy can never go below the true lowest energy.
+- A variational algorithm is a loop: a parameterized circuit prepares a trial state, the quantum computer estimates its energy, and a classical optimizer updates the angles. By the variational principle, the exact expectation value of the energy can never go below the true lowest energy; an estimate from a finite number of shots, or from a noisy computer, can fall a little below it.
 - The ansatz decides what can be reached: one layer without a CNOT stopped 20 millihartree above the answer for H₂; one CNOT more reached it.
 - QAOA turns Max-Cut into finding the lowest energy of H_C = Σ Z_i Z_j. Optimizers can stop at local optima, the starting point matters, and more layers give better cuts at the cost of deeper circuits.
 

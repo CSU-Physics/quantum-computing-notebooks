@@ -6,11 +6,12 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "content" / "level2"
+from l2_hidden import hidden_check  # noqa: E402
 CHECK = (ROOT / "checks" / "l2_m1_check.py").read_text().split('"""', 2)[2].lstrip()
 META = {"kernelspec": {"name": "python", "display_name": "Python (Pyodide)", "language": "python"},
         "language_info": {"name": "python"}}
 NAME = "QC-L2-M1-lab-qft-phase-estimation.ipynb"
-VERSION = "2026-10-05b"
+VERSION = "2026-10-06"
 
 
 def md(s): return nbf.v4.new_markdown_cell(s)
@@ -201,7 +202,7 @@ md("""## Step 8: your personal check
 Open the **Module 1 lab check** in Canvas. Question 1 shows your own phase PHI and seed SEED. Type them below and run the next two cells. The check cell tests `qft3()`, `qft(n)` for n = 1 to 5, and `phase_estimation()` on seven phases. Only if every test passes does it print your **verification value**: the number of shots, out of 1,000, in which the course's reference phase-estimation circuit with 5 counting qubits returns the best 5-bit estimate of PHI, run with your seed. Type it into Canvas."""),
 code("""PHI = 0.0     # your phase from Canvas, for example 0.432
 SEED = 0      # your seed from Canvas, for example 512"""),
-code(CHECK + '''
+code(hidden_check(['l2_m1_check'], 'check_l2_module1', '''
 
 passed, messages, value = check_l2_module1(qft3, qft, phase_estimation, PHI, SEED)
 for m in messages:
@@ -209,7 +210,7 @@ for m in messages:
 if passed:
     print("\\nAll tests passed. Your verification value is", value)
 else:
-    print("\\nNot yet: fix the item above and run this cell again.")'''),
+    print("\\nNot yet: fix the item above and run this cell again.")''')),
 
 md("""## What you should notice
 

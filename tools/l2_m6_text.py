@@ -1,10 +1,11 @@
 """Shared cells for the Level 2 Module 6 project notebooks (see make_l2_m6.py)."""
+import re
 from pathlib import Path
 
 import nbformat as nbf
 
 ROOT = Path(__file__).resolve().parents[1]
-VERSION = "2026-10-05"
+VERSION = "2026-10-06"
 COLAB_BASE = "https://colab.research.google.com/github/CSU-Physics/quantum-computing-notebooks/blob/main/colab/level2/"
 HARDWARE_COLAB = COLAB_BASE + "QC-L2-M6-hardware-colab.ipynb"
 
@@ -20,10 +21,12 @@ def _body(path):
     return "\n".join(line for line in body.splitlines() if not line.startswith("from l2_m6_common import")).strip() + "\n"
 
 
-def check_source(project_file, call):
-    """The check cell: l2_m6_common, then the project's check, then the call that prints the result."""
-    return ("# The course's check code. You do not need to read it; it is here so that you can.\n"
-            + _body("l2_m6_common.py") + "\n\n" + _body(project_file) + "\n\n" + call.strip())
+def check_source(project_file, call, colab=False):
+    """The check cell: it imports the project's check function from its file (with l2_m6_common next to it),
+    then runs the call that prints the result. Until 6 Oct 2026 the cell held the whole check code."""
+    from l2_hidden import hidden_check
+    func = re.search(r"= (check_l2_m6_\w+)\(", call).group(1)
+    return hidden_check(["l2_m6_common", project_file[:-3]], func, call, colab=colab)
 
 
 def common_intro(title, minutes, question, plan, personal):
@@ -78,6 +81,8 @@ For example, with S = 4,000 shots and p = {example_p}, σ = {(example_p * (1 - e
 **σ_diff = √( f₁(1 − f₁)/S + f₂(1 − f₂)/S )**.
 
 Uncertainties of independent results add **in quadrature** (their squares add), so a difference is less certain than either result alone. A difference larger than 3σ_diff is **significant**: shot noise alone would almost never produce it. A smaller difference may be real, but this experiment cannot show it.
+
+**Two cautions.** The 3σ rule is an approximation: it treats the binomial spread as a normal (bell-shaped) one, which is good when S·p and S·(1 − p) are both well above 10. And if you compare many settings, chance alone makes a "significant" difference somewhere more likely: with 20 comparisons of identical settings, the chance that at least one exceeds 3σ_diff is about 5%, not 0.27%. So treat a single surprising difference among many as a question to test again, with new shots, rather than as a finding.
 
 **Your task:** write the three functions below. They are used in every later step{example_name}.
 
@@ -169,9 +174,9 @@ These limits are not failures of your experiment: every experiment has them. Say
         md(f"""## Optional: run it on a real IBM quantum computer
 
 If you have an IBM Quantum account with an Open Plan instance (see **Set Up Your Tools** in Start Here), the [Module 6 hardware notebook in Colab]({HARDWARE_COLAB}) runs the project's reference circuit on a real computer and compares the result with the ideal value, with this course's noise model, and with IBM's own noise model of that computer. Your API key stays in Colab's **Secrets**; never type it into a cell. The Open Plan gives up to 10 minutes of quantum computer time every 28 days, and one run of 4,000 shots uses a few seconds of it, but the queue can take from seconds to hours. This step is not graded, and the badge does not depend on it."""),
-        md("""## Optional: a short summary of your experiment
+        md("""## Your experiment summary (required, not graded)
 
-Not graded. Writing five short answers is a good way to prepare for the project quiz, and it is how results are reported in a lab notebook or a paper. Double-click this cell to edit it.
+Write five short answers here (double-click this cell to edit it). They are good preparation for the project quiz, and they are how results are reported in a lab notebook or a paper. Then paste them into **Your Experiment Summary** at the start of Module 7 in Canvas: it is not graded, but you must submit it before the final quiz opens.
 
 1. **Question.** What did you want to find out?
 2. **Method.** Which circuit, which noise model (P2, READOUT), how many shots?

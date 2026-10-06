@@ -196,7 +196,7 @@ else:
     print("\\nNot yet: fix the item above and run this cell again.")''')),
     ]
     c += limits_and_summary(
-        """- **Gates as a real computer runs them.** Here `rzz` is one two-qubit gate with one error. IBM computers run it as `cz` gates and single-qubit rotations, and the triangle (0, 1, 2) cannot be placed on a heavy-hex chip without swaps (Module 4): each layer would cost more two-qubit gates, and the crossover would come at a lower P2.
+        """- **Gates as a real computer runs them.** Here `rzz` is one two-qubit gate with one error. With the default native gates of IBM Heron computers (`cz`, `rz`, `sx`, `x`), the transpiler rewrites it as two `cz` gates and single-qubit rotations, and the triangle (0, 1, 2) cannot be placed on a heavy-hex chip without swaps (Module 4): each layer would then cost more two-qubit gates, and the crossover would likely come at a lower P2. (Some IBM computers also offer `rzz` directly, as an opt-in fractional gate; that would change the count, but not the need for swaps.)
 - **Training without noise.** For depolarizing noise, the noise mostly shrinks the landscape toward the random-split value without moving its peak, so angles trained without noise stay near the best. Errors that rotate the state in the same direction every time do move the peak; training on the computer itself, or with a more detailed noise model, can then find better angles.
 - **A model, not a computer.** The same error on every gate and qubit, no drift, no crosstalk between neighbouring qubits.
 - **One small graph.** With 5 nodes, brute force is instant. QAOA is only interesting for graphs far too large for brute force, where no one knows the maximum cut to compare with.""",

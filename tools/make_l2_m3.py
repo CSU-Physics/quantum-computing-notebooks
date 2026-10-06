@@ -6,12 +6,13 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "content" / "level2"
 SRC = (ROOT / "checks" / "l2_m3_check.py").read_text()
+from l2_hidden import hidden_check  # noqa: E402
 CHECK = SRC.split('"""', 2)[2].lstrip()
 PREPARED = SRC[SRC.index("def c_amod15"):SRC.index("# ---------------------------------------------------------------- reference solutions")].rstrip()
 META = {"kernelspec": {"name": "python", "display_name": "Python (Pyodide)", "language": "python"},
         "language_info": {"name": "python"}}
 NAME = "QC-L2-M3-lab-shor-period-finding.ipynb"
-VERSION = "2026-10-05"
+VERSION = "2026-10-06"
 
 
 def md(s): return nbf.v4.new_markdown_cell(s)
@@ -155,7 +156,7 @@ md("""## Step 8: your personal check
 Open the **Module 3 lab check** in Canvas. Question 1 shows your own A (one of 2, 4, 7, 8, 11, 13) and seed SEED. Type them below and run the next two cells. The check cell tests `order()`, `factors_from_order()`, `order_finding()` (every a, 3 to 6 counting qubits) and `period_from_counts()`. Only if every test passes does it print your **verification value**: the number of shots, out of 4,000, in which the course's reference order-finding circuit for A with 8 counting qubits gives a result whose continued fraction has the true order as its denominator, run with your seed. Type it into Canvas."""),
 code("""A = 0         # your number from Canvas, for example 7
 SEED = 0      # your seed from Canvas, for example 512"""),
-code(CHECK + '''
+code(hidden_check(['l2_m3_check'], 'check_l2_module3', '''
 
 passed, messages, value = check_l2_module3(order, factors_from_order, order_finding, period_from_counts, A, SEED)
 for m in messages:
@@ -163,7 +164,7 @@ for m in messages:
 if passed:
     print("\\nAll tests passed. Your verification value is", value)
 else:
-    print("\\nNot yet: fix the item above and run this cell again.")'''),
+    print("\\nNot yet: fix the item above and run this cell again.")''')),
 
 md("""## What you should notice
 
