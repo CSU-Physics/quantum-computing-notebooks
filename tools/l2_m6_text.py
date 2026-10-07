@@ -176,7 +176,7 @@ These limits are not failures of your experiment: every experiment has them. Say
 If you have an IBM Quantum account with an Open Plan instance (see **Set Up Your Tools** in Start Here), the [Module 6 hardware notebook in Colab]({HARDWARE_COLAB}) runs the project's reference circuit on a real computer and compares the result with the ideal value, with this course's noise model, and with IBM's own noise model of that computer. Your API key stays in Colab's **Secrets**; never type it into a cell. The Open Plan gives up to 10 minutes of quantum computer time every 28 days, and one run of 4,000 shots uses a few seconds of it, but the queue can take from seconds to hours. This step is not graded, and the badge does not depend on it."""),
         md("""## Your experiment summary (required, not graded)
 
-Write five short answers here (double-click this cell to edit it). They are good preparation for the project quiz, and they are how results are reported in a lab notebook or a paper. Then paste them into **Your Experiment Summary** at the start of Module 7 in Canvas: it is not graded, but you must submit it before the final quiz opens.
+Write five short answers here (double-click this cell to edit it). They are good preparation for the project quiz, and they are how results are reported in a lab notebook or a paper. Then paste them into **Your Experiment Summary** at the start of the Course Completion module in Canvas: it is not graded, but you must submit it before the final quiz opens.
 
 1. **Question.** What did you want to find out?
 2. **Method.** Which circuit, which noise model (P2, READOUT), how many shots?
