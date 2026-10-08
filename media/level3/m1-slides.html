@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Module 1 Slides: Noise and Open Quantum Systems</title>
+<style>
+  :root { --maroon:#99004C; --ink:#24313D; --muted:#6A626B; --line:#E4DCE0; --tint:#F8F4F6; --gold:#C9A227; --ok:#2E7D4F; }
+  * { box-sizing:border-box; }
+  html, body { margin:0; height:100%; background:#2B2230; font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color:var(--ink); }
+  #viewport { position:absolute; inset:0 0 44px 0; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+  #stage { width:1280px; height:720px; flex-shrink:0; position:relative; transform-origin:center center; }
+  .slide { position:absolute; inset:0; background:#fff; padding:56px 72px 64px; display:none; flex-direction:column; border-top:10px solid var(--maroon); }
+  .slide.on { display:flex; }
+  .slide h1 { font-family: Georgia, serif; color:var(--maroon); font-size:56px; margin:0 0 18px; line-height:1.1; }
+  .slide h2 { font-family: Georgia, serif; color:var(--maroon); font-size:40px; margin:0 0 22px; line-height:1.15; }
+  .slide p, .slide li { font-size:27px; line-height:1.45; margin:0 0 14px; }
+  .slide ul { margin:0 0 10px 0; padding-left:34px; }
+  .kicker { font-size:20px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); margin-bottom:10px; }
+  .eq { background:var(--tint); border-left:6px solid var(--maroon); padding:16px 24px; font-size:34px; margin:10px 0 18px; font-family: Georgia, serif; }
+  .small { font-size:20px !important; color:var(--muted); }
+  .cols { display:flex; gap:40px; align-items:flex-start; flex:1; }
+  .cols > div { flex:1; }
+  .card { border:2px solid var(--line); border-radius:10px; padding:18px 22px; }
+  .card h3 { margin:0 0 8px; font-size:27px; color:var(--maroon); }
+  .card p { font-size:23px; margin:0; }
+  table { border-collapse:collapse; font-size:26px; }
+  th, td { border:1px solid var(--line); padding:10px 18px; text-align:left; }
+  th { background:var(--tint); }
+  .foot { position:absolute; left:72px; right:72px; bottom:20px; display:flex; justify-content:space-between; font-size:15px; color:var(--muted); }
+  .reveal { margin-top:10px; }
+  .reveal button { font-size:22px; padding:8px 18px; border:2px solid var(--maroon); background:#fff; color:var(--maroon); border-radius:6px; cursor:pointer; }
+  .reveal .ans { display:none; margin-top:14px; background:#EEF6F0; border-left:6px solid var(--ok); padding:12px 20px; font-size:25px; line-height:1.45; }
+  .reveal.open .ans { display:block; }
+  .reveal.open button { display:none; }
+  .title-slide { background: linear-gradient(135deg, #fff 0%, #fff 58%, var(--tint) 58%); }
+  #bar { position:absolute; left:0; right:0; bottom:0; height:44px; background:#1E1722; display:flex; align-items:center; justify-content:center; gap:10px; color:#fff; font-size:14px; }
+  #bar button { background:#3A2F40; color:#fff; border:0; border-radius:4px; padding:7px 14px; font-size:14px; cursor:pointer; }
+  #bar button:hover { background:var(--maroon); }
+  #count { min-width:70px; text-align:center; }
+  .slide code { font-family: Consolas, "Courier New", monospace; font-size:0.9em; }
+  .slide table td, .slide table th { padding:4px 10px; text-align:right; }
+  svg text { font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  @media print {
+    @page { size: 1280px 720px; margin:0; }
+    html, body { background:#fff; height:auto; }
+    #bar { display:none; }
+    #viewport { position:static; display:block; }
+    #stage { transform:none !important; width:1280px; height:auto; }
+    .slide { display:flex !important; position:relative; width:1280px; height:720px; page-break-after:always; break-after:page; }
+    .reveal .ans { display:block !important; }
+    .reveal button { display:none !important; }
+  }
+</style>
+</head>
+<body>
+<div id="viewport"><div id="stage">
+
+<!-- 1 -->
+<section class="slide title-slide">
+  <div class="kicker">Quantum Computing Advanced · Module 1</div>
+  <h1>Noise and open quantum systems</h1>
+  <p style="font-size:30px;max-width:620px">Real qubits leak energy and lose their phases. Density matrices and noise channels describe what happens, and T1 and T2 tell you how fast.</p>
+  <div style="position:absolute;right:80px;top:170px;width:400px"><svg width="400" height="400" viewBox="0 0 400 400" aria-label="A state relaxing inside the Bloch ball: it spirals in from the surface toward the top, the state |0⟩"><circle cx="200" cy="200" r="165" fill="#F8F4F6" stroke="#24313D" stroke-width="2.5"/><line x1="35" y1="200" x2="365" y2="200" stroke="#B9AEB4" stroke-width="1.5" stroke-dasharray="5 5"/><line x1="200" y1="35" x2="200" y2="365" stroke="#B9AEB4" stroke-width="1.5" stroke-dasharray="5 5"/><polyline points="333.4,297.1 325.2,284.2 317.5,271.9 310.3,260.2 303.6,249.0 297.2,238.5 291.3,228.4 285.7,218.9 280.4,209.8 275.5,201.2 270.8,193.0 266.5,185.2 262.4,177.8 258.6,170.7 255.0,164.0 251.6,157.6 248.5,151.6 245.5,145.8 242.7,140.4 240.1,135.2 237.6,130.2 235.3,125.5 233.1,121.0 231.1,116.8 229.2,112.8 227.4,108.9 225.7,105.3 224.2,101.8 222.7,98.5 221.3,95.4 220.0,92.4 218.8,89.5 217.6,86.9 216.5,84.3 215.5,81.9 214.6,79.5 213.7,77.3 212.8,75.3 212.0,73.3 211.3,71.4 210.6,69.6 210.0,67.9 209.3,66.3 208.8,64.7 208.2,63.2 207.7,61.8 207.3,60.5 206.8,59.3 206.4,58.1 206.0,56.9 205.6,55.8 205.3,54.8 205.0,53.8 204.7,52.9 204.4,52.0 204.1,51.2 203.9,50.4 203.6,49.6 203.4,48.9 203.2,48.2 203.0,47.6 202.8,46.9 202.6,46.4 202.5,45.8 202.3,45.3 202.2,44.8 202.0,44.3 201.9,43.8 201.8,43.4 201.7,43.0 201.6,42.6 201.5,42.2 201.4,41.8 201.3,41.5 201.2,41.2 201.2,40.9 201.1,40.6 201.0,40.3 201.0,40.0 200.9,39.8" fill="none" stroke="#99004C" stroke-width="4"/><circle cx="333.4" cy="297.1" r="8" fill="#99004C"/><circle cx="271.4" cy="194.0" r="8" fill="#99004C"/><circle cx="238.2" cy="131.4" r="8" fill="#99004C"/><circle cx="211.0" cy="70.5" r="8" fill="#99004C"/><text x="200.0" y="21.0" font-size="20" text-anchor="middle" fill="#24313D">|0⟩</text><text x="200.0" y="397.0" font-size="20" text-anchor="middle" fill="#24313D">|1⟩</text><text x="383.0" y="207.0" font-size="20" text-anchor="middle" fill="#6A626B">x</text><circle cx="200.0" cy="35.0" r="6" fill="#24313D"/><circle cx="200.0" cy="365.0" r="6" fill="#24313D"/></svg></div>
+  <div class="foot"><span>SemiAcademy · ISEP-CSU</span><span>CC BY 4.0</span></div>
+</section>
+
+<!-- 2 -->
+<section class="slide">
+  <h2>By the end of this module you can</h2>
+  <ul>
+    <li>write the <strong>density matrix</strong> of a pure state and of a mixture, and tell them apart by their <strong>purity</strong>;</li>
+    <li>read a one-qubit state as a point in the <strong>Bloch ball</strong>: on the surface if pure, inside if mixed;</li>
+    <li>apply a <strong>noise channel</strong> written with Kraus operators, including <strong>amplitude damping</strong> and <strong>phase damping</strong>;</li>
+    <li>explain <strong>T1</strong> and <strong>T2</strong>, why T2 can be at most 2 T1, and read them from a real device's calibration data;</li>
+    <li>rebuild a state by <strong>tomography</strong> and judge it with the <strong>fidelity</strong>.</li>
+  </ul>
+  <p class="small" style="margin-top:24px">Course outcome 1: describe noise with density matrices and noise channels, and read T1 and T2 from device data.</p>
+  <div class="foot"><span>Module 1 · Noise and open quantum systems</span><span>2</span></div>
+</section>
+
+<!-- 3 -->
+<section class="slide">
+  <h2>Why state vectors are not enough</h2>
+  <ul>
+    <li style="font-size:25px"><strong>Noise:</strong> a qubit touches its surroundings. Afterwards the qubit alone has no state vector of its own; its state is part of a larger, entangled one.</li>
+    <li style="font-size:25px"><strong>Missing information:</strong> a source that sends |0⟩ or |1⟩ at random, and does not tell you which, is not in any superposition. You need a way to write "|0⟩ with probability ½, |1⟩ with probability ½".</li>
+    <li style="font-size:25px"><strong>Part of an entangled pair:</strong> one qubit of a Bell pair, on its own, has no state vector either.</li>
+  </ul>
+  <p style="font-size:25px">All three are handled by one object: the <strong>density matrix</strong> ρ. Everything you can measure on the qubit follows from ρ.</p>
+  <div class="foot"><span>Module 1 · Noise and open quantum systems</span><span>3</span></div>
+</section>
+
+<!-- 4 -->
+<section class="slide">
+  <h2>The density matrix</h2>
+  <div class="cols">
+    <div style="flex:0 0 640px">
+      <p style="font-size:24px">For a pure state, ρ = |ψ⟩⟨ψ|: the column ψ times the row ψ†. For a mixture of states |ψₖ⟩ with probabilities pₖ:</p>
+      <div class="eq" style="font-size:28px">ρ = Σₖ pₖ |ψₖ⟩⟨ψₖ|</div>
+      <ul>
+        <li style="font-size:22px">ρ is Hermitian, its trace is 1, and its eigenvalues are never negative.</li>
+        <li style="font-size:22px">Diagonal: the probabilities of 0 and 1. Off-diagonal: the <strong>coherences</strong>, which hold the phases.</li>
+        <li style="font-size:22px">Probability of outcome k: ⟨k|ρ|k⟩. Expectation value of an observable A: tr(ρA).</li>
+      </ul>
+    </div>
+    <div>
+      <p style="font-size:22px;margin-bottom:6px">|+⟩ = (|0⟩ + |1⟩)/√2:</p>
+      <div class="eq" style="font-size:26px">ρ = ½ [[1, 1], [1, 1]]</div>
+      <p style="font-size:22px;margin:14px 0 6px">|0⟩ or |1⟩, each with probability ½:</p>
+      <div class="eq" style="font-size:26px">ρ = ½ [[1, 0], [0, 1]] = I/2</div>
+      <p class="small">Same probabilities in the Z basis; only the coherences differ.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Module 1 · Noise and open quantum systems</span><span>4</span></div>
+</section>
+
+<!-- 5 -->
+<section class="slide">
+  <h2>Pure or mixed: the purity</h2>
+  <div class="eq" style="font-size:30px">purity = tr(ρ²)</div>
+  <ul>
+    <li style="font-size:24px">1 for every pure state; less than 1 for every mixed state.</li>
+    <li style="font-size:24px">Smallest for the <strong>maximally mixed</strong> state I/d: 1/2 for one qubit, 1/4 for two.</li>
+    <li style="font-size:24px">|+⟩ and I/2 give the same Z-basis statistics, 50% each. Measure in the X basis to tell them apart: |+⟩ always gives +, I/2 gives + half of the time. Purity 1 against 1/2.</li>
+  </ul>
+  <p class="small">In code: <code>np.trace(rho @ rho).real</code>, or <code>DensityMatrix(rho).purity()</code> in qsim and Qiskit.</p>
+  <div class="foot"><span>Module 1 · Noise and open quantum systems</span><span>5</span></div>
+</section>
+
+<!-- 6 -->
+<section class="slide">
+  <h2>Same ρ, different recipes</h2>
+  <p style="font-size:24px">Two different mixtures can give the same density matrix, and then no measurement can tell them apart:</p>
+  <div class="eq" style="font-size:25px">½|0⟩⟨0| + ½|1⟩⟨1| &nbsp; = &nbsp; ½|+⟩⟨+| + ½|−⟩⟨−| &nbsp; = &nbsp; I/2</div>
+  <p style="font-size:24px">The third recipe has no randomness in it at all: take the Bell state (|00⟩ + |11⟩)/√2 and keep only one qubit. The <strong>partial trace</strong> over the other qubit gives</p>
+  <div class="eq" style="font-size:25px">tr₁ |Φ⁺⟩⟨Φ⁺| = I/2</div>
+  <p style="font-size:24px">The pair is pure; each half is maximally mixed. This is how noise works: the qubit becomes entangled with its surroundings, and the qubit alone looks mixed.</p>
+  <div class="foot"><span>Module 1 · Noise and open quantum systems</span><span>6</span></div>
+</section>
+
+<!-- 7 -->
+<section class="slide">
+  <h2>The Bloch ball</h2>
+  <div class="cols">
+    <div style="flex:0 0 620px">
+      <p style="font-size:24px">Every one-qubit density matrix can be written with a Bloch vector r = (x, y, z):</p>
+      <div class="eq" style="font-size:27px">ρ = (I + xX + yY + zZ)/2, &nbsp; x = tr(ρX), …</div>
+      <ul>
+        <li style="font-size:22px">|r| = 1: a pure state, on the surface (the Bloch sphere of Level 1).</li>
+        <li style="font-size:22px">|r| &lt; 1: a mixed state, inside the ball. I/2 is the center.</li>
+        <li style="font-size:22px">purity = (1 + |r|²)/2.</li>
+        <li style="font-size:22px">A mixture of states is the same mixture of their Bloch vectors: a point on the line between them.</li>
+      </ul>
+    </div>
+    <div><svg width="470" height="490" viewBox="0 0 470 490" aria-label="The x-z slice of the Bloch ball with |0⟩, |1⟩, |+⟩, |−⟩ on the edge, I/2 at the center, and the mixture of |0⟩ and |+⟩ inside"><circle cx="235" cy="235" r="175" fill="#F8F4F6" stroke="#24313D" stroke-width="2.5"/><line x1="60" y1="235" x2="410" y2="235" stroke="#B9AEB4" stroke-width="1.5" stroke-dasharray="5 5"/><line x1="235" y1="60" x2="235" y2="410" stroke="#B9AEB4" stroke-width="1.5" stroke-dasharray="5 5"/><line x1="235.0" y1="60.0" x2="410.0" y2="235.0" stroke="#99004C" stroke-width="2.5" stroke-dasharray="7 5"/><circle cx="235.0" cy="60.0" r="7" fill="#24313D"/><text x="235.0" y="44.0" font-size="22" text-anchor="middle" fill="#24313D">|0⟩</text><circle cx="235.0" cy="410.0" r="7" fill="#24313D"/><text x="235.0" y="444.0" font-size="22" text-anchor="middle" fill="#24313D">|1⟩</text><circle cx="410.0" cy="235.0" r="7" fill="#24313D"/><text x="444.0" y="242.0" font-size="22" text-anchor="middle" fill="#24313D">|+⟩</text><circle cx="60.0" cy="235.0" r="7" fill="#24313D"/><text x="26.0" y="242.0" font-size="22" text-anchor="middle" fill="#24313D">|−⟩</text><circle cx="235.0" cy="235.0" r="8" fill="#6A626B"/><text x="235.0" y="265.0" font-size="20" text-anchor="middle" fill="#6A626B">I/2</text><circle cx="278.8" cy="103.8" r="10" fill="#99004C"/><text x="262.8" y="109.8" font-size="18" text-anchor="end" fill="#99004C">¾|0⟩ + ¼|+⟩</text><text x="235.0" y="480.0" font-size="16" text-anchor="middle" fill="#6A626B">pure states: on the edge; mixed: inside</text></svg></div>
+  </div>
+  <div class="foot"><span>Module 1 · Noise and open quantum systems</span><span>7</span></div>
+</section>
+
+<!-- 8 -->
+<section class="slide">
+  <h2>Pause and predict</h2>
+  <p>A source sends |0⟩ three times out of four and |+⟩ one time out of four. Where is its state in the Bloch ball, and what is its purity?</p>
+  <div class="reveal"><button type="button">Show the answer</button>
+    <div class="ans">Mix the Bloch vectors: r = ¾ (0, 0, 1) + ¼ (1, 0, 0) = (0.25, 0, 0.75). Its length is 0.791, so the state is inside the ball, and the purity is (1 + |r|²)/2 = (1 + 0.625)/2 = 0.8125. The lab computes the same state as ρ = 0.75|0⟩⟨0| + 0.25|+⟩⟨+|.</div></div>
+  <div class="foot"><span>Module 1 · Noise and open quantum systems</span><span>8</span></div>
+</section>
+
+<!-- 9 -->
+<section class="slide">
+  <h2>Noise channels and Kraus operators</h2>
+  <p style="font-size:24px">A <strong>channel</strong> is anything that can happen to a qubit: a gate, noise, or a measurement whose result is thrown away. It is described by a few matrices Kₖ, the <strong>Kraus operators</strong>:</p>
+  <div class="eq" style="font-size:30px">ρ → Σₖ Kₖ ρ Kₖ†, &nbsp; with &nbsp; Σₖ Kₖ†Kₖ = I</div>
+  <p style="font-size:24px">The condition keeps the trace equal to 1. A unitary gate U is a channel with one Kraus operator, K₀ = U.</p>
+  <p style="font-size:24px">Example, the <strong>bit flip</strong> with probability p: K₀ = √(1 − p) I, K₁ = √p X. The state is left alone with probability 1 − p and flipped with probability p.</p>
+  <p class="small">In qsim and Qiskit Aer: <code>amplitude_damping_error</code>, <code>phase_damping_error</code>, <code>thermal_relaxation_error</code>; each has a list of Kraus operators.</p>
+  <div class="foot"><span>Module 1 · Noise and open quantum systems</span><span>9</span></div>
+</section>
+
+<!-- 10 -->
+<section class="slide">
+  <h2>Amplitude damping: losing energy</h2>
+  <div class="cols">
+    <div style="flex:0 0 560px">
+      <div class="eq" style="font-size:25px">K₀ = [[1, 0], [0, √(1 − γ)]] &nbsp; K₁ = [[0, √γ], [0, 0]]</div>
+      <p style="font-size:23px">K₁ takes |1⟩ to |0⟩: the qubit gives its energy to the surroundings. With probability γ an excited qubit has relaxed.</p>
+      <p style="font-size:23px">After a time t, γ = 1 − e<sup>−t/T1</sup>. T1 is the <strong>relaxation time</strong>.</p>
+    </div>
+    <div>
+      <p style="font-size:22px">On the Bloch vector:</p>
+      <div class="eq" style="font-size:24px">z → 1 − (1 − z)(1 − γ)<br>x, y → x, y · √(1 − γ)</div>
+      <p style="font-size:22px">Every state moves toward |0⟩, the north pole. The coherences shrink too, at half the rate.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Module 1 · Noise and open quantum systems</span><span>10</span></div>
+</section>
+
+<!-- 11 -->
+<section class="slide">
+  <h2>Phase damping: losing phase</h2>
+  <div class="cols">
+    <div style="flex:0 0 560px">
+      <div class="eq" style="font-size:25px">K₀ = [[1, 0], [0, √(1 − λ)]] &nbsp; K₁ = [[0, 0], [0, √λ]]</div>
+      <p style="font-size:23px">No energy changes hands: the probabilities of 0 and 1 stay the same. But the surroundings learn a little about which one the qubit is, and the coherences shrink by √(1 − λ).</p>
+    </div>
+    <div>
+      <p style="font-size:22px">On the Bloch vector:</p>
+      <div class="eq" style="font-size:24px">z → z<br>x, y → x, y · √(1 − λ)</div>
+      <p style="font-size:22px">Every state moves straight toward the z axis. |+⟩ becomes a mixture of |0⟩ and |1⟩: the superposition is lost. This is <strong>dephasing</strong>.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Module 1 · Noise and open quantum systems</span><span>11</span></div>
+</section>
+
+<!-- 12 -->
+<section class="slide">
+  <h2>T1 and T2 together</h2>
+  <div class="cols">
+    <div style="flex:0 0 560px"><svg width="560" height="380" viewBox="0 0 560 380" aria-label="P(1) starting from |1⟩ falls as exp(−t/T1); ⟨X⟩ starting from |+⟩ falls as exp(−t/T2); T1 = 100, T2 = 80 microseconds"><line x1="70" y1="320.0" x2="540" y2="320.0" stroke="#E4DCE0"/><text x="62" y="325.0" font-size="14" text-anchor="end" fill="#24313D">0</text><line x1="70" y1="245.0" x2="540" y2="245.0" stroke="#E4DCE0"/><text x="62" y="250.0" font-size="14" text-anchor="end" fill="#24313D">0.25</text><line x1="70" y1="170.0" x2="540" y2="170.0" stroke="#E4DCE0"/><text x="62" y="175.0" font-size="14" text-anchor="end" fill="#24313D">0.5</text><line x1="70" y1="95.0" x2="540" y2="95.0" stroke="#E4DCE0"/><text x="62" y="100.0" font-size="14" text-anchor="end" fill="#24313D">0.75</text><line x1="70" y1="20.0" x2="540" y2="20.0" stroke="#E4DCE0"/><text x="62" y="25.0" font-size="14" text-anchor="end" fill="#24313D">1</text><line x1="70" y1="320" x2="540" y2="320" stroke="#24313D" stroke-width="2"/><text x="70.0" y="340" font-size="14" text-anchor="middle" fill="#24313D">0</text><text x="187.5" y="340" font-size="14" text-anchor="middle" fill="#24313D">100</text><text x="305.0" y="340" font-size="14" text-anchor="middle" fill="#24313D">200</text><text x="422.5" y="340" font-size="14" text-anchor="middle" fill="#24313D">300</text><text x="540.0" y="340" font-size="14" text-anchor="middle" fill="#24313D">400</text><text x="305.0" y="372" font-size="15" text-anchor="middle" fill="#6A626B">time (microseconds)</text><text x="16" y="170.0" font-size="15" text-anchor="middle" fill="#6A626B" transform="rotate(-90 16 170.0)">value</text><polyline points="70.0,20.0 72.9,27.4 75.9,34.6 78.8,41.7 81.8,48.5 84.7,55.3 87.6,61.8 90.6,68.2 93.5,74.4 96.4,80.4 99.4,86.4 102.3,92.1 105.2,97.8 108.2,103.2 111.1,108.6 114.1,113.8 117.0,118.9 119.9,123.9 122.9,128.7 125.8,133.4 128.8,138.0 131.7,142.5 134.6,146.9 137.6,151.2 140.5,155.4 143.4,159.4 146.4,163.4 149.3,167.3 152.2,171.0 155.2,174.7 158.1,178.3 161.1,181.8 164.0,185.2 166.9,188.5 169.9,191.8 172.8,194.9 175.8,198.0 178.7,201.0 181.6,204.0 184.6,206.8 187.5,209.6 190.4,212.4 193.4,215.0 196.3,217.6 199.2,220.1 202.2,222.6 205.1,225.0 208.1,227.4 211.0,229.6 213.9,231.9 216.9,234.0 219.8,236.2 222.8,238.2 225.7,240.3 228.6,242.2 231.6,244.1 234.5,246.0 237.4,247.8 240.4,249.6 243.3,251.4 246.2,253.1 249.2,254.7 252.1,256.3 255.1,257.9 258.0,259.4 260.9,260.9 263.9,262.4 266.8,263.8 269.8,265.2 272.7,266.5 275.6,267.9 278.6,269.2 281.5,270.4 284.4,271.6 287.4,272.8 290.3,274.0 293.2,275.1 296.2,276.2 299.1,277.3 302.1,278.4 305.0,279.4 307.9,280.4 310.9,281.4 313.8,282.3 316.8,283.3 319.7,284.2 322.6,285.1 325.6,285.9 328.5,286.8 331.4,287.6 334.4,288.4 337.3,289.2 340.2,289.9 343.2,290.7 346.1,291.4 349.1,292.1 352.0,292.8 354.9,293.5 357.9,294.1 360.8,294.8 363.8,295.4 366.7,296.0 369.6,296.6 372.6,297.2 375.5,297.7 378.4,298.3 381.4,298.8 384.3,299.3 387.2,299.8 390.2,300.3 393.1,300.8 396.1,301.3 399.0,301.8 401.9,302.2 404.9,302.6 407.8,303.1 410.8,303.5 413.7,303.9 416.6,304.3 419.6,304.7 422.5,305.1 425.4,305.4 428.4,305.8 431.3,306.1 434.2,306.5 437.2,306.8 440.1,307.1 443.1,307.5 446.0,307.8 448.9,308.1 451.9,308.4 454.8,308.7 457.8,308.9 460.7,309.2 463.6,309.5 466.6,309.7 469.5,310.0 472.4,310.2 475.4,310.5 478.3,310.7 481.2,310.9 484.2,311.2 487.1,311.4 490.1,311.6 493.0,311.8 495.9,312.0 498.9,312.2 501.8,312.4 504.8,312.6 507.7,312.8 510.6,312.9 513.6,313.1 516.5,313.3 519.4,313.5 522.4,313.6 525.3,313.8 528.2,313.9 531.2,314.1 534.1,314.2 537.1,314.4 540.0,314.5" fill="none" stroke="#99004C" stroke-width="3.5"/><polyline points="70.0,20.0 72.9,29.2 75.9,38.2 78.8,46.8 81.8,55.3 84.7,63.4 87.6,71.3 90.6,78.9 93.5,86.4 96.4,93.5 99.4,100.5 102.3,107.3 105.2,113.8 108.2,120.2 111.1,126.3 114.1,132.3 117.0,138.0 119.9,143.6 122.9,149.1 125.8,154.3 128.8,159.4 131.7,164.4 134.6,169.2 137.6,173.8 140.5,178.3 143.4,182.6 146.4,186.9 149.3,191.0 152.2,194.9 155.2,198.8 158.1,202.5 161.1,206.1 164.0,209.6 166.9,213.0 169.9,216.3 172.8,219.5 175.8,222.6 178.7,225.6 181.6,228.5 184.6,231.3 187.5,234.0 190.4,236.7 193.4,239.3 196.3,241.7 199.2,244.1 202.2,246.5 205.1,248.7 208.1,250.9 211.0,253.1 213.9,255.1 216.9,257.1 219.8,259.1 222.8,260.9 225.7,262.7 228.6,264.5 231.6,266.2 234.5,267.9 237.4,269.5 240.4,271.0 243.3,272.5 246.2,274.0 249.2,275.4 252.1,276.8 255.1,278.1 258.0,279.4 260.9,280.6 263.9,281.9 266.8,283.0 269.8,284.2 272.7,285.3 275.6,286.3 278.6,287.4 281.5,288.4 284.4,289.4 287.4,290.3 290.3,291.2 293.2,292.1 296.2,293.0 299.1,293.8 302.1,294.6 305.0,295.4 307.9,296.1 310.9,296.9 313.8,297.6 316.8,298.3 319.7,298.9 322.6,299.6 325.6,300.2 328.5,300.8 331.4,301.4 334.4,302.0 337.3,302.5 340.2,303.1 343.2,303.6 346.1,304.1 349.1,304.6 352.0,305.1 354.9,305.5 357.9,306.0 360.8,306.4 363.8,306.8 366.7,307.2 369.6,307.6 372.6,308.0 375.5,308.4 378.4,308.7 381.4,309.1 384.3,309.4 387.2,309.7 390.2,310.1 393.1,310.4 396.1,310.7 399.0,310.9 401.9,311.2 404.9,311.5 407.8,311.8 410.8,312.0 413.7,312.3 416.6,312.5 419.6,312.7 422.5,312.9 425.4,313.2 428.4,313.4 431.3,313.6 434.2,313.8 437.2,314.0 440.1,314.2 443.1,314.3 446.0,314.5 448.9,314.7 451.9,314.8 454.8,315.0 457.8,315.2 460.7,315.3 463.6,315.4 466.6,315.6 469.5,315.7 472.4,315.9 475.4,316.0 478.3,316.1 481.2,316.2 484.2,316.3 487.1,316.5 490.1,316.6 493.0,316.7 495.9,316.8 498.9,316.9 501.8,317.0 504.8,317.1 507.7,317.1 510.6,317.2 513.6,317.3 516.5,317.4 519.4,317.5 522.4,317.6 525.3,317.6 528.2,317.7 531.2,317.8 534.1,317.8 537.1,317.9 540.0,318.0" fill="none" stroke="#24313D" stroke-width="3.5" stroke-dasharray="9 6"/><line x1="187.5" y1="320.0" x2="187.5" y2="209.6" stroke="#B9AEB4" stroke-width="1.5"/><line x1="300" y1="97" x2="316" y2="97" stroke="#B9AEB4" stroke-width="2"/><text x="324" y="102" font-size="15">t = T1</text><rect x="300" y="40" width="16" height="5" fill="#99004C"/><text x="324" y="48" font-size="15">P(1) from |1⟩</text><line x1="300" y1="70" x2="316" y2="70" stroke="#24313D" stroke-width="3" stroke-dasharray="6 4"/><text x="324" y="75" font-size="15">⟨X⟩ from |+⟩</text></svg></div>
+    <div>
+      <p style="font-size:22px">A real idle qubit has both. After a time t:</p>
+      <div class="eq" style="font-size:23px">z → 1 − (1 − z) e<sup>−t/T1</sup><br>x, y → x, y · e<sup>−t/T2</sup></div>
+      <p style="font-size:21px">T2 is the <strong>coherence time</strong>. Amplitude damping with γ = 1 − e<sup>−t/T1</sup> then phase damping with λ = 1 − e<sup>−2t/T2 + t/T1</sup> gives exactly this: the <code>relax()</code> you write in the lab.</p>
+      <p class="small">Left: T1 = 100 µs, T2 = 80 µs, the values of lab Steps 5 and 6.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Module 1 · Noise and open quantum systems</span><span>12</span></div>
+</section>
+
+<!-- 13 -->
+<section class="slide">
+  <h2>Why T2 can be at most 2 T1</h2>
+  <p style="font-size:24px">Amplitude damping alone already shrinks the coherences: by √(1 − γ) = e<sup>−t/(2T1)</sup>. So even with no extra dephasing,</p>
+  <div class="eq" style="font-size:28px">e<sup>−t/T2</sup> ≤ e<sup>−t/(2T1)</sup> &nbsp; so &nbsp; T2 ≤ 2 T1</div>
+  <p style="font-size:24px">In the formula for λ, 2t/T2 − t/T1 is never negative when T2 ≤ 2 T1. With T2 &gt; 2 T1 the phase damping would need a negative probability, so no channel of this kind exists.</p>
+  <p style="font-size:24px">Typical values today: T2 a little below T1 to a little above it. T2 = 2 T1 means the qubit has no dephasing beyond what relaxation causes.</p>
+  <div class="foot"><span>Module 1 · Noise and open quantum systems</span><span>13</span></div>
+</section>
+
+<!-- 14 -->
+<section class="slide">
+  <h2>Pause and predict</h2>
+  <p>A qubit with T1 = 100 µs and T2 = 80 µs waits for 500 µs, five times its T1. Which starting state comes through unchanged, and where does every other state end up?</p>
+  <div class="reveal"><button type="button">Show the answer</button>
+    <div class="ans">|0⟩ comes through unchanged: it is the lowest-energy state, and relaxation only moves states toward it. Every other state ends up very close to |0⟩ too: after 500 µs, z = 1 − (1 − z)e<sup>−5</sup> ≥ 0.987, and the coherences are multiplied by e<sup>−500/80</sup> ≈ 0.0019. This is why qubits are reset by waiting, and why circuits have to finish well within T1 and T2. (Real qubits are not at exactly zero temperature, so a small part of them sits in |1⟩; this course leaves that out.)</div></div>
+  <div class="foot"><span>Module 1 · Noise and open quantum systems</span><span>14</span></div>
+</section>
+
+<!-- 15 -->
+<section class="slide">
+  <h2>Measuring T1</h2>
+  <div class="cols">
+    <div style="flex:0 0 560px"><svg width="560" height="380" viewBox="0 0 560 380" aria-label="Measured P(1) after waits from 0 to 300 microseconds, the curve exp(−t/100) and the fitted curve"><line x1="70" y1="320.0" x2="540" y2="320.0" stroke="#E4DCE0"/><text x="62" y="325.0" font-size="14" text-anchor="end" fill="#24313D">0</text><line x1="70" y1="245.0" x2="540" y2="245.0" stroke="#E4DCE0"/><text x="62" y="250.0" font-size="14" text-anchor="end" fill="#24313D">0.25</text><line x1="70" y1="170.0" x2="540" y2="170.0" stroke="#E4DCE0"/><text x="62" y="175.0" font-size="14" text-anchor="end" fill="#24313D">0.5</text><line x1="70" y1="95.0" x2="540" y2="95.0" stroke="#E4DCE0"/><text x="62" y="100.0" font-size="14" text-anchor="end" fill="#24313D">0.75</text><line x1="70" y1="20.0" x2="540" y2="20.0" stroke="#E4DCE0"/><text x="62" y="25.0" font-size="14" text-anchor="end" fill="#24313D">1</text><line x1="70" y1="320" x2="540" y2="320" stroke="#24313D" stroke-width="2"/><text x="70.0" y="340" font-size="14" text-anchor="middle" fill="#24313D">0</text><text x="148.3" y="340" font-size="14" text-anchor="middle" fill="#24313D">50</text><text x="226.7" y="340" font-size="14" text-anchor="middle" fill="#24313D">100</text><text x="305.0" y="340" font-size="14" text-anchor="middle" fill="#24313D">150</text><text x="383.3" y="340" font-size="14" text-anchor="middle" fill="#24313D">200</text><text x="461.7" y="340" font-size="14" text-anchor="middle" fill="#24313D">250</text><text x="540.0" y="340" font-size="14" text-anchor="middle" fill="#24313D">300</text><text x="305.0" y="372" font-size="15" text-anchor="middle" fill="#6A626B">wait (microseconds)</text><text x="16" y="170.0" font-size="15" text-anchor="middle" fill="#6A626B" transform="rotate(-90 16 170.0)">P(1)</text><polyline points="70.0,20.0 73.9,27.4 77.8,34.6 81.8,41.7 85.7,48.5 89.6,55.3 93.5,61.8 97.4,68.2 101.3,74.4 105.2,80.4 109.2,86.4 113.1,92.1 117.0,97.8 120.9,103.2 124.8,108.6 128.8,113.8 132.7,118.9 136.6,123.9 140.5,128.7 144.4,133.4 148.3,138.0 152.2,142.5 156.2,146.9 160.1,151.2 164.0,155.4 167.9,159.4 171.8,163.4 175.8,167.3 179.7,171.0 183.6,174.7 187.5,178.3 191.4,181.8 195.3,185.2 199.2,188.5 203.2,191.8 207.1,194.9 211.0,198.0 214.9,201.0 218.8,204.0 222.8,206.8 226.7,209.6 230.6,212.4 234.5,215.0 238.4,217.6 242.3,220.1 246.2,222.6 250.2,225.0 254.1,227.4 258.0,229.6 261.9,231.9 265.8,234.0 269.8,236.2 273.7,238.2 277.6,240.3 281.5,242.2 285.4,244.1 289.3,246.0 293.2,247.8 297.2,249.6 301.1,251.4 305.0,253.1 308.9,254.7 312.8,256.3 316.8,257.9 320.7,259.4 324.6,260.9 328.5,262.4 332.4,263.8 336.3,265.2 340.2,266.5 344.2,267.9 348.1,269.2 352.0,270.4 355.9,271.6 359.8,272.8 363.8,274.0 367.7,275.1 371.6,276.2 375.5,277.3 379.4,278.4 383.3,279.4 387.2,280.4 391.2,281.4 395.1,282.3 399.0,283.3 402.9,284.2 406.8,285.1 410.8,285.9 414.7,286.8 418.6,287.6 422.5,288.4 426.4,289.2 430.3,289.9 434.2,290.7 438.2,291.4 442.1,292.1 446.0,292.8 449.9,293.5 453.8,294.1 457.8,294.8 461.7,295.4 465.6,296.0 469.5,296.6 473.4,297.2 477.3,297.7 481.2,298.3 485.2,298.8 489.1,299.3 493.0,299.8 496.9,300.3 500.8,300.8 504.8,301.3 508.7,301.8 512.6,302.2 516.5,302.6 520.4,303.1 524.3,303.5 528.2,303.9 532.2,304.3 536.1,304.7 540.0,305.1" fill="none" stroke="#B9AEB4" stroke-width="3"/><polyline points="70.0,26.6 73.9,33.8 77.8,40.8 81.8,47.6 85.7,54.2 89.6,60.7 93.5,67.0 97.4,73.2 101.3,79.2 105.2,85.1 109.2,90.8 113.1,96.4 117.0,101.8 120.9,107.2 124.8,112.3 128.8,117.4 132.7,122.3 136.6,127.2 140.5,131.9 144.4,136.4 148.3,140.9 152.2,145.3 156.2,149.5 160.1,153.7 164.0,157.8 167.9,161.7 171.8,165.6 175.8,169.3 179.7,173.0 183.6,176.6 187.5,180.1 191.4,183.5 195.3,186.8 199.2,190.1 203.2,193.2 207.1,196.3 211.0,199.3 214.9,202.3 218.8,205.2 222.8,208.0 226.7,210.7 230.6,213.4 234.5,216.0 238.4,218.5 242.3,221.0 246.2,223.4 250.2,225.7 254.1,228.0 258.0,230.3 261.9,232.5 265.8,234.6 269.8,236.7 273.7,238.7 277.6,240.7 281.5,242.6 285.4,244.5 289.3,246.4 293.2,248.1 297.2,249.9 301.1,251.6 305.0,253.3 308.9,254.9 312.8,256.5 316.8,258.0 320.7,259.5 324.6,261.0 328.5,262.5 332.4,263.9 336.3,265.2 340.2,266.6 344.2,267.9 348.1,269.1 352.0,270.4 355.9,271.6 359.8,272.8 363.8,273.9 367.7,275.0 371.6,276.1 375.5,277.2 379.4,278.3 383.3,279.3 387.2,280.3 391.2,281.2 395.1,282.2 399.0,283.1 402.9,284.0 406.8,284.9 410.8,285.7 414.7,286.6 418.6,287.4 422.5,288.2 426.4,289.0 430.3,289.7 434.2,290.4 438.2,291.2 442.1,291.9 446.0,292.6 449.9,293.2 453.8,293.9 457.8,294.5 461.7,295.1 465.6,295.7 469.5,296.3 473.4,296.9 477.3,297.5 481.2,298.0 485.2,298.6 489.1,299.1 493.0,299.6 496.9,300.1 500.8,300.6 504.8,301.0 508.7,301.5 512.6,302.0 516.5,302.4 520.4,302.8 524.3,303.2 528.2,303.7 532.2,304.1 536.1,304.4 540.0,304.8" fill="none" stroke="#99004C" stroke-width="3" stroke-dasharray="9 6"/><circle cx="70.0" cy="20.0" r="6" fill="#24313D" stroke="#24313D" stroke-width="2"/><circle cx="101.3" cy="70.7" r="6" fill="#24313D" stroke="#24313D" stroke-width="2"/><circle cx="132.7" cy="114.5" r="6" fill="#24313D" stroke="#24313D" stroke-width="2"/><circle cx="164.0" cy="152.6" r="6" fill="#24313D" stroke="#24313D" stroke-width="2"/><circle cx="195.3" cy="187.4" r="6" fill="#24313D" stroke="#24313D" stroke-width="2"/><circle cx="226.7" cy="214.7" r="6" fill="#24313D" stroke="#24313D" stroke-width="2"/><circle cx="258.0" cy="231.5" r="6" fill="#24313D" stroke="#24313D" stroke-width="2"/><circle cx="289.3" cy="247.7" r="6" fill="#24313D" stroke="#24313D" stroke-width="2"/><circle cx="320.7" cy="262.7" r="6" fill="#24313D" stroke="#24313D" stroke-width="2"/><circle cx="352.0" cy="262.4" r="6" fill="#24313D" stroke="#24313D" stroke-width="2"/><circle cx="383.3" cy="284.9" r="6" fill="#24313D" stroke="#24313D" stroke-width="2"/><circle cx="414.7" cy="293.0" r="6" fill="#24313D" stroke="#24313D" stroke-width="2"/><circle cx="446.0" cy="293.9" r="6" fill="#24313D" stroke="#24313D" stroke-width="2"/><circle cx="477.3" cy="295.7" r="6" fill="#24313D" stroke="#24313D" stroke-width="2"/><circle cx="508.7" cy="300.2" r="6" fill="#24313D" stroke="#24313D" stroke-width="2"/><circle cx="540.0" cy="302.9" r="6" fill="#24313D" stroke="#24313D" stroke-width="2"/><circle cx="290" cy="45" r="6" fill="#24313D"/><text x="304" y="50" font-size="15">1,000 shots each</text><line x1="282" y1="72" x2="298" y2="72" stroke="#B9AEB4" stroke-width="3"/><text x="304" y="77" font-size="15">exp(−t / 100)</text><line x1="282" y1="99" x2="298" y2="99" stroke="#99004C" stroke-width="3" stroke-dasharray="6 4"/><text x="304" y="104" font-size="15">fit: T1 = 101.3 µs</text></svg></div>
+    <div>
+      <p style="font-size:22px">Flip the qubit to |1⟩, wait a time t, measure; repeat for many waits. P(1) = e<sup>−t/T1</sup>, so ln P(1) is a straight line with slope −1/T1.</p>
+      <p style="font-size:22px">On the simulator with T1 = 100 µs, 1,000 shots per wait: the fit gives <strong>101.3 µs</strong>. Shot noise moves each point; the long waits, with few counts, are the noisiest.</p>
+      <p class="small">T2 is measured the same way, starting from |+⟩ and measuring in the X basis (a Ramsey or echo experiment). Module 3 uses echoes to suppress errors.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Module 1 · Noise and open quantum systems</span><span>15</span></div>
+</section>
+
+<!-- 16 -->
+<section class="slide">
+  <h2>A real device: FakePittsburgh</h2>
+  <div class="cols">
+    <div style="flex:0 0 560px"><svg width="560" height="400" viewBox="0 0 560 400" aria-label="T2 against T1 for the 156 qubits of FakePittsburgh, with the line T2 = 2 T1; one qubit lies above it"><line x1="70" y1="340.0" x2="540" y2="340.0" stroke="#E4DCE0"/><text x="62" y="345.0" font-size="14" text-anchor="end">0</text><line x1="70" y1="294.3" x2="540" y2="294.3" stroke="#E4DCE0"/><text x="62" y="299.3" font-size="14" text-anchor="end">100</text><line x1="70" y1="248.6" x2="540" y2="248.6" stroke="#E4DCE0"/><text x="62" y="253.6" font-size="14" text-anchor="end">200</text><line x1="70" y1="202.9" x2="540" y2="202.9" stroke="#E4DCE0"/><text x="62" y="207.9" font-size="14" text-anchor="end">300</text><line x1="70" y1="157.1" x2="540" y2="157.1" stroke="#E4DCE0"/><text x="62" y="162.1" font-size="14" text-anchor="end">400</text><line x1="70" y1="111.4" x2="540" y2="111.4" stroke="#E4DCE0"/><text x="62" y="116.4" font-size="14" text-anchor="end">500</text><line x1="70" y1="65.7" x2="540" y2="65.7" stroke="#E4DCE0"/><text x="62" y="70.7" font-size="14" text-anchor="end">600</text><line x1="70" y1="20.0" x2="540" y2="20.0" stroke="#E4DCE0"/><text x="62" y="25.0" font-size="14" text-anchor="end">700</text><text x="70.0" y="360" font-size="14" text-anchor="middle">0</text><text x="164.0" y="360" font-size="14" text-anchor="middle">100</text><text x="258.0" y="360" font-size="14" text-anchor="middle">200</text><text x="352.0" y="360" font-size="14" text-anchor="middle">300</text><text x="446.0" y="360" font-size="14" text-anchor="middle">400</text><text x="540.0" y="360" font-size="14" text-anchor="middle">500</text><line x1="70" y1="340" x2="540" y2="340" stroke="#24313D" stroke-width="2"/><line x1="70.0" y1="340.0" x2="399.0" y2="20.0" stroke="#24313D" stroke-width="2" stroke-dasharray="7 5"/><text x="368.9" y="29.1" font-size="15" text-anchor="end">T2 = 2 T1</text><circle cx="132.8" cy="288.6" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="362.1" cy="239.7" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="170.5" cy="290.8" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="338.3" cy="216.4" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="355.5" cy="193.3" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="392.9" cy="194.0" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="221.2" cy="248.1" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="368.0" cy="181.4" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="337.6" cy="157.8" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="142.0" cy="286.7" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="254.5" cy="226.4" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="279.3" cy="218.8" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="296.5" cy="230.1" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="384.4" cy="179.5" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="292.2" cy="200.8" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="387.0" cy="187.6" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="244.8" cy="252.4" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="325.6" cy="192.2" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="329.2" cy="157.3" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="284.0" cy="200.9" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="295.1" cy="145.8" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="406.5" cy="140.5" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="335.6" cy="203.7" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="409.2" cy="211.5" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="261.9" cy="233.5" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="257.7" cy="218.6" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="322.6" cy="185.7" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="453.8" cy="211.2" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="215.8" cy="270.5" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="414.8" cy="199.8" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="329.5" cy="200.7" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="86.3" cy="325.9" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="310.6" cy="142.8" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="395.7" cy="196.6" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="321.2" cy="200.2" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="392.9" cy="171.3" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="75.5" cy="334.6" r="6" fill="#C9A227" fill-opacity="1"/><circle cx="204.5" cy="239.2" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="266.2" cy="209.8" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="237.2" cy="245.6" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="323.3" cy="150.6" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="437.4" cy="207.3" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="340.3" cy="182.7" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="404.0" cy="100.6" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="294.8" cy="187.8" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="325.0" cy="225.3" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="355.6" cy="220.9" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="335.2" cy="200.3" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="356.7" cy="260.2" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="385.7" cy="255.2" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="254.8" cy="261.4" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="419.7" cy="234.6" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="305.5" cy="196.2" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="366.7" cy="190.4" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="357.9" cy="145.6" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="340.0" cy="86.8" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="376.4" cy="150.1" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="112.4" cy="303.2" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="369.9" cy="234.1" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="346.3" cy="161.5" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="380.9" cy="39.5" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="384.5" cy="165.0" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="292.2" cy="209.9" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="269.0" cy="255.2" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="388.6" cy="128.2" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="288.9" cy="186.0" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="379.0" cy="204.8" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="339.3" cy="249.4" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="350.6" cy="244.6" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="390.4" cy="253.9" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="192.6" cy="308.6" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="408.3" cy="255.5" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="347.9" cy="110.4" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="378.9" cy="124.7" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="255.8" cy="199.3" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="474.0" cy="62.4" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="310.8" cy="163.0" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="355.4" cy="186.6" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="321.0" cy="250.4" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="385.7" cy="155.7" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="289.0" cy="183.2" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="246.8" cy="200.2" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="402.9" cy="153.3" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="178.9" cy="267.6" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="359.8" cy="163.0" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="323.5" cy="209.1" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="311.8" cy="200.6" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="376.3" cy="171.5" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="320.1" cy="218.2" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="338.7" cy="219.2" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="142.8" cy="283.3" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="386.7" cy="246.6" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="384.4" cy="226.0" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="296.8" cy="238.7" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="351.6" cy="275.2" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="397.1" cy="216.2" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="275.5" cy="192.3" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="375.4" cy="176.0" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="273.3" cy="196.1" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="394.4" cy="164.5" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="358.8" cy="116.9" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="288.2" cy="213.6" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="315.2" cy="178.5" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="411.7" cy="94.8" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="404.7" cy="138.3" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="409.3" cy="149.4" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="345.9" cy="163.2" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="465.5" cy="143.3" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="244.7" cy="227.0" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="425.6" cy="190.8" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="322.1" cy="226.9" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="429.0" cy="120.9" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="396.1" cy="84.3" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="409.5" cy="152.5" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="359.6" cy="131.3" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="437.4" cy="148.6" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="241.3" cy="228.0" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="76.4" cy="336.1" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="300.3" cy="188.0" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="345.7" cy="209.8" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="429.9" cy="104.3" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="370.3" cy="288.8" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="286.3" cy="171.2" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="436.1" cy="131.0" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="430.2" cy="188.3" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="343.4" cy="231.7" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="462.1" cy="92.0" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="269.5" cy="220.1" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="221.9" cy="220.4" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="441.4" cy="186.7" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="378.2" cy="136.2" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="221.2" cy="247.2" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="370.8" cy="178.3" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="433.0" cy="167.7" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="461.4" cy="142.5" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="398.8" cy="116.5" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="376.2" cy="127.0" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="170.7" cy="278.6" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="439.2" cy="150.2" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="358.1" cy="143.8" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="286.5" cy="235.1" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="288.3" cy="213.1" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="293.5" cy="203.8" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="360.7" cy="112.4" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="435.4" cy="181.2" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="463.6" cy="143.9" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="351.4" cy="177.2" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="460.7" cy="130.8" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="364.0" cy="150.4" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="287.2" cy="237.3" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="443.6" cy="236.8" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="519.0" cy="94.9" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="389.2" cy="73.8" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="392.7" cy="126.8" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="424.3" cy="181.4" r="4" fill="#99004C" fill-opacity="0.65"/><circle cx="423.3" cy="80.9" r="4" fill="#99004C" fill-opacity="0.65"/><line x1="79.5" y1="330.6" x2="93.5" y2="225.7" stroke="#24313D" stroke-width="1.2"/><text x="95.4" y="222.1" font-size="14">qubit 36</text><text x="305.0" y="382" font-size="15" text-anchor="middle" fill="#6A626B">T1 (microseconds)</text><text x="16" y="180.0" font-size="15" text-anchor="middle" fill="#6A626B" transform="rotate(-90 16 180.0)">T2 (microseconds)</text></svg></div>
+    <div>
+      <p style="font-size:22px">Calibration of 17 April 2026, 156 qubits, as saved in Qiskit's FakePittsburgh model.</p>
+      <p style="font-size:22px">Median T1 299 µs, median T2 317 µs. One sx gate takes 32 ns, so about 9,342 of them fit in the median T1.</p>
+      <p style="font-size:22px">Qubits differ a lot. One point lies above T2 = 2 T1: two separate measurements, each with its own uncertainty.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Module 1 · Noise and open quantum systems</span><span>16</span></div>
+</section>
+
+<!-- 17 -->
+<section class="slide">
+  <h2>Fidelity and tomography</h2>
+  <div class="cols">
+    <div style="flex:0 0 500px">
+      <p style="font-size:23px">How close is ρ to the pure state |ψ⟩ you wanted? The <strong>fidelity</strong> F = ⟨ψ|ρ|ψ⟩: 1 if ρ = |ψ⟩⟨ψ|, ½ for I/2 against any pure state.</p>
+      <p style="font-size:23px"><strong>Tomography</strong> finds ρ from measurements: x, y and z from many copies measured in the X, Y and Z bases, each as (N₀ − N₁)/N. For X apply H first; for Y, S† and then H.</p>
+    </div>
+    <div><table style="font-size:19px;white-space:nowrap"><tr><th></th><th>x</th><th>y</th><th>z</th><th>|r|</th><th>F</th></tr><tr><td>exact</td><td>+0.682</td><td>+0.574</td><td>+0.454</td><td>1.000</td><td>1.000</td></tr><tr><td>1,000 shots</td><td>+0.700</td><td>+0.536</td><td>+0.492</td><td>1.010</td><td>1.004</td></tr><tr><td>10,000 shots, 3% readout</td><td>+0.635</td><td>+0.538</td><td>+0.438</td><td>0.941</td><td>0.970</td></tr></table></div>
+  </div>
+  <p class="small">State made by ry(1.1) then rz(0.7). With 1,000 shots the estimate lands just outside the ball (|r| and F above 1), which no real state can do; careful tomography then picks the nearest physical state. Shot noise is random and shrinks with more shots; a readout error is systematic: 3% on each bit shrinks every component by 1 − 2 × 0.03 = 0.94, however many shots you take.</p>
+  <div class="foot"><span>Module 1 · Noise and open quantum systems</span><span>17</span></div>
+</section>
+
+<!-- 18 -->
+<section class="slide">
+  <h2>Summary</h2>
+  <ul>
+    <li style="font-size:24px">ρ = Σ pₖ|ψₖ⟩⟨ψₖ| describes pure states, mixtures and parts of entangled systems; purity tr(ρ²) tells them apart.</li>
+    <li style="font-size:24px">One qubit: ρ = (I + r·σ)/2; |r| = 1 on the surface, |r| &lt; 1 inside the Bloch ball.</li>
+    <li style="font-size:24px">Channels: ρ → Σ KρK†. Amplitude damping (T1) pulls states to |0⟩; phase damping removes coherences; together they give the T1 and T2 decays, with T2 ≤ 2 T1.</li>
+    <li style="font-size:24px">Real qubits: T1 and T2 of a few hundred µs, different on every qubit. Tomography rebuilds ρ; shot noise and readout errors limit it.</li>
+  </ul>
+  <div class="eq" style="font-size:23px;margin-top:12px"><strong>Next:</strong> the Module 1 lab. You write <code>density_matrix()</code>, <code>bloch_vector()</code>, <code>apply_channel()</code> and <code>relax()</code>.</div>
+  <div class="foot"><span>Module 1 · Noise and open quantum systems</span><span>18</span></div>
+</section>
+
+<!-- 19 -->
+<section class="slide">
+  <h2>Credits and license</h2>
+  <p>These slides were written for SemiAcademy's <em>Quantum Computing Advanced</em> course, developed through the Intel Semiconductor Education Program at Central State University (ISEP-CSU).</p>
+  <p>License: <strong>Creative Commons Attribution 4.0 International (CC BY 4.0)</strong>, https://creativecommons.org/licenses/by/4.0/. You may copy, adapt and share them, with credit.</p>
+  <p>Suggested credit: "Module 1 slides, Quantum Computing Advanced, SemiAcademy / ISEP-CSU, CC BY 4.0."</p>
+  <p class="small">Device data: the FakePittsburgh model in qiskit-ibm-runtime (Apache License 2.0), calibration of 17 April 2026. All results were computed for these slides with qsim 1.10.0 and checked with Qiskit 2.5.2 and Qiskit Aer 0.17.2. Source of these slides: github.com/CSU-Physics/quantum-computing-notebooks (media/level3/m1-slides.html). Print or save as PDF from your browser to get one slide per page.</p>
+  <div class="foot"><span>Module 1 · Noise and open quantum systems</span><span>19</span></div>
+</section>
+
+</div></div>
+<div id="bar">
+  <button type="button" id="prev" aria-label="Previous slide">◀ Prev</button>
+  <span id="count">1 / 19</span>
+  <button type="button" id="next" aria-label="Next slide">Next ▶</button>
+  <button type="button" id="full">Full screen</button>
+  <button type="button" id="print">Print / PDF</button>
+</div>
+<script>
+(function () {
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide')), i = 0;
+  var m = /[#&]s=?(\d+)/.exec(location.hash); if (m) i = Math.min(slides.length - 1, Math.max(0, parseInt(m[1], 10) - 1));
+  function show(n) {
+    i = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach(function (s, j) { s.classList.toggle('on', j === i); });
+    document.getElementById('count').textContent = (i + 1) + ' / ' + slides.length;
+    try { history.replaceState(null, '', '#s' + (i + 1)); } catch (e) {}
+  }
+  function fit() {
+    var vp = document.getElementById('viewport'), st = document.getElementById('stage');
+    var sc = Math.min(vp.clientWidth / 1280, vp.clientHeight / 720);
+    st.style.transform = 'scale(' + sc + ')';
+  }
+  document.getElementById('prev').onclick = function () { show(i - 1); };
+  document.getElementById('next').onclick = function () { show(i + 1); };
+  document.getElementById('full').onclick = function () { var d = document.documentElement; if (!document.fullscreenElement && d.requestFullscreen) d.requestFullscreen(); else if (document.exitFullscreen) document.exitFullscreen(); };
+  document.getElementById('print').onclick = function () { window.print(); };
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { show(i + 1); e.preventDefault(); }
+    if (e.key === 'ArrowLeft' || e.key === 'PageUp') { show(i - 1); e.preventDefault(); }
+    if (e.key === 'Home') show(0); if (e.key === 'End') show(slides.length - 1);
+  });
+  var tx = null;
+  document.addEventListener('touchstart', function (e) { tx = e.touches[0].clientX; }, { passive: true });
+  document.addEventListener('touchend', function (e) { if (tx === null) return; var dx = e.changedTouches[0].clientX - tx; if (Math.abs(dx) > 50) show(i + (dx < 0 ? 1 : -1)); tx = null; });
+  document.getElementById('stage').addEventListener('click', function (e) {
+    var b = e.target.closest('.reveal button'); if (b) b.parentNode.classList.add('open');
+  });
+  window.addEventListener('resize', fit);
+  fit(); show(i);
+})();
+</script>
+</body>
+</html>
