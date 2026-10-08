@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Module 2 Explorer: Syndromes and Bigger Codes</title>
+<style>
+  :root { --maroon:#99004C; --ink:#24313D; --muted:#6A626B; --line:#E4DCE0; --tint:#F8F4F6; --gold:#C9A227; --ok:#2E7D4F; --bad:#B3261E; --grey:#B9AEB4; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:#fff; color:var(--ink); font-family:"Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size:15px; }
+  .tabs { display:flex; border-bottom:2px solid var(--line); background:var(--tint); }
+  .tabs button { flex:1; border:0; background:none; padding:10px 8px; font-size:15px; cursor:pointer; color:var(--muted); border-bottom:3px solid transparent; }
+  .tabs button.on { color:var(--maroon); border-bottom-color:var(--maroon); font-weight:600; background:#fff; }
+  .tool { display:none; padding:12px 16px; }
+  .tool.on { display:block; }
+  h2 { font-family:Georgia, serif; color:var(--maroon); font-size:19px; margin:0 0 4px; }
+  .hint { color:var(--muted); margin:0 0 10px; line-height:1.45; }
+  .grid { display:grid; grid-template-columns: 290px 1fr; gap:14px; align-items:start; }
+  @media (max-width: 660px) { .grid { grid-template-columns: 1fr; } }
+  .box { border:1px solid var(--line); border-radius:6px; padding:10px 12px; min-width:0; }
+  .box h3 { margin:0 0 6px; font-size:14.5px; color:var(--maroon); }
+  label { display:flex; justify-content:space-between; align-items:center; margin:8px 0 2px; font-size:14px; gap:8px; }
+  input[type=range] { width:100%; }
+  .row { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; align-items:center; }
+  button.act { border:2px solid var(--ink); background:#fff; color:var(--ink); padding:4px 9px; border-radius:5px; font-size:13.5px; cursor:pointer; }
+  button.act.on { background:var(--maroon); border-color:var(--maroon); color:#fff; }
+  .mono { font-family: Consolas, "Courier New", monospace; }
+  .note { margin-top:8px; padding:7px 10px; border-radius:4px; font-size:13.5px; background:var(--tint); color:var(--ink); line-height:1.45; }
+  .stats { display:grid; grid-template-columns: 1fr auto; gap:4px 10px; font-size:13.5px; margin-top:8px; }
+  .stats span.v { font-family:Consolas, monospace; text-align:right; }
+  .two { display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
+  @media (max-width: 760px) { .two { grid-template-columns: 1fr; } }
+  svg.chart { width:100%; height:auto; display:block; }
+  .far { color:var(--bad); font-weight:600; }
+  .credit { color:var(--muted); font-size:12px; padding:8px 16px 12px; border-top:1px solid var(--line); }
+  .qbtn { display:grid; grid-template-columns: 90px repeat(3, 1fr); gap:4px 6px; align-items:center; font-size:13.5px; margin-top:6px; }
+  .qbtn button { border:2px solid var(--grey); background:#fff; border-radius:5px; padding:4px 0; cursor:pointer; font-size:13.5px; }
+  .qbtn button.on { background:var(--maroon); border-color:var(--maroon); color:#fff; }
+  .verdict { margin-top:10px; padding:9px 12px; border-radius:5px; font-weight:600; }
+  .v-ok { background:#E8F3EC; color:var(--ok); }
+  .v-bad { background:#FBEAEA; color:var(--bad); }
+  .v-warn { background:#FFF6DC; color:#7A5B00; }
+  table.t { border-collapse:collapse; font-size:13.5px; margin-top:8px; }
+  table.t td, table.t th { border:1px solid var(--line); padding:3px 9px; text-align:right; }
+  table.t th { background:var(--tint); }
+</style>
+</head>
+<body>
+<div class="tabs" role="tablist">
+  <button type="button" data-t="syn" role="tab">1. Syndromes and corrections</button>
+  <button type="button" data-t="dist" role="tab">2. Bigger codes</button>
+</div>
+
+<!-- TOOL 1 -->
+<section class="tool" id="t-syn">
+  <h2>What the syndrome sees</h2>
+  <p class="hint">The encoded state is α|000⟩ + β|111⟩ on data qubits 0, 1 and 2. Ancilla A measures the parity of qubits 0 and 1 (syndrome bit s₁); ancilla B the parity of qubits 1 and 2 (s₂). Put errors on the data qubits, and misread a syndrome bit if you like, then see which correction the code applies and what is left.</p>
+  <div class="grid">
+    <div class="box">
+      <h3>Errors</h3>
+      <div class="qbtn">
+        <span></span><span style="text-align:center">qubit 0</span><span style="text-align:center">qubit 1</span><span style="text-align:center">qubit 2</span>
+        <span>X (bit flip)</span><button type="button" data-k="x0">X</button><button type="button" data-k="x1">X</button><button type="button" data-k="x2">X</button>
+        <span>Z (phase flip)</span><button type="button" data-k="z0">Z</button><button type="button" data-k="z1">Z</button><button type="button" data-k="z2">Z</button>
+      </div>
+      <div class="qbtn" style="grid-template-columns: 90px 1fr 1fr">
+        <span>misread</span><button type="button" data-k="m1">s₁</button><button type="button" data-k="m2">s₂</button>
+      </div>
+      <div class="row"><button type="button" class="act" id="clear">No errors</button><button type="button" class="act" id="two">Two flips</button><button type="button" class="act" id="zx">A phase flip</button></div>
+      <div class="stats" id="st1"></div>
+    </div>
+    <div class="box">
+      <h3>The code at work</h3>
+      <svg class="chart" id="pic" style="max-width:500px;margin:0 auto" viewBox="0 0 520 250" role="img" aria-label="Three data qubits, two ancillas between them, the measured syndrome and the correction"></svg>
+      <div class="verdict" id="verdict"></div>
+      <div class="note" id="msg1"></div>
+    </div>
+  </div>
+</section>
+
+<!-- TOOL 2 -->
+<section class="tool" id="t-dist">
+  <h2>Longer repetition codes and the threshold</h2>
+  <p class="hint">A repetition code of distance d uses d data qubits and corrects up to (d − 1)/2 bit flips. With perfect syndromes and flip probability p on each qubit, it fails when more than half the qubits flip. Move p and compare the distances.</p>
+  <div class="grid">
+    <div class="box">
+      <h3>Flip probability</h3>
+      <label for="pp">p <span class="mono" id="ppv"></span></label><input type="range" id="pp" min="0.001" max="0.7" step="0.001">
+      <div class="row"><button type="button" class="act" id="p1">p = 0.01</button><button type="button" class="act" id="p2">p = 0.1</button><button type="button" class="act" id="p3">p = 0.6</button></div>
+      <table class="t" id="tab"></table>
+      <div class="note" id="msg2"></div>
+    </div>
+    <div class="box">
+      <h3>Failure probability against p (logarithmic scale)</h3>
+      <svg class="chart" id="curves" style="max-width:560px" viewBox="0 0 520 330" role="img" aria-label="Failure probability of repetition codes of distance 1, 3, 5, 7 and 9 against p"></svg>
+    </div>
+  </div>
+</section>
+
+<div class="credit">Module 2 explorer · Quantum Computing Advanced · SemiAcademy / ISEP-CSU · CC BY 4.0. Everything is computed exactly in your browser. This is a practice tool: the graded values come from the lab notebook.</div>
+
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var NS = 'http://www.w3.org/2000/svg';
+  function sv(p, tag, a, txt) { var e = document.createElementNS(NS, tag); for (var k in a) e.setAttribute(k, a[k]); if (txt !== undefined) e.textContent = txt; p.appendChild(e); return e; }
+  function clear(s) { while (s.firstChild) s.removeChild(s.firstChild); }
+  var tabs = document.querySelectorAll('.tabs button');
+  function openTab(t) {
+    tabs.forEach(function (b) { b.classList.toggle('on', b.dataset.t === t); });
+    document.querySelectorAll('.tool').forEach(function (s) { s.classList.toggle('on', s.id === 't-' + t); });
+  }
+  tabs.forEach(function (b) { b.onclick = function () { openTab(b.dataset.t); }; });
+  function fromHash() { openTab(location.hash.indexOf('dist') >= 0 ? 'dist' : 'syn'); }
+  window.addEventListener('hashchange', fromHash);
+  fromHash();
+
+  // ---------------------------------------------------------------- tool 1
+  var st = { x0: 0, x1: 0, x2: 0, z0: 0, z1: 0, z2: 0, m1: 0, m2: 0 };
+  var FIX = { '10': 0, '11': 1, '01': 2 };
+  document.querySelectorAll('.qbtn button').forEach(function (b) {
+    b.onclick = function () { st[b.dataset.k] ^= 1; drawSyn(); };
+  });
+  function setAll(o) { for (var k in st) st[k] = o[k] || 0; drawSyn(); }
+  $('clear').onclick = function () { setAll({}); };
+  $('two').onclick = function () { setAll({ x0: 1, x1: 1 }); };
+  $('zx').onclick = function () { setAll({ z1: 1 }); };
+  function drawSyn() {
+    document.querySelectorAll('.qbtn button').forEach(function (b) { b.classList.toggle('on', !!st[b.dataset.k]); });
+    var x = [st.x0, st.x1, st.x2], z = [st.z0, st.z1, st.z2];
+    var s1 = x[0] ^ x[1], s2 = x[1] ^ x[2];
+    var r1 = s1 ^ st.m1, r2 = s2 ^ st.m2;
+    var key = '' + r1 + r2, fixq = FIX.hasOwnProperty(key) ? FIX[key] : -1;
+    var fin = x.slice(); if (fixq >= 0) fin[fixq] ^= 1;
+    var w = fin[0] + fin[1] + fin[2], zp = (z[0] + z[1] + z[2]) % 2;
+    var s = $('pic'); clear(s);
+    var xs = [60, 260, 460], ya = 60, yd = 150;
+    // ancillas and their CNOT lines
+    [[0, 1, 160, r1, s1, st.m1, 'A'], [1, 2, 360, r2, s2, st.m2, 'B']].forEach(function (a) {
+      sv(s, 'line', { x1: xs[a[0]], y1: yd - 26, x2: a[2], y2: ya + 22, stroke: '#B9AEB4', 'stroke-width': 2 });
+      sv(s, 'line', { x1: xs[a[1]], y1: yd - 26, x2: a[2], y2: ya + 22, stroke: '#B9AEB4', 'stroke-width': 2 });
+      sv(s, 'rect', { x: a[2] - 42, y: ya - 22, width: 84, height: 44, rx: 8, fill: a[3] ? '#99004C' : '#fff', stroke: '#99004C', 'stroke-width': 2 });
+      sv(s, 'text', { x: a[2], y: ya - 2, 'text-anchor': 'middle', 'font-size': 13, fill: a[3] ? '#fff' : '#24313D' }, 'ancilla ' + a[6]);
+      sv(s, 'text', { x: a[2], y: ya + 15, 'text-anchor': 'middle', 'font-size': 13, fill: a[3] ? '#fff' : '#24313D' }, 's' + (a[6] === 'A' ? '₁' : '₂') + ' = ' + a[3] + (a[5] ? ' (misread)' : ''));
+    });
+    for (var i = 0; i < 3; i++) {
+      var col = x[i] ? '#C9A227' : '#fff';
+      sv(s, 'circle', { cx: xs[i], cy: yd, r: 26, fill: col, stroke: '#24313D', 'stroke-width': 2.5 });
+      sv(s, 'text', { x: xs[i], y: yd + 5, 'text-anchor': 'middle', 'font-size': 15 }, 'q' + i);
+      var lab = (x[i] ? 'X' : '') + (z[i] ? 'Z' : '');
+      if (lab) sv(s, 'text', { x: xs[i], y: yd - 34, 'text-anchor': 'middle', 'font-size': 14, fill: '#99004C' }, lab + ' error');
+      if (fixq === i) sv(s, 'text', { x: xs[i], y: yd + 52, 'text-anchor': 'middle', 'font-size': 14, fill: '#2E7D4F' }, 'correction: X');
+      if (fin[i]) sv(s, 'text', { x: xs[i], y: yd + 74, 'text-anchor': 'middle', 'font-size': 13, fill: '#B3261E' }, 'still flipped');
+    }
+    sv(s, 'text', { x: 260, y: 240, 'text-anchor': 'middle', 'font-size': 13, fill: '#6A626B' }, 'measured syndrome (s₁, s₂) = (' + r1 + ', ' + r2 + ')' + (fixq >= 0 ? ' → X on qubit ' + fixq : ' → no correction'));
+    $('st1').innerHTML = '<span>true syndrome (s₁, s₂)</span><span class="v">(' + s1 + ', ' + s2 + ')</span>' +
+      '<span>measured syndrome</span><span class="v">(' + r1 + ', ' + r2 + ')</span>' +
+      '<span>X errors left after correction</span><span class="v">' + w + '</span>' +
+      '<span>Z errors (count is ' + (zp ? 'odd' : 'even') + ')</span><span class="v">' + (z[0] + z[1] + z[2]) + '</span>';
+    var v = $('verdict'), m;
+    var bitOK = (w === 0), bitL = (w === 3);
+    if (bitOK && !zp) { v.className = 'verdict v-ok'; v.textContent = 'Back in the encoded state α|000⟩ + β|111⟩.'; }
+    else if (bitL || (bitOK && zp) || (bitL && zp)) { v.className = 'verdict v-bad'; v.textContent = 'Logical error: still a code state, but the wrong one' + (bitL ? ' (all three qubits flipped: logical X)' : '') + (zp ? (bitL ? ' and' : '') + ' (a phase flip: logical Z)' : '') + '. The code cannot see it.'; }
+    else { v.className = 'verdict v-warn'; v.textContent = 'Out of the code space: ' + w + ' qubit(s) still flipped. The next round would see it, but may correct it the wrong way.'; }
+    if (x[0] + x[1] + x[2] >= 2) m = 'Two or more flips give the syndrome of a different, single flip, so the correction completes a flip of all three qubits. The code has distance 3: it corrects one error, not two.';
+    else if (st.m1 || st.m2) m = 'A misread syndrome bit makes the code apply a correction that is not needed, or the wrong one. That is why real codes measure the syndrome again and again before trusting it.';
+    else if (z[0] + z[1] + z[2] > 0) m = 'Z errors do not change any parity, so the syndrome stays (0, 0). One Z error (or three) is a logical phase flip. Two Z errors cancel on α|000⟩ + β|111⟩: Z₀Z₁ is one of the parities the code measures, so it leaves every code state unchanged.';
+    else m = 'Each single bit flip has its own syndrome: (1, 0) for qubit 0, (1, 1) for qubit 1, (0, 1) for qubit 2. The syndrome never depends on α or β.';
+    $('msg1').textContent = m;
+  }
+  drawSyn();
+
+  // ---------------------------------------------------------------- tool 2
+  var DS = [1, 3, 5, 7, 9], COLS = ['#24313D', '#99004C', '#C9A227', '#2E7D4F', '#6E2C4F'];
+  function binom(n, k) { var r = 1; for (var i = 1; i <= k; i++) r = r * (n - k + i) / i; return r; }
+  function PL(d, p) { var s = 0; for (var k = (d + 1) / 2; k <= d; k++) s += binom(d, k) * Math.pow(p, k) * Math.pow(1 - p, d - k); return s; }
+  function drawDist() {
+    var p = +$('pp').value; $('ppv').textContent = p.toFixed(3);
+    var c = $('curves'); clear(c);
+    var x0 = 56, x1 = 505, yb = 290, yt = 14, lmin = -8, lmax = 0;
+    var X = function (q) { return x0 + (x1 - x0) * q / 0.7; };
+    var Y = function (v) { var l = Math.log10(Math.max(v, 1e-12)); return yb - (yb - yt) * (l - lmin) / (lmax - lmin); };
+    for (var e = lmin; e <= lmax; e += 2) {
+      sv(c, 'line', { x1: x0, y1: Y(Math.pow(10, e)), x2: x1, y2: Y(Math.pow(10, e)), stroke: '#E4DCE0' });
+      sv(c, 'text', { x: x0 - 6, y: Y(Math.pow(10, e)) + 4, 'text-anchor': 'end', 'font-size': 11 }, '1e' + e);
+    }
+    [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7].forEach(function (q) { sv(c, 'text', { x: X(q), y: yb + 15, 'text-anchor': 'middle', 'font-size': 11 }, q); });
+    sv(c, 'line', { x1: X(0.5), y1: yt, x2: X(0.5), y2: yb, stroke: '#B9AEB4', 'stroke-dasharray': '5 4' });
+    sv(c, 'text', { x: X(0.5) + 4, y: yb - 8, 'font-size': 11, fill: '#6A626B' }, 'threshold p = 0.5');
+    DS.forEach(function (d, j) {
+      var pts = [];
+      for (var k = 1; k <= 140; k++) { var q = 0.7 * k / 140; pts.push(X(q).toFixed(1) + ',' + Y(PL(d, q)).toFixed(1)); }
+      sv(c, 'polyline', { points: pts.join(' '), fill: 'none', stroke: COLS[j], 'stroke-width': d === 1 ? 2 : 2.5, 'stroke-dasharray': d === 1 ? '6 4' : '' });
+      sv(c, 'text', { x: X(0.36), y: Y(1e-6) + 16 * j, 'font-size': 12, fill: COLS[j] }, d === 1 ? 'd = 1 (no code)' : 'd = ' + d);
+    });
+    sv(c, 'line', { x1: X(p), y1: yt, x2: X(p), y2: yb, stroke: '#C9A227', 'stroke-width': 2 });
+    sv(c, 'text', { x: (x0 + x1) / 2, y: 322, 'text-anchor': 'middle', 'font-size': 12, fill: '#6A626B' }, 'flip probability p on each qubit');
+    var h = '<tr><th>d</th><th>qubits</th><th>corrects</th><th>fails with</th></tr>';
+    DS.forEach(function (d) { h += '<tr><td>' + d + '</td><td>' + d + '</td><td>' + (d - 1) / 2 + '</td><td>' + PL(d, p).toExponential(2) + '</td></tr>'; });
+    $('tab').innerHTML = h;
+    var ratio = PL(3, p) / PL(5, p);
+    $('msg2').innerHTML = p < 0.5 ? 'Below the threshold, each step up in distance divides the failure probability by ' + ratio.toFixed(1) + ' (from d = 3 to d = 5). More qubits, fewer failures.' :
+      (p > 0.5 ? '<span class="far">Above the threshold, a bigger code fails more often than a smaller one: adding qubits adds more errors than it can correct.</span>' : 'At p = 0.5 every distance fails half of the time.');
+  }
+  $('pp').oninput = drawDist;
+  $('p1').onclick = function () { $('pp').value = 0.01; drawDist(); };
+  $('p2').onclick = function () { $('pp').value = 0.1; drawDist(); };
+  $('p3').onclick = function () { $('pp').value = 0.6; drawDist(); };
+  $('pp').value = 0.1;
+  drawDist();
+})();
+</script>
+</body>
+</html>
