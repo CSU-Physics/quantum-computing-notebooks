@@ -1,0 +1,255 @@
+<!-- 1 -->
+<section class="slide title-slide">
+  <div class="kicker">Quantum Computing Advanced · Module 1</div>
+  <h1>Noise and open quantum systems</h1>
+  <p style="font-size:30px;max-width:620px">Real qubits leak energy and lose their phases. Density matrices and noise channels describe what happens, and T1 and T2 tell you how fast.</p>
+  <div style="position:absolute;right:80px;top:170px;width:400px">/*TITLE_DISC*/</div>
+  <div class="foot"><span>SemiAcademy · ISEP-CSU</span><span>CC BY 4.0</span></div>
+</section>
+
+<!-- 2 -->
+<section class="slide">
+  <h2>By the end of this module you can</h2>
+  <ul>
+    <li>write the <strong>density matrix</strong> of a pure state and of a mixture, and tell them apart by their <strong>purity</strong>;</li>
+    <li>read a one-qubit state as a point in the <strong>Bloch ball</strong>: on the surface if pure, inside if mixed;</li>
+    <li>apply a <strong>noise channel</strong> written with Kraus operators, including <strong>amplitude damping</strong> and <strong>phase damping</strong>;</li>
+    <li>explain <strong>T1</strong> and <strong>T2</strong>, why T2 can be at most 2 T1, and read them from a real device's calibration data;</li>
+    <li>rebuild a state by <strong>tomography</strong> and judge it with the <strong>fidelity</strong>.</li>
+  </ul>
+  <p class="small" style="margin-top:24px">Course outcome 1: describe noise with density matrices and noise channels, and read T1 and T2 from device data.</p>
+  <div class="foot"><span>Module 1 · Noise and open quantum systems</span><span>2</span></div>
+</section>
+
+<!-- 3 -->
+<section class="slide">
+  <h2>Why state vectors are not enough</h2>
+  <ul>
+    <li style="font-size:25px"><strong>Noise:</strong> a qubit touches its surroundings. Afterwards the qubit alone has no state vector of its own; its state is part of a larger, entangled one.</li>
+    <li style="font-size:25px"><strong>Missing information:</strong> a source that sends |0⟩ or |1⟩ at random, and does not tell you which, is not in any superposition. You need a way to write "|0⟩ with probability ½, |1⟩ with probability ½".</li>
+    <li style="font-size:25px"><strong>Part of an entangled pair:</strong> one qubit of a Bell pair, on its own, has no state vector either.</li>
+  </ul>
+  <p style="font-size:25px">All three are handled by one object: the <strong>density matrix</strong> ρ. Everything you can measure on the qubit follows from ρ.</p>
+  <div class="foot"><span>Module 1 · Noise and open quantum systems</span><span>3</span></div>
+</section>
+
+<!-- 4 -->
+<section class="slide">
+  <h2>The density matrix</h2>
+  <div class="cols">
+    <div style="flex:0 0 640px">
+      <p style="font-size:24px">For a pure state, ρ = |ψ⟩⟨ψ|: the column ψ times the row ψ†. For a mixture of states |ψₖ⟩ with probabilities pₖ:</p>
+      <div class="eq" style="font-size:28px">ρ = Σₖ pₖ |ψₖ⟩⟨ψₖ|</div>
+      <ul>
+        <li style="font-size:22px">ρ is Hermitian, its trace is 1, and its eigenvalues are never negative.</li>
+        <li style="font-size:22px">Diagonal: the probabilities of 0 and 1. Off-diagonal: the <strong>coherences</strong>, which hold the phases.</li>
+        <li style="font-size:22px">Probability of outcome k: ⟨k|ρ|k⟩. Expectation value of an observable A: tr(ρA).</li>
+      </ul>
+    </div>
+    <div>
+      <p style="font-size:22px;margin-bottom:6px">|+⟩ = (|0⟩ + |1⟩)/√2:</p>
+      <div class="eq" style="font-size:26px">ρ = ½ [[1, 1], [1, 1]]</div>
+      <p style="font-size:22px;margin:14px 0 6px">|0⟩ or |1⟩, each with probability ½:</p>
+      <div class="eq" style="font-size:26px">ρ = ½ [[1, 0], [0, 1]] = I/2</div>
+      <p class="small">Same probabilities in the Z basis; only the coherences differ.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Module 1 · Noise and open quantum systems</span><span>4</span></div>
+</section>
+
+<!-- 5 -->
+<section class="slide">
+  <h2>Pure or mixed: the purity</h2>
+  <div class="eq" style="font-size:30px">purity = tr(ρ²)</div>
+  <ul>
+    <li style="font-size:24px">1 for every pure state; less than 1 for every mixed state.</li>
+    <li style="font-size:24px">Smallest for the <strong>maximally mixed</strong> state I/d: 1/2 for one qubit, 1/4 for two.</li>
+    <li style="font-size:24px">|+⟩ and I/2 give the same Z-basis statistics, 50% each. Measure in the X basis to tell them apart: |+⟩ always gives +, I/2 gives + half of the time. Purity 1 against 1/2.</li>
+  </ul>
+  <p class="small">In code: <code>np.trace(rho @ rho).real</code>, or <code>DensityMatrix(rho).purity()</code> in qsim and Qiskit.</p>
+  <div class="foot"><span>Module 1 · Noise and open quantum systems</span><span>5</span></div>
+</section>
+
+<!-- 6 -->
+<section class="slide">
+  <h2>Same ρ, different recipes</h2>
+  <p style="font-size:24px">Two different mixtures can give the same density matrix, and then no measurement can tell them apart:</p>
+  <div class="eq" style="font-size:25px">½|0⟩⟨0| + ½|1⟩⟨1| &nbsp; = &nbsp; ½|+⟩⟨+| + ½|−⟩⟨−| &nbsp; = &nbsp; I/2</div>
+  <p style="font-size:24px">The third recipe has no randomness in it at all: take the Bell state (|00⟩ + |11⟩)/√2 and keep only one qubit. The <strong>partial trace</strong> over the other qubit gives</p>
+  <div class="eq" style="font-size:25px">tr₁ |Φ⁺⟩⟨Φ⁺| = I/2</div>
+  <p style="font-size:24px">The pair is pure; each half is maximally mixed. This is how noise works: the qubit becomes entangled with its surroundings, and the qubit alone looks mixed.</p>
+  <div class="foot"><span>Module 1 · Noise and open quantum systems</span><span>6</span></div>
+</section>
+
+<!-- 7 -->
+<section class="slide">
+  <h2>The Bloch ball</h2>
+  <div class="cols">
+    <div style="flex:0 0 620px">
+      <p style="font-size:24px">Every one-qubit density matrix can be written with a Bloch vector r = (x, y, z):</p>
+      <div class="eq" style="font-size:27px">ρ = (I + xX + yY + zZ)/2, &nbsp; x = tr(ρX), …</div>
+      <ul>
+        <li style="font-size:22px">|r| = 1: a pure state, on the surface (the Bloch sphere of Level 1).</li>
+        <li style="font-size:22px">|r| &lt; 1: a mixed state, inside the ball. I/2 is the center.</li>
+        <li style="font-size:22px">purity = (1 + |r|²)/2.</li>
+        <li style="font-size:22px">A mixture of states is the same mixture of their Bloch vectors: a point on the line between them.</li>
+      </ul>
+    </div>
+    <div>/*BALL*/</div>
+  </div>
+  <div class="foot"><span>Module 1 · Noise and open quantum systems</span><span>7</span></div>
+</section>
+
+<!-- 8 -->
+<section class="slide">
+  <h2>Pause and predict</h2>
+  <p>A source sends |0⟩ three times out of four and |+⟩ one time out of four. Where is its state in the Bloch ball, and what is its purity?</p>
+  <div class="reveal"><button type="button">Show the answer</button>
+    <div class="ans">Mix the Bloch vectors: r = ¾ (0, 0, 1) + ¼ (1, 0, 0) = (/*RP*/). Its length is /*RP_LEN*/, so the state is inside the ball, and the purity is (1 + |r|²)/2 = (1 + /*RP_SQ*/)/2 = /*RP_PUR*/. The lab computes the same state as ρ = 0.75|0⟩⟨0| + 0.25|+⟩⟨+|.</div></div>
+  <div class="foot"><span>Module 1 · Noise and open quantum systems</span><span>8</span></div>
+</section>
+
+<!-- 9 -->
+<section class="slide">
+  <h2>Noise channels and Kraus operators</h2>
+  <p style="font-size:24px">A <strong>channel</strong> is anything that can happen to a qubit: a gate, noise, or a measurement whose result is thrown away. It is described by a few matrices Kₖ, the <strong>Kraus operators</strong>:</p>
+  <div class="eq" style="font-size:30px">ρ → Σₖ Kₖ ρ Kₖ†, &nbsp; with &nbsp; Σₖ Kₖ†Kₖ = I</div>
+  <p style="font-size:24px">The condition keeps the trace equal to 1. A unitary gate U is a channel with one Kraus operator, K₀ = U.</p>
+  <p style="font-size:24px">Example, the <strong>bit flip</strong> with probability p: K₀ = √(1 − p) I, K₁ = √p X. The state is left alone with probability 1 − p and flipped with probability p.</p>
+  <p class="small">In qsim and Qiskit Aer: <code>amplitude_damping_error</code>, <code>phase_damping_error</code>, <code>thermal_relaxation_error</code>; each has a list of Kraus operators.</p>
+  <div class="foot"><span>Module 1 · Noise and open quantum systems</span><span>9</span></div>
+</section>
+
+<!-- 10 -->
+<section class="slide">
+  <h2>Amplitude damping: losing energy</h2>
+  <div class="cols">
+    <div style="flex:0 0 560px">
+      <div class="eq" style="font-size:25px">K₀ = [[1, 0], [0, √(1 − γ)]] &nbsp; K₁ = [[0, √γ], [0, 0]]</div>
+      <p style="font-size:23px">K₁ takes |1⟩ to |0⟩: the qubit gives its energy to the surroundings. With probability γ an excited qubit has relaxed.</p>
+      <p style="font-size:23px">After a time t, γ = 1 − e<sup>−t/T1</sup>. T1 is the <strong>relaxation time</strong>.</p>
+    </div>
+    <div>
+      <p style="font-size:22px">On the Bloch vector:</p>
+      <div class="eq" style="font-size:24px">z → 1 − (1 − z)(1 − γ)<br>x, y → x, y · √(1 − γ)</div>
+      <p style="font-size:22px">Every state moves toward |0⟩, the north pole. The coherences shrink too, at half the rate.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Module 1 · Noise and open quantum systems</span><span>10</span></div>
+</section>
+
+<!-- 11 -->
+<section class="slide">
+  <h2>Phase damping: losing phase</h2>
+  <div class="cols">
+    <div style="flex:0 0 560px">
+      <div class="eq" style="font-size:25px">K₀ = [[1, 0], [0, √(1 − λ)]] &nbsp; K₁ = [[0, 0], [0, √λ]]</div>
+      <p style="font-size:23px">No energy changes hands: the probabilities of 0 and 1 stay the same. But the surroundings learn a little about which one the qubit is, and the coherences shrink by √(1 − λ).</p>
+    </div>
+    <div>
+      <p style="font-size:22px">On the Bloch vector:</p>
+      <div class="eq" style="font-size:24px">z → z<br>x, y → x, y · √(1 − λ)</div>
+      <p style="font-size:22px">Every state moves straight toward the z axis. |+⟩ becomes a mixture of |0⟩ and |1⟩: the superposition is lost. This is <strong>dephasing</strong>.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Module 1 · Noise and open quantum systems</span><span>11</span></div>
+</section>
+
+<!-- 12 -->
+<section class="slide">
+  <h2>T1 and T2 together</h2>
+  <div class="cols">
+    <div style="flex:0 0 560px">/*CURVES*/</div>
+    <div>
+      <p style="font-size:22px">A real idle qubit has both. After a time t:</p>
+      <div class="eq" style="font-size:23px">z → 1 − (1 − z) e<sup>−t/T1</sup><br>x, y → x, y · e<sup>−t/T2</sup></div>
+      <p style="font-size:21px">T2 is the <strong>coherence time</strong>. Amplitude damping with γ = 1 − e<sup>−t/T1</sup> then phase damping with λ = 1 − e<sup>−2t/T2 + t/T1</sup> gives exactly this: the <code>relax()</code> you write in the lab.</p>
+      <p class="small">Left: T1 = 100 µs, T2 = 80 µs, the values of lab Steps 5 and 6.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Module 1 · Noise and open quantum systems</span><span>12</span></div>
+</section>
+
+<!-- 13 -->
+<section class="slide">
+  <h2>Why T2 can be at most 2 T1</h2>
+  <p style="font-size:24px">Amplitude damping alone already shrinks the coherences: by √(1 − γ) = e<sup>−t/(2T1)</sup>. So even with no extra dephasing,</p>
+  <div class="eq" style="font-size:28px">e<sup>−t/T2</sup> ≤ e<sup>−t/(2T1)</sup> &nbsp; so &nbsp; T2 ≤ 2 T1</div>
+  <p style="font-size:24px">In the formula for λ, 2t/T2 − t/T1 is never negative when T2 ≤ 2 T1. With T2 &gt; 2 T1 the phase damping would need a negative probability, so no channel of this kind exists.</p>
+  <p style="font-size:24px">Typical values today: T2 a little below T1 to a little above it. T2 = 2 T1 means the qubit has no dephasing beyond what relaxation causes.</p>
+  <div class="foot"><span>Module 1 · Noise and open quantum systems</span><span>13</span></div>
+</section>
+
+<!-- 14 -->
+<section class="slide">
+  <h2>Pause and predict</h2>
+  <p>A qubit with T1 = 100 µs and T2 = 80 µs waits for 500 µs, five times its T1. Which starting state comes through unchanged, and where does every other state end up?</p>
+  <div class="reveal"><button type="button">Show the answer</button>
+    <div class="ans">|0⟩ comes through unchanged: it is the lowest-energy state, and relaxation only moves states toward it. Every other state ends up very close to |0⟩ too: after 500 µs, z = 1 − (1 − z)e<sup>−5</sup> ≥ /*Z500*/, and the coherences are multiplied by e<sup>−500/80</sup> ≈ /*C500*/. This is why qubits are reset by waiting, and why circuits have to finish well within T1 and T2. (Real qubits are not at exactly zero temperature, so a small part of them sits in |1⟩; this course leaves that out.)</div></div>
+  <div class="foot"><span>Module 1 · Noise and open quantum systems</span><span>14</span></div>
+</section>
+
+<!-- 15 -->
+<section class="slide">
+  <h2>Measuring T1</h2>
+  <div class="cols">
+    <div style="flex:0 0 560px">/*T1FIT*/</div>
+    <div>
+      <p style="font-size:22px">Flip the qubit to |1⟩, wait a time t, measure; repeat for many waits. P(1) = e<sup>−t/T1</sup>, so ln P(1) is a straight line with slope −1/T1.</p>
+      <p style="font-size:22px">On the simulator with T1 = 100 µs, 1,000 shots per wait: the fit gives <strong>/*T1FIT_VAL*/ µs</strong>. Shot noise moves each point; the long waits, with few counts, are the noisiest.</p>
+      <p class="small">T2 is measured the same way, starting from |+⟩ and measuring in the X basis (a Ramsey or echo experiment). Module 3 uses echoes to suppress errors.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Module 1 · Noise and open quantum systems</span><span>15</span></div>
+</section>
+
+<!-- 16 -->
+<section class="slide">
+  <h2>A real device: /*BACKEND*/</h2>
+  <div class="cols">
+    <div style="flex:0 0 560px">/*DEVICE*/</div>
+    <div>
+      <p style="font-size:22px">Calibration of /*CAL_DATE*/, /*NQ*/ qubits, as saved in Qiskit's FakePittsburgh model.</p>
+      <p style="font-size:22px">Median T1 /*MED_T1*/ µs, median T2 /*MED_T2*/ µs. One sx gate takes /*SX*/ ns, so about /*N_SX*/ of them fit in the median T1.</p>
+      <p style="font-size:22px">Qubits differ a lot. One point lies above T2 = 2 T1: two separate measurements, each with its own uncertainty.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Module 1 · Noise and open quantum systems</span><span>16</span></div>
+</section>
+
+<!-- 17 -->
+<section class="slide">
+  <h2>Fidelity and tomography</h2>
+  <div class="cols">
+    <div style="flex:0 0 500px">
+      <p style="font-size:23px">How close is ρ to the pure state |ψ⟩ you wanted? The <strong>fidelity</strong> F = ⟨ψ|ρ|ψ⟩: 1 if ρ = |ψ⟩⟨ψ|, ½ for I/2 against any pure state.</p>
+      <p style="font-size:23px"><strong>Tomography</strong> finds ρ from measurements: x, y and z from many copies measured in the X, Y and Z bases, each as (N₀ − N₁)/N. For X apply H first; for Y, S† and then H.</p>
+    </div>
+    <div>/*TOMO*/</div>
+  </div>
+  <p class="small">State made by ry(1.1) then rz(0.7). With 1,000 shots the estimate lands just outside the ball (|r| and F above 1), which no real state can do; careful tomography then picks the nearest physical state. Shot noise is random and shrinks with more shots; a readout error is systematic: 3% on each bit shrinks every component by 1 − 2 × 0.03 = 0.94, however many shots you take.</p>
+  <div class="foot"><span>Module 1 · Noise and open quantum systems</span><span>17</span></div>
+</section>
+
+<!-- 18 -->
+<section class="slide">
+  <h2>Summary</h2>
+  <ul>
+    <li style="font-size:24px">ρ = Σ pₖ|ψₖ⟩⟨ψₖ| describes pure states, mixtures and parts of entangled systems; purity tr(ρ²) tells them apart.</li>
+    <li style="font-size:24px">One qubit: ρ = (I + r·σ)/2; |r| = 1 on the surface, |r| &lt; 1 inside the Bloch ball.</li>
+    <li style="font-size:24px">Channels: ρ → Σ KρK†. Amplitude damping (T1) pulls states to |0⟩; phase damping removes coherences; together they give the T1 and T2 decays, with T2 ≤ 2 T1.</li>
+    <li style="font-size:24px">Real qubits: T1 and T2 of a few hundred µs, different on every qubit. Tomography rebuilds ρ; shot noise and readout errors limit it.</li>
+  </ul>
+  <div class="eq" style="font-size:23px;margin-top:12px"><strong>Next:</strong> the Module 1 lab. You write <code>density_matrix()</code>, <code>bloch_vector()</code>, <code>apply_channel()</code> and <code>relax()</code>.</div>
+  <div class="foot"><span>Module 1 · Noise and open quantum systems</span><span>18</span></div>
+</section>
+
+<!-- 19 -->
+<section class="slide">
+  <h2>Credits and license</h2>
+  <p>These slides were written for SemiAcademy's <em>Quantum Computing Advanced</em> course, developed through the Intel Semiconductor Education Program at Central State University (ISEP-CSU).</p>
+  <p>License: <strong>Creative Commons Attribution 4.0 International (CC BY 4.0)</strong>, https://creativecommons.org/licenses/by/4.0/. You may copy, adapt and share them, with credit.</p>
+  <p>Suggested credit: "Module 1 slides, Quantum Computing Advanced, SemiAcademy / ISEP-CSU, CC BY 4.0."</p>
+  <p class="small">Device data: the FakePittsburgh model in qiskit-ibm-runtime (Apache License 2.0), calibration of /*CAL_DATE*/. All results were computed for these slides with qsim /*QSIM_V*/ and checked with Qiskit 2.5.2 and Qiskit Aer 0.17.2. Source of these slides: github.com/CSU-Physics/quantum-computing-notebooks (media/level3/m1-slides.html). Print or save as PDF from your browser to get one slide per page.</p>
+  <div class="foot"><span>Module 1 · Noise and open quantum systems</span><span>19</span></div>
+</section>
