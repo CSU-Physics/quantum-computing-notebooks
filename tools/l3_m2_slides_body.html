@@ -1,0 +1,238 @@
+<!-- 1 -->
+<section class="slide title-slide">
+  <div class="kicker">Quantum Computing Advanced · Module 2</div>
+  <h1>Quantum error correction</h1>
+  <p style="font-size:30px;max-width:620px">Spread one qubit over several, measure only parities, and fix what they point to: the repetition code, and the road to the surface code.</p>
+  <div style="position:absolute;right:70px;top:200px;width:430px">/*TITLE_FIG*/</div>
+  <div class="foot"><span>SemiAcademy · ISEP-CSU</span><span>CC BY 4.0</span></div>
+</section>
+
+<!-- 2 -->
+<section class="slide">
+  <h2>By the end of this module you can</h2>
+  <ul>
+    <li>explain why a qubit cannot be protected by copying it, and how a <strong>code</strong> spreads its state over several qubits instead;</li>
+    <li>build the three-qubit <strong>repetition code</strong>: encoding, <strong>syndrome</strong> measurement with ancillas in the middle of the circuit, and <strong>feedforward</strong> correction;</li>
+    <li>compute when the code helps, and explain how noisy syndromes and noisy gates limit it;</li>
+    <li>read <strong>syndrome statistics</strong> and detection events from repeated rounds on device-level noise;</li>
+    <li>describe what Shor's code, stabilizer codes, the <strong>surface code</strong> and the <strong>threshold</strong> add.</li>
+  </ul>
+  <p class="small" style="margin-top:24px">Course outcome 2: build a repetition code with mid-circuit measurement and correction, and explain what it protects against and how larger codes extend it.</p>
+  <div class="foot"><span>Module 2 · Quantum error correction</span><span>2</span></div>
+</section>
+
+<!-- 3 -->
+<section class="slide">
+  <h2>Why correct errors at all?</h2>
+  <ul>
+    <li style="font-size:25px">On ibm_pittsburgh (calibration of 17 April 2026) the median two-qubit gate fails about <strong>/*MED_CZ*/ times in 10,000</strong>, and the median readout /*MED_RO*/ times in 10,000.</li>
+    <li style="font-size:25px">A circuit with 10,000 such gates almost never runs without an error. Useful algorithms, such as Shor's for real key sizes, need billions of operations.</li>
+    <li style="font-size:25px">Better hardware alone will not close a gap of that size. <strong>Error correction</strong> builds reliable <strong>logical qubits</strong> out of many imperfect physical ones, and fixes errors faster than they build up.</li>
+  </ul>
+  <div class="foot"><span>Module 2 · Quantum error correction</span><span>3</span></div>
+</section>
+
+<!-- 4 -->
+<section class="slide">
+  <h2>The classical repetition code</h2>
+  <div class="cols">
+    <div style="flex:0 0 560px">
+      <p style="font-size:24px">Send each bit three times; take the <strong>majority vote</strong>. The vote is wrong only if two or three copies flip:</p>
+      <div class="eq" style="font-size:28px">P<sub>L</sub> = 3p²(1 − p) + p³ = 3p² − 2p³</div>
+      <p style="font-size:24px">For p = 0.1: P<sub>L</sub> = /*PL01*/. The curves cross at p = 0.5: below it, repetition helps, and more and more as p gets smaller.</p>
+    </div>
+    <div>/*CLASSICAL*/</div>
+  </div>
+  <div class="foot"><span>Module 2 · Quantum error correction</span><span>4</span></div>
+</section>
+
+<!-- 5 -->
+<section class="slide">
+  <h2>Two obstacles for qubits</h2>
+  <ul>
+    <li style="font-size:25px"><strong>No cloning:</strong> no circuit turns α|0⟩ + β|1⟩ into three copies (α|0⟩ + β|1⟩)<sup>⊗3</sup> for every α and β.</li>
+    <li style="font-size:25px"><strong>Measurement disturbs:</strong> reading the qubits to take a vote would destroy the superposition.</li>
+  </ul>
+  <p style="font-size:25px;margin-top:20px">The way around both:</p>
+  <ul>
+    <li style="font-size:25px"><strong>entangle</strong> instead of copy: α|0⟩ + β|1⟩ → α|000⟩ + β|111⟩;</li>
+    <li style="font-size:25px">measure only <strong>parities</strong>: "do qubits 0 and 1 agree?" The answer depends on the error, not on α and β, so it can be measured without disturbing the stored state.</li>
+  </ul>
+  <div class="foot"><span>Module 2 · Quantum error correction</span><span>5</span></div>
+</section>
+
+<!-- 6 -->
+<section class="slide">
+  <h2>One round of the three-qubit code</h2>
+  <div>/*CIRCUIT*/</div>
+  <p style="font-size:22px">Encode with two CNOTs. Each ancilla collects a parity with two CNOTs, is measured in the middle of the circuit, and is <strong>reset</strong>. The two results, the <strong>syndrome</strong>, choose the X gate through <code>if_test</code>: <strong>feedforward</strong>, in the same shot.</p>
+  <div class="foot"><span>Module 2 · Quantum error correction</span><span>6</span></div>
+</section>
+
+<!-- 7 -->
+<section class="slide">
+  <h2>The syndrome table</h2>
+  <div class="cols">
+    <div style="flex:0 0 560px">/*SYN_TABLE*/</div>
+    <div>
+      <p style="font-size:23px">s₁ = parity of qubits 0 and 1 (classical bit 0); s₂ = parity of qubits 1 and 2 (classical bit 1).</p>
+      <p style="font-size:23px">Each single flip has its own syndrome, so the code knows which qubit to fix. A counts key reads right to left: '01' means s₁ = 1, s₂ = 0.</p>
+      <p style="font-size:23px">The syndrome is the same in every shot and says nothing about α and β: the superposition survives.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Module 2 · Quantum error correction</span><span>7</span></div>
+</section>
+
+<!-- 8 -->
+<section class="slide">
+  <h2>Feedforward in code</h2>
+  <div class="cols">
+    <div style="flex:0 0 560px">
+      <div class="eq" style="font-size:20px;line-height:1.5;font-family:Consolas,'Courier New',monospace;white-space:pre">with qc.if_test((0, 1)):
+    with qc.if_test((1, 1)):
+        qc.x(1)
+    with qc.if_test((1, 0)):
+        qc.x(0)
+with qc.if_test((0, 0)):
+    with qc.if_test((1, 1)):
+        qc.x(2)</div>
+    </div>
+    <div>
+      <p style="font-size:23px"><code>if_test((bit, value))</code> runs its block only in shots where that classical bit was measured as value. Nesting tests two bits.</p>
+      <p style="font-size:23px">This needs hardware that measures a qubit, sends the result to classical electronics and acts on it while the other qubits wait: <strong>mid-circuit measurement</strong> and <strong>dynamic circuits</strong>, available on IBM's current devices.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Module 2 · Quantum error correction</span><span>8</span></div>
+</section>
+
+<!-- 9 -->
+<section class="slide">
+  <h2>Pause and predict</h2>
+  <p>Data qubits 0 and 1 both flip. Which syndrome does the code measure, which correction does it apply, and what is left?</p>
+  <div class="reveal"><button type="button">Show the answer</button>
+    <div class="ans">Qubits 0 and 1 agree again, qubits 1 and 2 do not: the syndrome is (s₁, s₂) = (0, 1), the syndrome of a single flip on qubit 2. The code applies X to qubit 2, so all three qubits are now flipped: α|111⟩ + β|000⟩, a <strong>logical X</strong>. It is a valid code state, the wrong one, and no later round can notice. The three-qubit code corrects one flip but not two: its <strong>distance</strong> is 3.</div></div>
+  <div class="foot"><span>Module 2 · Quantum error correction</span><span>9</span></div>
+</section>
+
+<!-- 10 -->
+<section class="slide">
+  <h2>When does the code help?</h2>
+  <div class="cols">
+    <div style="flex:0 0 560px">/*FAIL*/</div>
+    <div>
+      <p style="font-size:22px">Flip probability p on each data qubit, readout error q on each syndrome bit; failure = the data are not back in the encoded state.</p>
+      <p style="font-size:22px">With perfect syndromes: 3p² − 2p³, as in the classical code. A misread syndrome makes the correction put a flip <strong>in</strong>: at p = 0.05 and q = 0.02 the round fails /*F0502*/ of the time, about as often as an unprotected qubit (0.05).</p>
+    </div>
+  </div>
+  <div class="foot"><span>Module 2 · Quantum error correction</span><span>10</span></div>
+</section>
+
+<!-- 11 -->
+<section class="slide">
+  <h2>Phase flips need their own code</h2>
+  <ul>
+    <li style="font-size:24px">A Z error turns α|000⟩ + β|111⟩ into α|000⟩ − β|111⟩. Every parity still agrees: the syndrome is 00, and the bit-flip code never sees it.</li>
+    <li style="font-size:24px">The <strong>phase-flip code</strong> works in the X basis: H on each qubit after encoding gives α|+++⟩ + β|−−−⟩. A Z error flips |+⟩ ↔ |−⟩, which the same parity check, done after H gates, catches.</li>
+    <li style="font-size:24px"><strong>Shor's nine-qubit code</strong> (1995) nests the two: three phase-flip blocks, each made of three bit-flip qubits. It corrects any error on any one qubit, because every error is a combination of I, X, Z and Y = iXZ.</li>
+  </ul>
+  <div class="foot"><span>Module 2 · Quantum error correction</span><span>11</span></div>
+</section>
+
+<!-- 12 -->
+<section class="slide">
+  <h2>Noisy gates and the break-even point</h2>
+  <div class="cols">
+    <div style="flex:0 0 560px">/*BREAKEVEN*/</div>
+    <div>
+      <p style="font-size:22px">The code's own six CNOTs are noisy too. With a 1% depolarizing error on each CNOT, the code fails /*F_SMALL*/ of the time even when the data qubits never flip.</p>
+      <p style="font-size:22px">It beats an unprotected qubit only above p ≈ /*BREAK*/, the <strong>break-even point</strong>. The operations of a code must be good enough for correction to remove more errors than it adds.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Module 2 · Quantum error correction</span><span>12</span></div>
+</section>
+
+<!-- 13 -->
+<section class="slide">
+  <h2>Repeated rounds and detection events</h2>
+  <div class="cols">
+    <div style="flex:0 0 560px">/*DEVICE*/</div>
+    <div>
+      <p style="font-size:21px">Three rounds of the code, 4,000 shots of logical |0⟩, with the noise of five neighbouring qubits of ibm_pittsburgh (FakePittsburgh, simulated).</p>
+      <p style="font-size:21px">A <strong>detection event</strong> is a syndrome that differs from the round before. A misread ancilla gives a syndrome that appears in one round and is gone in the next; a real data flip changes the syndrome and keeps it changed.</p>
+      <p style="font-size:21px">A single data qubit reads wrong /*Q_RAW*/ of the time; the majority vote of the three is wrong only /*Q_VOTE*/.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Module 2 · Quantum error correction</span><span>13</span></div>
+</section>
+
+<!-- 14 -->
+<section class="slide">
+  <h2>Stabilizer codes</h2>
+  <ul>
+    <li style="font-size:24px">The repetition code is described by the Pauli operators it measures: <strong>Z₀Z₁</strong> and <strong>Z₁Z₂</strong>. Every code state has eigenvalue +1 for both; an error flips some of the signs, and the signs are the syndrome.</li>
+    <li style="font-size:24px">Codes described this way are <strong>stabilizer codes</strong>. Written [[n, k, d]]: n physical qubits, k logical qubits, distance d. As a quantum code the repetition code is [[3, 1, 1]]: a single Z error is already a logical error. Shor's code is [[9, 1, 3]].</li>
+    <li style="font-size:24px">The <strong>Steane code</strong> [[7, 1, 3]] measures six stabilizers on seven qubits and corrects any single-qubit error.</li>
+  </ul>
+  <div class="foot"><span>Module 2 · Quantum error correction</span><span>14</span></div>
+</section>
+
+<!-- 15 -->
+<section class="slide">
+  <h2>The surface code and the threshold</h2>
+  <div class="cols">
+    <div style="flex:0 0 420px">/*SURFACE*/</div>
+    <div>
+      <p style="font-size:21px">Data qubits on a square grid, with measure qubits between them that check X or Z parities of their neighbours only. Distance d needs d² data qubits; it corrects (d − 1)/2 errors.</p>
+      <p style="font-size:21px"><strong>Threshold:</strong> if every operation fails less often than a threshold (around 1% for the surface code), each increase of d lowers the logical error rate.</p>
+      <p style="font-size:21px">Google, 2024: surface codes of distance 3, 5 and 7 on its Willow chip; the distance-7 code (101 qubits) failed 0.143% of rounds, and each step d → d + 2 cut the error rate by a factor of 2.14.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Module 2 · Quantum error correction</span><span>15</span></div>
+</section>
+
+<!-- 16 -->
+<section class="slide">
+  <h2>Beyond the surface code: qLDPC codes</h2>
+  <ul>
+    <li style="font-size:24px">The surface code needs about 2d² physical qubits for one logical qubit: hundreds or more for a useful distance.</li>
+    <li style="font-size:24px"><strong>qLDPC codes</strong> (low-density parity check) store several logical qubits in one block. IBM's "gross" code [[144, 12, 12]] keeps 12 logical qubits in 144 data qubits (plus 144 check qubits).</li>
+    <li style="font-size:24px">IBM's roadmap (June 2025): <strong>Starling</strong>, planned for 2029, with 200 logical qubits running circuits of 100 million gates. Its checks need long-range connections, which is why IBM's new chips add couplers between distant qubits.</li>
+  </ul>
+  <div class="foot"><span>Module 2 · Quantum error correction</span><span>16</span></div>
+</section>
+
+<!-- 17 -->
+<section class="slide">
+  <h2>Choose your capstone</h2>
+  <p style="font-size:23px">In Module 6 you run one experiment on a noisy simulator (a real IBM run is optional). Choose now, so the modules ahead can prepare you; you can change your mind later.</p>
+  <ul>
+    <li style="font-size:22px"><strong>Repetition code:</strong> several rounds, syndrome statistics and logical error rate (this module).</li>
+    <li style="font-size:22px"><strong>Mitigation study:</strong> one expectation value, raw and with suppression and mitigation (Module 3).</li>
+    <li style="font-size:22px"><strong>Spin-chain simulation:</strong> Trotter evolution of a 2- or 3-spin chain, with mitigation (Modules 3 and 4B).</li>
+    <li style="font-size:22px"><strong>Quantum-kernel classifier:</strong> 8 training and 4 test points within hardware limits (Module 4A).</li>
+  </ul>
+  <div class="foot"><span>Module 2 · Quantum error correction</span><span>17</span></div>
+</section>
+
+<!-- 18 -->
+<section class="slide">
+  <h2>Summary</h2>
+  <ul>
+    <li style="font-size:23px">A code protects a qubit by entangling it with others and measuring only parities: the syndrome locates an error without revealing the state.</li>
+    <li style="font-size:23px">The three-qubit code corrects one bit flip (distance 3): failure 3p² − 2p³ with perfect syndromes. It cannot see phase flips; Shor's and stabilizer codes handle both.</li>
+    <li style="font-size:23px">Noisy syndromes and noisy gates add errors: codes need repeated rounds, and operations below a threshold.</li>
+    <li style="font-size:23px">Below threshold, bigger codes do better: Google's distance-7 surface code; IBM's qLDPC plans for Starling.</li>
+  </ul>
+  <div class="eq" style="font-size:22px;margin-top:12px"><strong>Next:</strong> the Module 2 lab. You write <code>encode()</code>, <code>measure_syndrome()</code> and <code>correct()</code>.</div>
+  <div class="foot"><span>Module 2 · Quantum error correction</span><span>18</span></div>
+</section>
+
+<!-- 19 -->
+<section class="slide">
+  <h2>Credits and license</h2>
+  <p>These slides were written for SemiAcademy's <em>Quantum Computing Advanced</em> course, developed through the Intel Semiconductor Education Program at Central State University (ISEP-CSU).</p>
+  <p>License: <strong>Creative Commons Attribution 4.0 International (CC BY 4.0)</strong>, https://creativecommons.org/licenses/by/4.0/. You may copy, adapt and share them, with credit.</p>
+  <p>Suggested credit: "Module 2 slides, Quantum Computing Advanced, SemiAcademy / ISEP-CSU, CC BY 4.0."</p>
+  <p class="small">Device data: the FakePittsburgh model in qiskit-ibm-runtime (Apache License 2.0), calibration of 17 April 2026, simulated with Qiskit Aer. Surface code results: Google Quantum AI and collaborators, "Quantum error correction below the surface code threshold", Nature 638, 920 (2025). IBM roadmap: IBM Quantum blog, 10 June 2025. All other results were computed for these slides with qsim /*QSIM_V*/ and checked with Qiskit 2.5.2 and Qiskit Aer 0.17.2. Source: github.com/CSU-Physics/quantum-computing-notebooks (media/level3/m2-slides.html).</p>
+  <div class="foot"><span>Module 2 · Quantum error correction</span><span>19</span></div>
+</section>
