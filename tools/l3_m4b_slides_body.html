@@ -1,0 +1,179 @@
+<!-- 1 -->
+<section class="slide title-slide">
+  <div class="kicker">Quantum Computing Advanced · Module 4 · Track B</div>
+  <h1>Simulating a spin chain</h1>
+  <p style="font-size:30px;max-width:620px">Trotter steps turn the time evolution of a quantum system into gates. How small must the steps be, and when does noise win?</p>
+  <div style="position:absolute;right:70px;top:200px;width:430px">/*TITLE_FIG*/</div>
+  <div class="foot"><span>SemiAcademy · ISEP-CSU</span><span>CC BY 4.0</span></div>
+</section>
+
+<!-- 2 -->
+<section class="slide">
+  <h2>By the end of this track you can</h2>
+  <ul>
+    <li>write the <strong>transverse-field Ising</strong> Hamiltonian as a sum of Pauli terms;</li>
+    <li>build first- and second-order <strong>Trotter steps</strong> from RZZ and RX gates;</li>
+    <li>measure how the <strong>Trotter error</strong> shrinks with the step size;</li>
+    <li>find the number of steps that balances Trotter error against <strong>gate noise</strong>;</li>
+    <li>say what this costs on real hardware, and why the large cases need a quantum computer.</li>
+  </ul>
+  <p class="small" style="margin-top:24px">Course outcome 4: apply one application method, quantum machine learning against a fair classical baseline or Trotterized simulation with controlled error, and report its limits.</p>
+  <div class="foot"><span>Module 4 · Track B · Simulating a spin chain</span><span>2</span></div>
+</section>
+
+<!-- 3 -->
+<section class="slide">
+  <h2>Why simulate with qubits?</h2>
+  <ul>
+    <li>The state of N spins has 2ᴺ amplitudes: 16 for 4 spins, about 10¹⁵ for 50. Classical exact simulation runs out of memory near 50.</li>
+    <li>A quantum computer stores the state in N qubits and applies the evolution as gates. This was Feynman's original reason for quantum computers.</li>
+    <li>Approximate classical methods (tensor networks, for example) handle many cases, and quantum results must be checked against them.</li>
+  </ul>
+  <p style="margin-top:12px">In this track the chain is small enough to compute exactly, so every error can be measured.</p>
+  <div class="foot"><span>Module 4 · Track B · Simulating a spin chain</span><span>3</span></div>
+</section>
+
+<!-- 4 -->
+<section class="slide">
+  <h2>The transverse-field Ising chain</h2>
+  <div style="margin:0 0 6px">/*CHAIN_FIG*/</div>
+  <div class="eq">H = −J (Z₀Z₁ + Z₁Z₂ + Z₂Z₃) − h (X₀ + X₁ + X₂ + X₃)</div>
+  <ul>
+    <li style="font-size:24px">Neighbours prefer to align along Z (coupling J = 1); the field h tries to turn every spin along X.</li>
+    <li style="font-size:24px">The chain is open: 3 ZZ terms, 4 X terms. In a Qiskit label qubit 0 is the rightmost character: Z₀Z₁ is "IIZZ".</li>
+  </ul>
+  <div class="foot"><span>Module 4 · Track B · Simulating a spin chain</span><span>4</span></div>
+</section>
+
+<!-- 5 -->
+<section class="slide">
+  <h2>The exact evolution</h2>
+  <div class="cols">
+    <div style="flex:0 0 580px">/*EXACT_FIG*/</div>
+    <div>
+      <p style="font-size:24px">All spins start up: |0000⟩. The state at time t is e<sup>−iHt</sup>|0000⟩; for 4 spins we compute it by diagonalizing the 16 × 16 matrix H.</p>
+      <p style="font-size:24px">The magnetization M = (1/4) Σ ⟨Zᵢ⟩ starts at 1. With h = 0.5 it dips to about 0.67; with h = 1 it swings down to about 0.</p>
+      <p style="font-size:24px">The lab follows h = 0.5 and t = 2, where M = /*MEX*/.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Module 4 · Track B · Simulating a spin chain</span><span>5</span></div>
+</section>
+
+<!-- 6 -->
+<section class="slide">
+  <h2>Trotter steps</h2>
+  <p>The ZZ part and the X part of H do not commute, so e<sup>−iHt</sup> is not a product of simple gates. But for a short time dt:</p>
+  <div class="eq">e<sup>−iH dt</sup> ≈ e<sup>+iJ dt Σ ZᵢZᵢ₊₁</sup> · e<sup>+ih dt Σ Xᵢ</sup></div>
+  <ul>
+    <li style="font-size:24px">Each factor is a product of commuting gates: RZZ(−2J dt) on each pair, RX(−2h dt) on each spin.</li>
+    <li style="font-size:24px">Repeat n = t/dt times. The error of each step comes from the commutator of the two parts and is of order dt².</li>
+    <li style="font-size:24px">Over n steps the errors add up to order t · dt: smaller steps, more gates.</li>
+  </ul>
+  <div class="foot"><span>Module 4 · Track B · Simulating a spin chain</span><span>6</span></div>
+</section>
+
+<!-- 7 -->
+<section class="slide">
+  <h2>One step as a circuit</h2>
+  <div style="margin:10px 0 18px">/*STEP_FIG*/</div>
+  <p style="font-size:24px">RZZ(θ) = e<sup>−iθ ZZ/2</sup> and RX(θ) = e<sup>−iθ X/2</sup>, so the angles are −2J dt and −2h dt. On IBM hardware each RZZ is usually built from two CNOT or CZ gates around a Z rotation, on neighbouring qubits.</p>
+  <div class="foot"><span>Module 4 · Track B · Simulating a spin chain</span><span>7</span></div>
+</section>
+
+<!-- 8 -->
+<section class="slide">
+  <h2>Trotter against exact</h2>
+  <div class="cols">
+    <div style="flex:0 0 580px">/*TROT_FIG*/</div>
+    <div>
+      <p style="font-size:24px">With dt = 0.5 the Trotter points drift away from the exact curve as time goes on. With dt = 0.2 they follow it closely.</p>
+      <p style="font-size:24px">The error grows with the total time and shrinks with the step.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Module 4 · Track B · Simulating a spin chain</span><span>8</span></div>
+</section>
+
+<!-- 9 -->
+<section class="slide">
+  <h2>How fast the error shrinks</h2>
+  <div class="cols">
+    <div style="flex:0 0 580px">/*SCALING_FIG*/</div>
+    <div>
+      <p style="font-size:23px">Infidelity 1 − |⟨ψ_exact|ψ_Trotter⟩|² at t = 2. First order: slope /*SL1*/, so each doubling of the steps divides it by about 4.</p>
+      <p style="font-size:23px">A <strong>second-order</strong> step, RX(−h dt), RZZ(−2J dt), RX(−h dt), has slope /*SL2*/: about 16 per doubling.</p>
+      <p style="font-size:23px">With 8 steps: /*INF1_8*/ against /*INF2_8*/, about /*RATIO8*/ times smaller, with the same 3 RZZ gates per step.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Module 4 · Track B · Simulating a spin chain</span><span>9</span></div>
+</section>
+
+<!-- 10 -->
+<section class="slide">
+  <h2>Pause and predict</h2>
+  <p>Each RZZ gate now has a 0.5% two-qubit error. Will doubling the number of Trotter steps always make the result better?</p>
+  <div class="reveal"><button type="button">Show the answer</button>
+    <div class="ans">No. More steps reduce the Trotter error but add more noisy gates. The total error falls, reaches a minimum and rises again. In the lab the first-order step does best with /*B1N*/ steps (error /*B1E*/) and the second-order step with /*B2N*/ steps (error /*B2E*/).</div></div>
+  <div class="foot"><span>Module 4 · Track B · Simulating a spin chain</span><span>10</span></div>
+</section>
+
+<!-- 11 -->
+<section class="slide">
+  <h2>Trotter error against gate noise</h2>
+  <div class="cols">
+    <div style="flex:0 0 580px">/*NOISE_FIG*/</div>
+    <div>
+      <p style="font-size:23px">|M − M_exact| at t = 2 with a 0.5% depolarizing error on every RZZ, computed exactly with density matrices.</p>
+      <p style="font-size:23px">Left of the minimum the Trotter error dominates, right of it the noise. The better formula reaches a lower minimum (gold rings).</p>
+      <p style="font-size:23px">Mitigation (Module 3) can then remove part of the noise.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Module 4 · Track B · Simulating a spin chain</span><span>11</span></div>
+</section>
+
+<!-- 12 -->
+<section class="slide">
+  <h2>On real hardware</h2>
+  <ul>
+    <li>The best schedules above use 15 to 18 RZZ gates, about 30 to 36 CNOTs: fine for four spins today.</li>
+    <li>IBM's 2023 "utility" experiment (Kim et al., Nature 618, 500) ran Trotter circuits of this kind for a 127-spin Ising model, up to 60 layers of two-qubit gates, with zero-noise extrapolation.</li>
+    <li>For its largest circuits no exact answer existed; approximate classical methods were the only check.</li>
+  </ul>
+  <p style="margin-top:12px">In the capstone you can run a 2- or 3-spin chain with mitigation, on a noisy simulator and optionally on hardware.</p>
+  <div class="foot"><span>Module 4 · Track B · Simulating a spin chain</span><span>12</span></div>
+</section>
+
+<!-- 13 -->
+<section class="slide">
+  <h2>Try it: Trotter steps and noise</h2>
+  <p>Tab 2 of the Module 4 explorer runs the lab's chain in your browser.</p>
+  <ul>
+    <li style="font-size:24px">Set the noise to zero and add steps: the error keeps falling, faster for the second order.</li>
+    <li style="font-size:24px">Press <strong>Lab's settings</strong>: the error curve has a minimum. Move the noise and watch it shift.</li>
+    <li style="font-size:24px">Change h: stronger fields make the spins turn more and the Trotter error larger.</li>
+  </ul>
+  <p class="small" style="margin-top:20px">The explorer is on the Track B page in Canvas, below these slides.</p>
+  <div class="foot"><span>Module 4 · Track B · Simulating a spin chain</span><span>13</span></div>
+</section>
+
+<!-- 14 -->
+<section class="slide">
+  <h2>Summary</h2>
+  <ul>
+    <li>Trotter steps approximate e<sup>−iHt</sup> by alternating short evolutions of the parts of H, built from RZZ and RX gates.</li>
+    <li>First-order error shrinks in proportion to the step; a symmetric second-order step shrinks it much faster for the same two-qubit gates.</li>
+    <li>On noisy hardware the best number of steps balances Trotter error against gate noise: /*B2N*/ second-order steps here.</li>
+    <li>Small chains can be checked exactly; large chains are why we want quantum computers.</li>
+  </ul>
+  <p style="margin-top:16px">Next: the Track B lab. You write <code>ising_hamiltonian()</code>, <code>trotter_step()</code> and <code>trotter_step2()</code>.</p>
+  <div class="foot"><span>Module 4 · Track B · Simulating a spin chain</span><span>14</span></div>
+</section>
+
+<!-- 15 -->
+<section class="slide">
+  <h2>Credits and license</h2>
+  <p style="font-size:23px">These slides were written for SemiAcademy's Quantum Computing Advanced course, developed through the Intel Semiconductor Education Program at Central State University (ISEP-CSU).</p>
+  <p style="font-size:23px">License: Creative Commons Attribution 4.0 International (CC BY 4.0), https://creativecommons.org/licenses/by/4.0/. You may copy, adapt and share them, with credit.</p>
+  <p style="font-size:23px">Suggested credit: "Module 4 Track B slides, Quantum Computing Advanced, SemiAcademy / ISEP-CSU, CC BY 4.0."</p>
+  <p style="font-size:21px">Every number was computed for these slides with qsim /*QSIM_V*/; the Hamiltonian and Trotter steps were checked against Qiskit 2.5.2 (SparsePauliOp, PauliEvolutionGate with LieTrotter and SuzukiTrotter), and the noisy results against Qiskit Aer 0.17.2. Source: github.com/CSU-Physics/quantum-computing-notebooks (media/level3/m4b-slides.html).</p>
+  <div class="foot"><span>Module 4 · Track B · Simulating a spin chain</span><span>15</span></div>
+</section>

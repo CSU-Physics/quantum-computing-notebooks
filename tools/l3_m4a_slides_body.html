@@ -1,0 +1,159 @@
+<!-- 1 -->
+<section class="slide title-slide">
+  <div class="kicker">Quantum Computing Advanced · Module 4 · Track A</div>
+  <h1>A quantum-kernel classifier</h1>
+  <p style="font-size:30px;max-width:620px">Encode data in quantum states, classify with a support vector machine, and compare honestly with a classical baseline.</p>
+  <div style="position:absolute;right:70px;top:200px;width:430px">/*TITLE_FIG*/</div>
+  <div class="foot"><span>SemiAcademy · ISEP-CSU</span><span>CC BY 4.0</span></div>
+</section>
+
+<!-- 2 -->
+<section class="slide">
+  <h2>By the end of this track you can</h2>
+  <ul>
+    <li>explain what a <strong>kernel</strong> does in a support vector machine;</li>
+    <li>build the <strong>ZZ feature map</strong> and compute a <strong>quantum kernel</strong> K(x, x′) = |⟨φ(x)|φ(x′)⟩|²;</li>
+    <li>compare a quantum kernel with a <strong>fair classical baseline</strong>: same split, same tuning, test set used once;</li>
+    <li>count the circuits and shots a kernel needs on hardware;</li>
+    <li>explain <strong>kernel concentration</strong> and why it limits large feature maps.</li>
+  </ul>
+  <p class="small" style="margin-top:24px">Course outcome 4: apply one application method, quantum machine learning against a fair classical baseline or Trotterized simulation with controlled error, and report its limits.</p>
+  <div class="foot"><span>Module 4 · Track A · Quantum-kernel classifier</span><span>2</span></div>
+</section>
+
+<!-- 3 -->
+<section class="slide">
+  <h2>What a kernel does</h2>
+  <p>A support vector machine (SVM) finds the boundary between two classes with the widest margin. It never needs the features themselves, only a <strong>kernel</strong>: a similarity K(x, x′) for every pair of points.</p>
+  <div class="eq">decision(x) = sign( Σᵢ αᵢ yᵢ K(xᵢ, x) + b )</div>
+  <ul>
+    <li style="font-size:24px">The <strong>RBF kernel</strong> K = exp(−γ |x − x′|²) treats nearby points as similar: a round bump around each point.</li>
+    <li style="font-size:24px">A kernel is the inner product of the points in some <strong>feature space</strong>, which can be far larger than the data. That is the kernel trick.</li>
+    <li style="font-size:24px">A <strong>quantum kernel</strong> uses the 2ⁿ-dimensional state space of n qubits as the feature space.</li>
+  </ul>
+  <div class="foot"><span>Module 4 · Track A · Quantum-kernel classifier</span><span>3</span></div>
+</section>
+
+<!-- 4 -->
+<section class="slide">
+  <h2>The ZZ feature map</h2>
+  <div style="margin:4px 0 14px">/*FMAP_FIG*/</div>
+  <ul>
+    <li style="font-size:24px">One qubit per feature. H gates, a phase 2xᵢ on each qubit, and a CX-phase-CX block for each pair, with phase 2(π − xᵢ)(π − xⱼ).</li>
+    <li style="font-size:24px">The state |φ(x)⟩ depends on the data in a way that is hard to compute classically for many qubits (Havlíček et al., Nature, 2019).</li>
+    <li style="font-size:24px">The kernel is the overlap of two such states: <strong>K(x, x′) = |⟨φ(x)|φ(x′)⟩|²</strong>, 1 when x = x′.</li>
+  </ul>
+  <div class="foot"><span>Module 4 · Track A · Quantum-kernel classifier</span><span>4</span></div>
+</section>
+
+<!-- 5 -->
+<section class="slide">
+  <h2>Two data sets, one fixed split</h2>
+  <div style="margin:0 0 10px">/*DATA_FIG*/</div>
+  <p style="font-size:24px"><strong>moons</strong>: a standard classical test set. <strong>adhoc</strong>: labels made by the ZZ feature map itself and a random two-qubit unitary, so the quantum kernel can fit them by construction. Each set: 40 training points, 20 test points, 10 of each class in the test set.</p>
+  <div class="foot"><span>Module 4 · Track A · Quantum-kernel classifier</span><span>5</span></div>
+</section>
+
+<!-- 6 -->
+<section class="slide">
+  <h2>The kernel matrix</h2>
+  <div style="margin:0 0 6px">/*KMAT_FIG*/</div>
+  <p style="font-size:24px">Ten points of each class, class 0 first. For adhoc the two diagonal blocks are brighter than the off-diagonal ones: points of the same class look alike to this kernel. For moons the pattern is much weaker.</p>
+  <div class="foot"><span>Module 4 · Track A · Quantum-kernel classifier</span><span>6</span></div>
+</section>
+
+<!-- 7 -->
+<section class="slide">
+  <h2>A fair comparison</h2>
+  <div class="cols">
+    <div class="card"><h3>Same data</h3><p>Both models see the same 40 training points; the 20 test points are used once, at the end.</p></div>
+    <div class="card"><h3>Same tuning</h3><p>Both choose their settings by 4-fold cross-validation on the training points: C for both, and γ for RBF.</p></div>
+    <div class="card"><h3>Honest report</h3><p>Report both accuracies, the size of the test set (each point is 0.05 here) and how the data were made.</p></div>
+  </div>
+  <p style="font-size:24px;margin-top:22px">Many published "quantum advantages" in machine learning disappear when the classical model is tuned as carefully as the quantum one.</p>
+  <div class="foot"><span>Module 4 · Track A · Quantum-kernel classifier</span><span>7</span></div>
+</section>
+
+<!-- 8 -->
+<section class="slide">
+  <h2>Results on the same split</h2>
+  <div class="cols">
+    <div style="flex:0 0 580px">/*ACC_FIG*/</div>
+    <div>
+      <p style="font-size:24px"><strong>moons:</strong> quantum /*MQ*/, classical /*MC*/. The ZZ kernel's notion of similarity does not match two curved bands.</p>
+      <p style="font-size:24px"><strong>adhoc:</strong> quantum /*AQ*/, classical /*AC*/. The labels came from the feature map, so the quantum kernel "knows" the rule.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Module 4 · Track A · Quantum-kernel classifier</span><span>8</span></div>
+</section>
+
+<!-- 9 -->
+<section class="slide">
+  <h2>Pause and predict</h2>
+  <p>The quantum kernel wins on adhoc by four test points. Is this evidence that quantum kernels classify real data better?</p>
+  <div class="reveal"><button type="button">Show the answer</button>
+    <div class="ans">No. The adhoc labels were generated from the same feature map, so the result shows only that a quantum kernel can fit data with a matching quantum structure. A real claim needs real data whose structure the feature map captures, a classical baseline tuned as hard, several splits and a larger test set, and enough shots on hardware. Huang et al. (Nature Communications, 2021) showed that with enough data, classical models can often match quantum kernels.</div></div>
+  <div class="foot"><span>Module 4 · Track A · Quantum-kernel classifier</span><span>9</span></div>
+</section>
+
+<!-- 10 -->
+<section class="slide">
+  <h2>Kernels from shots</h2>
+  <div style="margin:0 0 12px">/*OVERLAP_FIG*/</div>
+  <ul>
+    <li style="font-size:24px">Run the feature map of x, then the feature map of x′ backwards. The probability of all zeros is K(x, x′).</li>
+    <li style="font-size:24px">With 1,000 shots each kernel value is off by about 0.01.</li>
+    <li style="font-size:24px"><strong>Cost:</strong> 40 training points need 40 × 39 / 2 = 780 circuits, and 20 test points 20 × 40 = 800 more: 1,580 circuits, 1.58 million shots. The capstone limit, 8 training and 4 test points, needs 28 + 32 = 60.</li>
+  </ul>
+  <div class="foot"><span>Module 4 · Track A · Quantum-kernel classifier</span><span>10</span></div>
+</section>
+
+<!-- 11 -->
+<section class="slide">
+  <h2>More qubits, smaller kernel values</h2>
+  <div class="cols">
+    <div style="flex:0 0 580px">/*CONC_FIG*/</div>
+    <div>
+      <p style="font-size:23px">50 random pairs of points per size. The mean kernel value falls like 2⁻ⁿ: /*C6*/ at 6 qubits, /*C8*/ at 8.</p>
+      <p style="font-size:23px">The spread between pairs falls as fast (/*S8*/ at 8 qubits), the 1,000-shot error only like its square root (/*E8*/).</p>
+      <p style="font-size:23px"><strong>Exponential concentration</strong> (Thanasilp et al., 2024): without a feature map designed for the data, more qubits need exponentially more shots.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Module 4 · Track A · Quantum-kernel classifier</span><span>11</span></div>
+</section>
+
+<!-- 12 -->
+<section class="slide">
+  <h2>Try it: what a kernel sees</h2>
+  <p>Tab 1 of the Module 4 explorer colours the plane by K(x₀, x) for a reference point x₀ that you move with a click.</p>
+  <ul>
+    <li style="font-size:24px">RBF: one round bump; γ sets its width.</li>
+    <li style="font-size:24px">ZZ: a pattern of patches far from x₀, finer with more repetitions.</li>
+    <li style="font-size:24px">Overlay moons and adhoc: the adhoc classes follow the ZZ pattern, the moons do not.</li>
+  </ul>
+  <p class="small" style="margin-top:20px">The explorer is on the Track A page in Canvas, below these slides.</p>
+  <div class="foot"><span>Module 4 · Track A · Quantum-kernel classifier</span><span>12</span></div>
+</section>
+
+<!-- 13 -->
+<section class="slide">
+  <h2>Summary</h2>
+  <ul>
+    <li>A quantum kernel compares data through quantum states; an SVM uses it like any kernel.</li>
+    <li>Fair tests: same split, same tuning, test set used once. On moons the classical kernel won (/*MC*/ against /*MQ*/); on data built for the quantum kernel it lost (/*AC*/ against /*AQ*/).</li>
+    <li>On hardware every kernel value costs a circuit and many shots, and the number of circuits grows with the square of the data.</li>
+    <li>With many qubits, kernel values concentrate and shot noise wins.</li>
+  </ul>
+  <p style="margin-top:16px">Next: the Track A lab. You write <code>feature_map()</code>, <code>kernel_matrix()</code> and <code>kernel_entry_shots()</code>.</p>
+  <div class="foot"><span>Module 4 · Track A · Quantum-kernel classifier</span><span>13</span></div>
+</section>
+
+<!-- 14 -->
+<section class="slide">
+  <h2>Credits and license</h2>
+  <p style="font-size:23px">These slides were written for SemiAcademy's Quantum Computing Advanced course, developed through the Intel Semiconductor Education Program at Central State University (ISEP-CSU).</p>
+  <p style="font-size:23px">License: Creative Commons Attribution 4.0 International (CC BY 4.0), https://creativecommons.org/licenses/by/4.0/. You may copy, adapt and share them, with credit.</p>
+  <p style="font-size:23px">Suggested credit: "Module 4 Track A slides, Quantum Computing Advanced, SemiAcademy / ISEP-CSU, CC BY 4.0."</p>
+  <p style="font-size:21px">Every number was computed for these slides with qsim /*QSIM_V*/ and scikit-learn; the feature map was checked against Qiskit 2.5.2's zz_feature_map. The moons data come from scikit-learn's make_moons; the adhoc construction follows Havlíček et al., Nature 567, 209 (2019). Source: github.com/CSU-Physics/quantum-computing-notebooks (media/level3/m4a-slides.html).</p>
+  <div class="foot"><span>Module 4 · Track A · Quantum-kernel classifier</span><span>14</span></div>
+</section>

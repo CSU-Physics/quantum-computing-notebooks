@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Module 4 Explorer: Quantum Kernels and Trotter Steps</title>
+<style>
+  :root { --maroon:#99004C; --ink:#24313D; --muted:#6A626B; --line:#E4DCE0; --tint:#F8F4F6; --gold:#C9A227; --ok:#2E7D4F; --bad:#B3261E; --grey:#B9AEB4; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:#fff; color:var(--ink); font-family:"Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size:15px; }
+  .tabs { display:flex; border-bottom:2px solid var(--line); background:var(--tint); }
+  .tabs button { flex:1; border:0; background:none; padding:10px 8px; font-size:15px; cursor:pointer; color:var(--muted); border-bottom:3px solid transparent; }
+  .tabs button.on { color:var(--maroon); border-bottom-color:var(--maroon); font-weight:600; background:#fff; }
+  .tool { display:none; padding:12px 16px; }
+  .tool.on { display:block; }
+  h2 { font-family:Georgia, serif; color:var(--maroon); font-size:19px; margin:0 0 4px; }
+  .hint { color:var(--muted); margin:0 0 10px; line-height:1.45; }
+  .grid { display:grid; grid-template-columns: 290px 1fr; gap:14px; align-items:start; }
+  @media (max-width: 660px) { .grid { grid-template-columns: 1fr; } }
+  .box { border:1px solid var(--line); border-radius:6px; padding:10px 12px; min-width:0; }
+  .box h3 { margin:0 0 6px; font-size:14.5px; color:var(--maroon); }
+  label { display:flex; justify-content:space-between; align-items:center; margin:8px 0 2px; font-size:14px; gap:8px; }
+  input[type=range] { width:100%; }
+  .row { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; align-items:center; font-size:13.5px; }
+  button.act { border:2px solid var(--ink); background:#fff; color:var(--ink); padding:4px 9px; border-radius:5px; font-size:13.5px; cursor:pointer; }
+  button.act.on { background:var(--maroon); border-color:var(--maroon); color:#fff; }
+  .mono { font-family: Consolas, "Courier New", monospace; }
+  .note { margin-top:8px; padding:7px 10px; border-radius:4px; font-size:13.5px; background:var(--tint); color:var(--ink); line-height:1.45; }
+  .stats { display:grid; grid-template-columns: 1fr auto; gap:4px 10px; font-size:13.5px; margin-top:8px; }
+  .stats span.v { font-family:Consolas, monospace; text-align:right; }
+  .two { display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
+  @media (max-width: 760px) { .two { grid-template-columns: 1fr; } }
+  svg.chart { width:100%; height:auto; display:block; }
+  .credit { color:var(--muted); font-size:12px; padding:8px 16px 12px; border-top:1px solid var(--line); }
+</style>
+</head>
+<body>
+<div class="tabs" role="tablist">
+  <button type="button" data-t="kernel" role="tab">1. What a kernel sees (Track A)</button>
+  <button type="button" data-t="trotter" role="tab">2. Trotter steps and noise (Track B)</button>
+</div>
+
+<!-- TOOL 1 -->
+<section class="tool" id="t-kernel">
+  <h2>How similar does each point look to the reference point?</h2>
+  <p class="hint">The colour at each position x shows the kernel K(x₀, x) between the reference point x₀ (the gold cross) and x: bright means similar, dark means different. <strong>Click</strong> or tap the map to move x₀. Compare the quantum ZZ kernel of the lab with the classical RBF kernel, and overlay one of the lab's data sets.</p>
+  <div class="grid">
+    <div class="box">
+      <h3>Kernel</h3>
+      <div class="row"><button type="button" class="act" data-k="zz">Quantum ZZ</button><button type="button" class="act" data-k="rbf">Classical RBF</button></div>
+      <label for="kr">ZZ repetitions <span class="mono" id="krv"></span></label><input type="range" id="kr" min="1" max="3" step="1">
+      <label for="kg">RBF width γ <span class="mono" id="kgv"></span></label><input type="range" id="kg" min="-1" max="1" step="0.05">
+      <h3 style="margin-top:12px">Data</h3>
+      <div class="row"><button type="button" class="act" data-d="none">None</button><button type="button" class="act" data-d="moons">moons</button><button type="button" class="act" data-d="adhoc">adhoc</button></div>
+      <div class="stats" id="kst"></div>
+    </div>
+    <div class="box">
+      <h3>K(x₀, x) over the feature plane, 0 to 2π in each feature</h3>
+      <svg class="chart" id="kmap" viewBox="0 0 420 430" role="img" aria-label="Heat map of the kernel between the reference point and every point of the plane" style="max-width:520px;cursor:crosshair"></svg>
+      <div class="note" id="kmsg"></div>
+    </div>
+  </div>
+</section>
+
+<!-- TOOL 2 -->
+<section class="tool" id="t-trotter">
+  <h2>Four spins: Trotter error against gate noise</h2>
+  <p class="hint">The chain of the Track B lab: H = −J Σ ZᵢZᵢ₊₁ − h Σ Xᵢ with J = 1, four spins starting in |0000⟩. The simulation runs to t = 2 in n Trotter steps, and every RZZ gate gets a two-qubit depolarizing error p. Left: the magnetization over time, exact (line) and simulated (dots, one per step). Right: the error at t = 2 for 1 to 20 steps. The numbers are exact density-matrix results, as in the lab.</p>
+  <div class="grid">
+    <div class="box">
+      <h3>Simulation</h3>
+      <label for="th">field h <span class="mono" id="thv"></span></label><input type="range" id="th" min="0.2" max="1.5" step="0.05">
+      <label for="tn">Trotter steps n <span class="mono" id="tnv"></span></label><input type="range" id="tn" min="1" max="20" step="1">
+      <label for="tp">error per RZZ gate <span class="mono" id="tpv"></span></label><input type="range" id="tp" min="0" max="0.02" step="0.001">
+      <div class="row">order <button type="button" class="act" data-o="1">first</button><button type="button" class="act" data-o="2">second</button></div>
+      <div class="row"><button type="button" class="act" id="tlab">Lab's settings</button><button type="button" class="act" id="tclean">No noise</button></div>
+      <div class="stats" id="tst"></div>
+    </div>
+    <div class="box">
+      <div class="two">
+        <svg class="chart" id="tmag" viewBox="0 0 330 270" role="img" aria-label="Magnetization against time, exact and Trotter"></svg>
+        <svg class="chart" id="terr" viewBox="0 0 330 270" role="img" aria-label="Error at t = 2 against the number of Trotter steps"></svg>
+      </div>
+      <div class="note" id="tmsg"></div>
+    </div>
+  </div>
+</section>
+<div class="credit">Module 4 explorer · SemiAcademy / ISEP-CSU · CC BY 4.0 · the kernels, data and spin chain are those of the Module 4 labs; every value is computed in this page.</div>
+
+<script>
+/*CORE*/
+var DATA = /*DATA*/;
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var NS = 'http://www.w3.org/2000/svg';
+  function sv(p, tag, a, txt) { var e = document.createElementNS(NS, tag); for (var k in a) e.setAttribute(k, a[k]); if (txt !== undefined) e.textContent = txt; p.appendChild(e); return e; }
+  function clear(s) { while (s.firstChild) s.removeChild(s.firstChild); }
+  var tabs = document.querySelectorAll('.tabs button');
+  function openTab(t) {
+    tabs.forEach(function (b) { b.classList.toggle('on', b.dataset.t === t); });
+    document.querySelectorAll('.tool').forEach(function (s) { s.classList.toggle('on', s.id === 't-' + t); });
+  }
+  tabs.forEach(function (b) { b.onclick = function () { openTab(b.dataset.t); }; });
+  function fromHash() { openTab(location.hash.indexOf('trotter') >= 0 ? 'trotter' : 'kernel'); }
+  window.addEventListener('hashchange', fromHash);
+  fromHash();
+
+  // ---------------------------------------------------------------- tool 1: kernels
+  var KIND = 'zz', SET = 'none', X0 = [1.2, 2.0], G = 48, TWO_PI = 2 * Math.PI;
+  var M0 = 20, SZ = 380;
+  function colour(v) {                        // dark ink -> maroon -> gold -> white
+    var stops = [[36, 49, 61], [153, 0, 76], [201, 162, 39], [255, 248, 230]], x = Math.max(0, Math.min(1, v)) * 3, i = Math.min(2, Math.floor(x)), f = x - i;
+    var c = stops[i].map(function (a, j) { return Math.round(a + (stops[i + 1][j] - a) * f); });
+    return 'rgb(' + c.join(',') + ')';
+  }
+  function kval(x, y) {
+    return KIND === 'zz' ? M4.zzKernel(x, y, +$('kr').value) : M4.rbfKernel(x, y, Math.pow(10, +$('kg').value));
+  }
+  function drawKernel() {
+    var reps = +$('kr').value, gamma = Math.pow(10, +$('kg').value);
+    $('krv').textContent = reps; $('kgv').textContent = gamma.toFixed(2);
+    document.querySelectorAll('[data-k]').forEach(function (b) { b.classList.toggle('on', b.dataset.k === KIND); });
+    document.querySelectorAll('[data-d]').forEach(function (b) { b.classList.toggle('on', b.dataset.d === SET); });
+    $('kr').disabled = KIND !== 'zz'; $('kg').disabled = KIND !== 'rbf';
+    var s = $('kmap'); clear(s);
+    var cell = SZ / G, above = 0, sum = 0;
+    for (var i = 0; i < G; i++) for (var j = 0; j < G; j++) {
+      var x = [(i + 0.5) * TWO_PI / G, (j + 0.5) * TWO_PI / G], v = kval(X0, x);
+      sum += v; if (v > 0.5) above++;
+      sv(s, 'rect', { x: (M0 + i * cell).toFixed(2), y: (M0 + SZ - (j + 1) * cell).toFixed(2), width: (cell + 0.4).toFixed(2), height: (cell + 0.4).toFixed(2), fill: colour(v) });
+    }
+    sv(s, 'rect', { x: M0, y: M0, width: SZ, height: SZ, fill: 'none', stroke: '#24313D' });
+    ['0', 'π', '2π'].forEach(function (lab, k) {
+      sv(s, 'text', { x: M0 + k * SZ / 2, y: M0 + SZ + 16, 'font-size': 12, 'text-anchor': 'middle' }, lab);
+      sv(s, 'text', { x: M0 - 4, y: M0 + SZ - k * SZ / 2 + 4, 'font-size': 12, 'text-anchor': 'end' }, lab);
+    });
+    if (SET !== 'none') {
+      var d = DATA[SET];
+      [[d.X_train, d.y_train], [d.X_test, d.y_test]].forEach(function (pair, t) {
+        pair[0].forEach(function (p, k) {
+          var cx = M0 + p[0] / TWO_PI * SZ, cy = M0 + SZ - p[1] / TWO_PI * SZ;
+          if (pair[1][k] === 1) sv(s, 'circle', { cx: cx, cy: cy, r: 4.5, fill: t ? 'none' : '#FFFFFF', stroke: '#FFFFFF', 'stroke-width': 1.8 });
+          else sv(s, 'rect', { x: cx - 4, y: cy - 4, width: 8, height: 8, fill: t ? 'none' : '#6EC1FF', stroke: '#6EC1FF', 'stroke-width': 1.8 });
+        });
+      });
+    }
+    var gx = M0 + X0[0] / TWO_PI * SZ, gy = M0 + SZ - X0[1] / TWO_PI * SZ;
+    sv(s, 'line', { x1: gx - 9, y1: gy, x2: gx + 9, y2: gy, stroke: '#C9A227', 'stroke-width': 3 });
+    sv(s, 'line', { x1: gx, y1: gy - 9, x2: gx, y2: gy + 9, stroke: '#C9A227', 'stroke-width': 3 });
+    sv(s, 'text', { x: M0 + SZ / 2, y: 428, 'font-size': 12, 'text-anchor': 'middle', fill: '#6A626B' }, 'feature 1 across, feature 2 up' + (SET !== 'none' ? ' · circles class 1, squares class 0, filled = training' : ''));
+    $('kst').innerHTML = '<span>reference x₀</span><span class="v">(' + X0[0].toFixed(2) + ', ' + X0[1].toFixed(2) + ')</span>' +
+      '<span>mean K over the plane</span><span class="v">' + (sum / G / G).toFixed(3) + '</span>' +
+      '<span>share of the plane with K &gt; 0.5</span><span class="v">' + (100 * above / G / G).toFixed(1) + '%</span>';
+    $('kmsg').textContent = KIND === 'rbf'
+      ? 'The RBF kernel is one round bump around x₀: nearby points are similar, distant ones are not. γ sets its width; the lab tunes γ by cross-validation.'
+      : 'The ZZ kernel is not a single bump: x₀ looks similar to whole patches far away from it, in a pattern set by the circuit. More repetitions make the pattern finer. A quantum kernel helps only if this pattern matches how the classes are arranged, as it does for adhoc and not for moons.';
+  }
+  $('kmap').addEventListener('click', function (ev) {
+    var r = $('kmap').getBoundingClientRect(), sx = 420 / r.width;
+    var x = ((ev.clientX - r.left) * sx - M0) / SZ, y = 1 - ((ev.clientY - r.top) * sx - M0) / SZ;
+    if (x < 0 || x > 1 || y < 0 || y > 1) return;
+    X0 = [x * TWO_PI, y * TWO_PI]; drawKernel();
+  });
+  document.querySelectorAll('[data-k]').forEach(function (b) { b.onclick = function () { KIND = b.dataset.k; drawKernel(); }; });
+  document.querySelectorAll('[data-d]').forEach(function (b) { b.onclick = function () { SET = b.dataset.d; drawKernel(); }; });
+  $('kr').oninput = drawKernel; $('kg').oninput = drawKernel;
+  $('kr').value = 2; $('kg').value = 0;
+  drawKernel();
+
+  // ---------------------------------------------------------------- tool 2: Trotter
+  var ORDER = 1, TEND = 2, cache = {};
+  function eigFor(h) { var k = h.toFixed(2); if (!cache[k]) cache[k] = M4.jacobi(M4.hamiltonian(1, h)); return cache[k]; }
+  function axes(svg, x0, x1, yb, yt, xt, yt2, X, Y, xlab, ylab) {
+    yt2.forEach(function (v) { sv(svg, 'line', { x1: x0, y1: Y(v[0]), x2: x1, y2: Y(v[0]), stroke: '#E4DCE0' }); sv(svg, 'text', { x: x0 - 5, y: Y(v[0]) + 4, 'font-size': 11, 'text-anchor': 'end' }, v[1]); });
+    sv(svg, 'line', { x1: x0, y1: yb, x2: x1, y2: yb, stroke: '#24313D', 'stroke-width': 1.5 });
+    xt.forEach(function (v) { sv(svg, 'text', { x: X(v), y: yb + 15, 'font-size': 11, 'text-anchor': 'middle' }, v); });
+    sv(svg, 'text', { x: (x0 + x1) / 2, y: 266, 'font-size': 12, 'text-anchor': 'middle', fill: '#6A626B' }, xlab);
+    sv(svg, 'text', { x: 12, y: (yb + yt) / 2, 'font-size': 12, 'text-anchor': 'middle', fill: '#6A626B', transform: 'rotate(-90 12 ' + (yb + yt) / 2 + ')' }, ylab);
+  }
+  function drawTrotter() {
+    var h = +$('th').value, n = +$('tn').value, p = +$('tp').value;
+    $('thv').textContent = h.toFixed(2); $('tnv').textContent = n; $('tpv').textContent = (100 * p).toFixed(1) + '%';
+    document.querySelectorAll('[data-o]').forEach(function (b) { b.classList.toggle('on', +b.dataset.o === ORDER); });
+    var eig = eigFor(h), dt = TEND / n;
+    // left: magnetization over time
+    var s = $('tmag'); clear(s);
+    var x0 = 42, x1 = 320, yb = 236, yt = 14, X = function (t) { return x0 + (x1 - x0) * t / 3; }, Y = function (v) { return yb - (yb - yt) * (v + 1) / 2; };
+    axes(s, x0, x1, yb, yt, [0, 1, 2, 3], [[-1, '-1'], [0, '0'], [1, '1']], X, Y, 'time t', 'magnetization M');
+    var pts = [];
+    for (var t = 0; t <= 3.0001; t += 0.05) pts.push(X(t).toFixed(1) + ',' + Y(M4.exactMag(eig, t)).toFixed(1));
+    sv(s, 'polyline', { points: pts.join(' '), fill: 'none', stroke: '#99004C', 'stroke-width': 2.5 });
+    for (var k = 0; k * dt <= 3.0001; k++) {
+      var m = k === 0 ? 1 : M4.trotterMag(1, h, k * dt, k, ORDER, p);
+      sv(s, 'circle', { cx: X(k * dt), cy: Y(m), r: 3.6, fill: '#24313D' });
+    }
+    sv(s, 'line', { x1: X(2), y1: yt, x2: X(2), y2: yb, stroke: '#C9A227', 'stroke-dasharray': '4 3' });
+    // right: error at t = 2 against steps
+    var ex = M4.exactMag(eig, TEND), errs = [];
+    for (var j = 1; j <= 20; j++) errs.push(Math.abs(M4.trotterMag(1, h, TEND, j, ORDER, p) - ex));
+    var c = $('terr'); clear(c);
+    x0 = 58;
+    var lo = -4, hi = 0, Xn = function (v) { return x0 + (x1 - x0) * (v - 1) / 19; }, Ye = function (e) { var l = Math.log(Math.max(e, 1e-4)) / Math.LN10; return yb - (yb - yt) * (l - lo) / (hi - lo); };
+    axes(c, x0, x1, yb, yt, [1, 5, 10, 15, 20], [[1e-4, '1e-4'], [1e-3, '0.001'], [1e-2, '0.01'], [1e-1, '0.1'], [1, '1']], Xn, Ye, 'Trotter steps', '|M - M_exact| at t = 2');
+    sv(c, 'polyline', { points: errs.map(function (e, i) { return Xn(i + 1).toFixed(1) + ',' + Ye(e).toFixed(1); }).join(' '), fill: 'none', stroke: '#24313D', 'stroke-width': 2 });
+    var best = errs.indexOf(Math.min.apply(null, errs)) + 1;
+    errs.forEach(function (e, i) { sv(c, 'circle', { cx: Xn(i + 1), cy: Ye(e), r: i + 1 === n ? 6 : 3, fill: i + 1 === n ? '#99004C' : (i + 1 === best ? '#C9A227' : '#24313D') }); });
+    var mt = M4.trotterMag(1, h, TEND, n, ORDER, p);
+    $('tst').innerHTML = '<span>exact M at t = 2</span><span class="v">' + ex.toFixed(3) + '</span>' +
+      '<span>simulated M at t = 2</span><span class="v">' + mt.toFixed(3) + '</span>' +
+      '<span>error</span><span class="v">' + Math.abs(mt - ex).toFixed(4) + '</span>' +
+      '<span>noisy RZZ gates</span><span class="v">' + 3 * n + '</span>' +
+      '<span>best number of steps (gold)</span><span class="v">' + best + ' (' + errs[best - 1].toFixed(4) + ')</span>';
+    $('tmsg').textContent = p === 0
+      ? 'Without noise the error keeps falling as steps are added: only the Trotter error is left. Switch to the second order and see how much faster it falls.'
+      : 'With noise the error curve has a minimum (gold): fewer steps leave more Trotter error, more steps add more noisy gates. The second-order step reaches a lower minimum with about as many gates.';
+  }
+  $('th').oninput = drawTrotter; $('tn').oninput = drawTrotter; $('tp').oninput = drawTrotter;
+  document.querySelectorAll('[data-o]').forEach(function (b) { b.onclick = function () { ORDER = +b.dataset.o; drawTrotter(); }; });
+  $('tlab').onclick = function () { $('th').value = 0.5; $('tn').value = 5; $('tp').value = 0.005; ORDER = 1; drawTrotter(); };
+  $('tclean').onclick = function () { $('tp').value = 0; drawTrotter(); };
+  $('th').value = 0.5; $('tn').value = 5; $('tp').value = 0.005;
+  drawTrotter();
+})();
+</script>
+</body>
+</html>
