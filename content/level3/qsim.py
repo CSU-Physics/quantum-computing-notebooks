@@ -15,6 +15,9 @@ Everything is exact linear algebra with NumPy. It is meant for small circuits (u
 
 QuantumCircuit.compose (version 1.4.0) joins circuits as in Qiskit.
 
+Coherent errors (version 1.11.0): coherent_unitary_error(U) adds the same small unitary each time a gate
+runs, as in qiskit_aer.noise; Level 3 Module 3 uses it for an idle qubit whose frequency is slightly off.
+
 Faster density matrices (version 1.10.0): noisy runs and DensityMatrix work as before, much faster (an 8-qubit
 noisy circuit about 75 times), so that the Module 6 projects can scan noise levels in the browser.
 
@@ -51,9 +54,10 @@ __all__ = [
     "plot_bloch_vector", "plot_bloch_multivector", "bloch_vectors", "Operator",
     "NoiseModel", "QuantumError", "ReadoutError", "depolarizing_error", "pauli_error",
     "amplitude_damping_error", "phase_damping_error", "thermal_relaxation_error", "partial_trace",
+    "coherent_unitary_error",
     "Parameter", "ParameterVector", "ParameterExpression", "SparsePauliOp", "StatevectorEstimator",
 ]
-__version__ = "1.10.0"
+__version__ = "1.11.0"
 
 
 class CircuitError(Exception):
@@ -1646,6 +1650,18 @@ def pauli_error(noise_ops):
     if any(len(lab) != n or set(lab) - set("IXYZ") for lab in labels):
         raise ValueError("Use Pauli labels of equal length made of I, X, Y and Z.")
     return QuantumError([math.sqrt(max(p, 0.0)) * _pauli_matrix(lab) for lab, p in zip(labels, probs)])
+
+
+def coherent_unitary_error(unitary):
+    """A coherent error: the same unitary every time, as qiskit_aer.noise.coherent_unitary_error.
+
+    Example: coherent_unitary_error(RZ(0.05)) on an idle qubit is a small unwanted Z rotation each time
+    it idles (a qubit frequency slightly off), the error that dynamical decoupling removes.
+    """
+    u = np.asarray(unitary, dtype=complex)
+    if u.ndim != 2 or u.shape[0] != u.shape[1] or not np.allclose(u.conj().T @ u, np.eye(u.shape[0]), atol=1e-8):
+        raise ValueError("Input matrix is not unitary.")
+    return QuantumError([u])
 
 
 def depolarizing_error(param, num_qubits):

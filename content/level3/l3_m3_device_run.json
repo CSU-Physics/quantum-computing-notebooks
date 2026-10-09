@@ -1,0 +1,95 @@
+{
+ "backend": "fake_pittsburgh",
+ "kind": "simulation with the FakePittsburgh noise model (Qiskit Aer), not a hardware run",
+ "calibration_date": "2026-04-17",
+ "source": "qiskit_ibm_runtime 0.50.0, qiskit-aer AerSimulator.from_backend",
+ "physical_qubits": [
+  97,
+  107
+ ],
+ "qubit_properties": {
+  "97": {
+   "t1_us": 324.9,
+   "t2_us": 358.8,
+   "readout_error": 0.0033,
+   "x_error": 0.000258
+  },
+  "107": {
+   "t1_us": 420.7,
+   "t2_us": 430.2,
+   "readout_error": 0.00403,
+   "x_error": 0.000106
+  }
+ },
+ "cz_error": 0.00195,
+ "idle_us": 20,
+ "shots": 40000,
+ "cz_gates": {
+  "raw": 1,
+  "dd": 1,
+  "dd_fold3": 3,
+  "dd_fold5": 5,
+  "cal_00": 0,
+  "cal_01": 0,
+  "cal_10": 0,
+  "cal_11": 0
+ },
+ "key_format": "'b1b0': classical bit 1 (qubit 1) on the left, bit 0 (qubit 0) on the right, as Qiskit prints counts",
+ "circuits": {
+  "raw": "H(0), CX(0,1), idle 20 us, H on both, measure both: <XX>",
+  "dd": "as raw, with an X on both qubits after 10 us and after 20 us",
+  "dd_fold3": "as dd, with the CX replaced by three CXs",
+  "dd_fold5": "as dd, with five CXs",
+  "cal_b1b0": "prepare the bit string b1b0 with X gates and measure"
+ },
+ "counts": {
+  "raw": {
+   "00": 18708,
+   "01": 1140,
+   "10": 1181,
+   "11": 18971
+  },
+  "dd": {
+   "00": 18960,
+   "01": 1133,
+   "10": 1133,
+   "11": 18774
+  },
+  "dd_fold3": {
+   "00": 18816,
+   "01": 1224,
+   "10": 1206,
+   "11": 18754
+  },
+  "dd_fold5": {
+   "00": 18718,
+   "01": 1220,
+   "10": 1252,
+   "11": 18810
+  },
+  "cal_00": {
+   "00": 39716,
+   "01": 129,
+   "10": 155,
+   "11": 0
+  },
+  "cal_01": {
+   "00": 139,
+   "01": 39705,
+   "10": 1,
+   "11": 155
+  },
+  "cal_10": {
+   "00": 155,
+   "01": 0,
+   "10": 39718,
+   "11": 127
+  },
+  "cal_11": {
+   "00": 0,
+   "01": 167,
+   "10": 124,
+   "11": 39709
+  }
+ }
+}
