@@ -1,0 +1,233 @@
+<!-- 1 -->
+<section class="slide title-slide">
+  <div class="kicker">Quantum Computing Advanced · Module 5</div>
+  <h1>Quantum hardware and careers</h1>
+  <p style="font-size:30px;max-width:620px">Five ways to build a qubit, how to read the numbers each one publishes, and the people who build them.</p>
+  <div style="position:absolute;right:70px;top:200px;width:430px">/*TITLE_FIG*/</div>
+  <div class="foot"><span>SemiAcademy · ISEP-CSU</span><span>CC BY 4.0</span></div>
+</section>
+
+<!-- 2 -->
+<section class="slide">
+  <h2>By the end of this module you can</h2>
+  <ul>
+    <li>name what a qubit platform must deliver and the numbers that describe it;</li>
+    <li>explain how superconducting circuits, trapped ions, neutral atoms, silicon spins and photons store a qubit;</li>
+    <li>read a published figure for what it is: median, mean, best value or bound;</li>
+    <li>estimate how deep a circuit a device allows from its error rates;</li>
+    <li>explain why silicon spin qubits matter to the semiconductor industry;</li>
+    <li>name roles in the quantum workforce and the skills they need.</li>
+  </ul>
+  <p class="small" style="margin-top:24px">Course outcome 5: compare qubit technologies, including silicon spin qubits made with semiconductor processes, and name roles in the quantum workforce.</p>
+  <div class="foot"><span>Module 5 · Quantum hardware and careers</span><span>2</span></div>
+</section>
+
+<!-- 3 -->
+<section class="slide">
+  <h2>What a qubit platform must deliver</h2>
+  <div class="cols">
+    <div class="card"><h3>Qubits that last</h3><p>Two well-defined states that keep their phase (T2) much longer than a gate takes.</p></div>
+    <div class="card"><h3>Gates and readout</h3><p>A universal gate set and a measurement, all with small errors.</p></div>
+    <div class="card"><h3>Room to grow</h3><p>Many qubits that can be prepared, wired, controlled and connected, ideally made in a factory.</p></div>
+  </div>
+  <p style="font-size:24px;margin-top:20px">These are DiVincenzo's criteria (2000), in short. Every platform meets them; they differ in how well, how fast and at what scale.</p>
+  <div class="foot"><span>Module 5 · Quantum hardware and careers</span><span>3</span></div>
+</section>
+
+<!-- 4 -->
+<section class="slide">
+  <h2>The numbers on a spec sheet</h2>
+  <table style="font-size:22px">
+    <tr><td><strong>qubits</strong></td><td>how many, and which pairs can interact (connectivity)</td></tr>
+    <tr><td><strong>e1, e2</strong></td><td>error per single-qubit and two-qubit gate (0.001 = 99.9% fidelity)</td></tr>
+    <tr><td><strong>e_ro</strong></td><td>readout error, or SPAM error (preparation and measurement)</td></tr>
+    <tr><td><strong>T1, T2</strong></td><td>energy relaxation and dephasing times (Module 1)</td></tr>
+    <tr><td><strong>gate time</strong></td><td>how long an operation takes; with T2 it says how many gates fit</td></tr>
+  </table>
+  <p style="font-size:24px;margin-top:14px">Always ask what kind of number it is: median over a chip, mean with all qubits running, best pair, or a bound.</p>
+  <div class="foot"><span>Module 5 · Quantum hardware and careers</span><span>4</span></div>
+</section>
+
+<!-- 5 -->
+<section class="slide">
+  <h2>Superconducting circuits</h2>
+  <ul>
+    <li style="font-size:24px">A transmon is a tiny circuit: a capacitor and a Josephson junction (two aluminium layers with a thin oxide between them). Its two lowest energy levels, a few GHz apart, are the qubit.</li>
+    <li style="font-size:24px">Made with lithography on silicon or sapphire wafers; cooled to about 15 mK in a dilution refrigerator; controlled with microwave pulses.</li>
+    <li style="font-size:24px">Fast: a CZ on ibm_boston takes /*BOSTON_T2Q*/ ns. Median CZ error /*BOSTON_E2*/, T2 /*BOSTON_T2*/ µs (calibration of 17 Apr 2026). Google Willow: mean CZ error 0.33% with all 105 qubits running.</li>
+    <li style="font-size:24px">Fixed wiring: each qubit talks only to its neighbours (3 or 4).</li>
+  </ul>
+  <div class="foot"><span>Module 5 · Quantum hardware and careers</span><span>5</span></div>
+</section>
+
+<!-- 6 -->
+<section class="slide">
+  <h2>Trapped ions</h2>
+  <ul>
+    <li style="font-size:24px">Single charged atoms held by electric fields in a vacuum chamber, above a chip-like trap. The qubit is two hyperfine levels of each ion.</li>
+    <li style="font-size:24px">Lasers or microwaves drive the gates; ions are moved around the trap so that any two can interact.</li>
+    <li style="font-size:24px">Quantinuum Helios (98 barium ions, 2025): two-qubit error 7.9 × 10⁻⁴, single-qubit 2.5 × 10⁻⁵, among the best published.</li>
+    <li style="font-size:24px">Slow: about 70 µs per two-qubit gate on Helios, 600 µs on IonQ Aria, against tens of nanoseconds on a superconducting chip.</li>
+  </ul>
+  <div class="foot"><span>Module 5 · Quantum hardware and careers</span><span>6</span></div>
+</section>
+
+<!-- 7 -->
+<section class="slide">
+  <h2>Neutral atoms</h2>
+  <ul>
+    <li style="font-size:24px">Uncharged atoms (rubidium, caesium) held in arrays of laser beams, "optical tweezers", in a vacuum cell.</li>
+    <li style="font-size:24px">Two-qubit gates excite atoms to large Rydberg states for a few hundred nanoseconds: 99.52% fidelity on up to 60 atoms in parallel (Harvard, MIT, QuEra, 2023).</li>
+    <li style="font-size:24px">Scale: 6,100 caesium atoms trapped with 12.6 s coherence (Caltech, 2025), without gates yet.</li>
+    <li style="font-size:24px">Atoms can be moved to change connectivity; moving and reading out atoms is slow, and atoms are sometimes lost.</li>
+  </ul>
+  <div class="foot"><span>Module 5 · Quantum hardware and careers</span><span>7</span></div>
+</section>
+
+<!-- 8 -->
+<section class="slide">
+  <h2>Silicon spin qubits: transistors that hold one electron</h2>
+  <ul>
+    <li style="font-size:23px">A gate electrode traps a single electron in a quantum dot a few tens of nanometres across, under gates much like a transistor's. Its spin, up or down in a magnetic field, is the qubit.</li>
+    <li style="font-size:23px">Intel's Tunnel Falls: 12 dots made on 300 mm wafers with EUV lithography; 96% of the devices tested reached the single-electron regime.</li>
+    <li style="font-size:23px">Diraq and imec (Nature, 2025): devices from a 300 mm foundry line with one- and two-qubit fidelities above 99%. A remaining error source is silicon-29, whose nuclear spins disturb the electron: purified silicon-28 helps.</li>
+    <li style="font-size:23px">Tiny and factory-made, but the largest arrays have only about a dozen qubits so far.</li>
+  </ul>
+  <div class="foot"><span>Module 5 · Quantum hardware and careers</span><span>8</span></div>
+</section>
+
+<!-- 9 -->
+<section class="slide">
+  <h2>Photons</h2>
+  <ul>
+    <li style="font-size:24px">Qubits carried by single photons or squeezed light in waveguides on silicon-photonics chips. Most of the hardware runs at room temperature; the photon detectors are cooled.</li>
+    <li style="font-size:24px">PsiQuantum (Nature, 2025): single-qubit preparation and measurement 99.98%, two-qubit fusion 99.22%, not counting photon loss.</li>
+    <li style="font-size:24px">Xanadu Aurora (Nature, 2025): 35 chips in four racks, 12 qubit modes per clock cycle, about 14 dB of loss end to end.</li>
+    <li style="font-size:24px">Loss is the main error: a lost photon is a lost qubit.</li>
+  </ul>
+  <div class="foot"><span>Module 5 · Quantum hardware and careers</span><span>9</span></div>
+</section>
+
+<!-- 10 -->
+<section class="slide">
+  <h2>The platforms side by side</h2>
+  <div class="cols">
+    <div style="flex:0 0 600px">/*COMPARE_FIG*/</div>
+    <div>
+      <p style="font-size:22px">Published two-qubit errors against qubit count, log scales. Lower is better.</p>
+      <p style="font-size:22px">The points are not all the same kind of number: medians, means, averages from benchmarking, a bound (silicon) and a fusion (photons).</p>
+      <p style="font-size:22px">No platform wins on every axis.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Module 5 · Quantum hardware and careers</span><span>10</span></div>
+</section>
+
+<!-- 11 -->
+<section class="slide">
+  <h2>An error budget</h2>
+  <div class="eq">P(no error) = (1 − e1)<sup>n1</sup> · (1 − e2)<sup>n2</sup> · (1 − e_ro)<sup>nm</sup></div>
+  <div class="cols">
+    <div style="flex:0 0 600px">/*BUDGET_FIG*/</div>
+    <div>
+      <p style="font-size:22px">A 20-qubit GHZ state runs error free most of the time on every device listed.</p>
+      <p style="font-size:22px">A 50-qubit circuit with 500 two-qubit gates separates them: /*HELIOS_L*/ on Helios, /*BOSTON_L*/ on ibm_boston, /*WILLOW_L*/ on Willow.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Module 5 · Quantum hardware and careers</span><span>11</span></div>
+</section>
+
+<!-- 12 -->
+<section class="slide">
+  <h2>Pause and predict</h2>
+  <p>Device A reports a median two-qubit error of 0.2%. Device B advertises its best pair at 0.1%, with a median of 0.4%. Which do you expect to run a 50-qubit circuit with 300 two-qubit gates better?</p>
+  <div class="reveal"><button type="button">Show the answer</button>
+    <div class="ans">Device A. A 50-qubit circuit uses many pairs, so the median is the fair number: 0.998<sup>300</sup> ≈ 0.55 for A against 0.996<sup>300</sup> ≈ 0.30 for B. The best pair, 0.999<sup>300</sup> ≈ 0.74, describes one pair, not the circuit.</div></div>
+  <div class="foot"><span>Module 5 · Quantum hardware and careers</span><span>12</span></div>
+</section>
+
+<!-- 13 -->
+<section class="slide">
+  <h2>One chip, many qubits</h2>
+  <div class="cols">
+    <div style="flex:0 0 600px">/*SPREAD_FIG*/</div>
+    <div>
+      <p style="font-size:22px">The CZ error of each of the /*BOSTON_NPAIR*/ usable pairs of ibm_boston: median /*BOSTON_E2*/, best /*BOSTON_E2B*/, worst /*BOSTON_E2W*/.</p>
+      <p style="font-size:22px">T1 runs from /*BOSTON_T1W*/ µs to /*BOSTON_T1B*/ µs around a median of /*BOSTON_T1*/ µs.</p>
+      <p style="font-size:22px">The transpiler uses this calibration to avoid the worst qubits.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Module 5 · Quantum hardware and careers</span><span>13</span></div>
+</section>
+
+<!-- 14 -->
+<section class="slide">
+  <h2>Coherence against speed</h2>
+  <div class="cols">
+    <div style="flex:0 0 600px">/*SPEED_FIG*/</div>
+    <div>
+      <p style="font-size:22px">IonQ Aria keeps its phase about 1 s, ibm_boston /*BOSTON_T2*/ µs. But a gate takes 600 µs on Aria and /*BOSTON_T2Q*/ ns on ibm_boston.</p>
+      <p style="font-size:22px">Two-qubit gate times within T2: /*ARIA_R*/ for Aria, /*BOSTON_R*/ for ibm_boston. 1,000 layers take 0.6 s on Aria and /*BOSTON_1000*/ µs on ibm_boston.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Module 5 · Quantum hardware and careers</span><span>14</span></div>
+</section>
+
+<!-- 15 -->
+<section class="slide">
+  <h2>Who builds quantum computers?</h2>
+  <p style="font-size:23px">A survey of 57 quantum companies (Hughes and colleagues, IEEE Transactions on Education, 2022) listed 19 kinds of jobs, grouped here into three areas:</p>
+  <div class="cols">
+    <div class="card"><h3>Hardware</h3><p style="font-size:20px">device and component engineers, cryogenics, control systems, circuit design, photonics, test and measurement, technicians, experimental physicists</p></div>
+    <div class="card"><h3>Software</h3><p style="font-size:20px">software developers, algorithm developers, error-correction scientists, data scientists, computational chemists</p></div>
+    <div class="card"><h3>Business</h3><p style="font-size:20px">applications and solutions architects, sales and marketing, technical support</p></div>
+  </div>
+  <p style="font-size:22px;margin-top:14px">Most of the skills the companies rated important were not quantum: software development, electronics, circuit design, modelling, device testing.</p>
+  <div class="foot"><span>Module 5 · Quantum hardware and careers</span><span>15</span></div>
+</section>
+
+<!-- 16 -->
+<section class="slide">
+  <h2>Where semiconductor skills fit</h2>
+  <ul>
+    <li style="font-size:24px">Superconducting and silicon spin chips are made in cleanrooms with lithography, deposition, etching and metrology.</li>
+    <li style="font-size:24px">Silicon spin qubits come off 300 mm production lines; testing them uses wafer probers cooled to about 1.7 K.</li>
+    <li style="font-size:24px">Every platform needs microwave and RF engineering, cryogenics or vacuum, lasers and optics, and control electronics.</li>
+    <li style="font-size:24px">Technicians fabricate, assemble, test, operate and maintain these systems. QED-C's <em>Guide to Building a Quantum Technician Workforce</em> (2023) notes that companies often hire them from fields with shared skills: microelectronics, semiconductors and photonics.</li>
+  </ul>
+  <div class="foot"><span>Module 5 · Quantum hardware and careers</span><span>16</span></div>
+</section>
+
+<!-- 17 -->
+<section class="slide">
+  <h2>Try it: the Module 5 explorer</h2>
+  <ul>
+    <li style="font-size:24px">Tab 1: choose the qubits and layers of a circuit and compare its chance of an error-free run on each device. Switch IBM between median, best and worst qubits.</li>
+    <li style="font-size:24px">Tab 2: the calibration of every qubit and pair of ibm_boston and ibm_miami: T1, T2, gate and readout errors.</li>
+  </ul>
+  <p class="small" style="margin-top:20px">The explorer is on the Module 5 page in Canvas, below these slides.</p>
+  <div class="foot"><span>Module 5 · Quantum hardware and careers</span><span>17</span></div>
+</section>
+
+<!-- 18 -->
+<section class="slide">
+  <h2>Summary</h2>
+  <ul>
+    <li>Five platforms, one set of requirements: long-lived qubits, accurate gates and readout, and a path to scale.</li>
+    <li>Read every figure for what it is; compare medians with medians.</li>
+    <li>Two-qubit errors set the depth of a circuit: about 0.69/e2 gates halve the chance of an error-free run.</li>
+    <li>Coherence counts relative to gate time, and speed matters on its own.</li>
+    <li>Silicon spin qubits bring quantum computing into semiconductor fabs, and most quantum jobs need skills that are not quantum.</li>
+  </ul>
+  <p style="margin-top:16px">Next: the Module 5 lab. You write <code>circuit_success()</code>, <code>max_two_qubit_gates()</code> and <code>summarize()</code>.</p>
+  <div class="foot"><span>Module 5 · Quantum hardware and careers</span><span>18</span></div>
+</section>
+
+<!-- 19 -->
+<section class="slide">
+  <h2>Credits and license</h2>
+  <p style="font-size:22px">These slides were written for SemiAcademy's Quantum Computing Advanced course, developed through the Intel Semiconductor Education Program at Central State University (ISEP-CSU).</p>
+  <p style="font-size:22px">License: Creative Commons Attribution 4.0 International (CC BY 4.0), https://creativecommons.org/licenses/by/4.0/. You may copy, adapt and share them, with credit.</p>
+  <p style="font-size:22px">Suggested credit: "Module 5 slides, Quantum Computing Advanced, SemiAcademy / ISEP-CSU, CC BY 4.0."</p>
+  <p style="font-size:19px">Figures: IBM calibration data shipped in qiskit-ibm-runtime 0.50.0 (ibm_boston and ibm_miami, 17 April 2026); Google Quantum AI, Willow spec sheet; Quantinuum, arXiv:2511.05465; Azure Quantum documentation (IonQ); Evered et al., Nature 622, 268 (2023); Manetsch et al., Nature 647, 60 (2025); Steinacker et al., Nature 646, 81 (2025); George et al., arXiv:2410.16583; PsiQuantum, Nature (2025); Aghaee Rad et al., Nature 638, 912 (2025); Hughes et al., IEEE Trans. Educ. (2022); QED-C, Guide to Building a Quantum Technician Workforce (2023). Source: github.com/CSU-Physics/quantum-computing-notebooks (media/level3/m5-slides.html).</p>
+  <div class="foot"><span>Module 5 · Quantum hardware and careers</span><span>19</span></div>
+</section>
