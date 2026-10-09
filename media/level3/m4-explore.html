@@ -1,0 +1,371 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Module 4 Explorer: Quantum Kernels and Trotter Steps</title>
+<style>
+  :root { --maroon:#99004C; --ink:#24313D; --muted:#6A626B; --line:#E4DCE0; --tint:#F8F4F6; --gold:#C9A227; --ok:#2E7D4F; --bad:#B3261E; --grey:#B9AEB4; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:#fff; color:var(--ink); font-family:"Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size:15px; }
+  .tabs { display:flex; border-bottom:2px solid var(--line); background:var(--tint); }
+  .tabs button { flex:1; border:0; background:none; padding:10px 8px; font-size:15px; cursor:pointer; color:var(--muted); border-bottom:3px solid transparent; }
+  .tabs button.on { color:var(--maroon); border-bottom-color:var(--maroon); font-weight:600; background:#fff; }
+  .tool { display:none; padding:12px 16px; }
+  .tool.on { display:block; }
+  h2 { font-family:Georgia, serif; color:var(--maroon); font-size:19px; margin:0 0 4px; }
+  .hint { color:var(--muted); margin:0 0 10px; line-height:1.45; }
+  .grid { display:grid; grid-template-columns: 290px 1fr; gap:14px; align-items:start; }
+  @media (max-width: 660px) { .grid { grid-template-columns: 1fr; } }
+  .box { border:1px solid var(--line); border-radius:6px; padding:10px 12px; min-width:0; }
+  .box h3 { margin:0 0 6px; font-size:14.5px; color:var(--maroon); }
+  label { display:flex; justify-content:space-between; align-items:center; margin:8px 0 2px; font-size:14px; gap:8px; }
+  input[type=range] { width:100%; }
+  .row { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; align-items:center; font-size:13.5px; }
+  button.act { border:2px solid var(--ink); background:#fff; color:var(--ink); padding:4px 9px; border-radius:5px; font-size:13.5px; cursor:pointer; }
+  button.act.on { background:var(--maroon); border-color:var(--maroon); color:#fff; }
+  .mono { font-family: Consolas, "Courier New", monospace; }
+  .note { margin-top:8px; padding:7px 10px; border-radius:4px; font-size:13.5px; background:var(--tint); color:var(--ink); line-height:1.45; }
+  .stats { display:grid; grid-template-columns: 1fr auto; gap:4px 10px; font-size:13.5px; margin-top:8px; }
+  .stats span.v { font-family:Consolas, monospace; text-align:right; }
+  .two { display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
+  @media (max-width: 760px) { .two { grid-template-columns: 1fr; } }
+  svg.chart { width:100%; height:auto; display:block; }
+  .credit { color:var(--muted); font-size:12px; padding:8px 16px 12px; border-top:1px solid var(--line); }
+</style>
+</head>
+<body>
+<div class="tabs" role="tablist">
+  <button type="button" data-t="kernel" role="tab">1. What a kernel sees (Track A)</button>
+  <button type="button" data-t="trotter" role="tab">2. Trotter steps and noise (Track B)</button>
+</div>
+
+<!-- TOOL 1 -->
+<section class="tool" id="t-kernel">
+  <h2>How similar does each point look to the reference point?</h2>
+  <p class="hint">The colour at each position x shows the kernel K(x₀, x) between the reference point x₀ (the gold cross) and x: bright means similar, dark means different. <strong>Click</strong> or tap the map to move x₀. Compare the quantum ZZ kernel of the lab with the classical RBF kernel, and overlay one of the lab's data sets.</p>
+  <div class="grid">
+    <div class="box">
+      <h3>Kernel</h3>
+      <div class="row"><button type="button" class="act" data-k="zz">Quantum ZZ</button><button type="button" class="act" data-k="rbf">Classical RBF</button></div>
+      <label for="kr">ZZ repetitions <span class="mono" id="krv"></span></label><input type="range" id="kr" min="1" max="3" step="1">
+      <label for="kg">RBF width γ <span class="mono" id="kgv"></span></label><input type="range" id="kg" min="-1" max="1" step="0.05">
+      <h3 style="margin-top:12px">Data</h3>
+      <div class="row"><button type="button" class="act" data-d="none">None</button><button type="button" class="act" data-d="moons">moons</button><button type="button" class="act" data-d="adhoc">adhoc</button></div>
+      <div class="stats" id="kst"></div>
+    </div>
+    <div class="box">
+      <h3>K(x₀, x) over the feature plane, 0 to 2π in each feature</h3>
+      <svg class="chart" id="kmap" viewBox="0 0 420 430" role="img" aria-label="Heat map of the kernel between the reference point and every point of the plane" style="max-width:520px;cursor:crosshair"></svg>
+      <div class="note" id="kmsg"></div>
+    </div>
+  </div>
+</section>
+
+<!-- TOOL 2 -->
+<section class="tool" id="t-trotter">
+  <h2>Four spins: Trotter error against gate noise</h2>
+  <p class="hint">The chain of the Track B lab: H = −J Σ ZᵢZᵢ₊₁ − h Σ Xᵢ with J = 1, four spins starting in |0000⟩. The simulation runs to t = 2 in n Trotter steps, and every RZZ gate gets a two-qubit depolarizing error p. Left: the magnetization over time, exact (line) and simulated (dots, one per step). Right: the error at t = 2 for 1 to 20 steps. The numbers are exact density-matrix results, as in the lab.</p>
+  <div class="grid">
+    <div class="box">
+      <h3>Simulation</h3>
+      <label for="th">field h <span class="mono" id="thv"></span></label><input type="range" id="th" min="0.2" max="1.5" step="0.05">
+      <label for="tn">Trotter steps n <span class="mono" id="tnv"></span></label><input type="range" id="tn" min="1" max="20" step="1">
+      <label for="tp">error per RZZ gate <span class="mono" id="tpv"></span></label><input type="range" id="tp" min="0" max="0.02" step="0.001">
+      <div class="row">order <button type="button" class="act" data-o="1">first</button><button type="button" class="act" data-o="2">second</button></div>
+      <div class="row"><button type="button" class="act" id="tlab">Lab's settings</button><button type="button" class="act" id="tclean">No noise</button></div>
+      <div class="stats" id="tst"></div>
+    </div>
+    <div class="box">
+      <div class="two">
+        <svg class="chart" id="tmag" viewBox="0 0 330 270" role="img" aria-label="Magnetization against time, exact and Trotter"></svg>
+        <svg class="chart" id="terr" viewBox="0 0 330 270" role="img" aria-label="Error at t = 2 against the number of Trotter steps"></svg>
+      </div>
+      <div class="note" id="tmsg"></div>
+    </div>
+  </div>
+</section>
+<div class="credit">Module 4 explorer · SemiAcademy / ISEP-CSU · CC BY 4.0 · the kernels, data and spin chain are those of the Module 4 labs; every value is computed in this page.</div>
+
+<script>
+// Computational core of the Module 4 explorer (inlined into media/level3/m4-explore.html by tools/build_l3_m4.py,
+// and tested in Node against the lab's numbers). Qubit q is bit q of a basis index, as in qsim and Qiskit.
+var M4 = (function () {
+  // ------------------------------------------------------------ kernels (2 features, 2 qubits)
+  function zzState(x, reps) {               // the ZZ feature map of the lab, as [re0, im0, re1, im1, ...]
+    var re = [1, 0, 0, 0], im = [0, 0, 0, 0], k, t;
+    function h(q) {
+      var m = 1 << q, s = Math.SQRT1_2;
+      for (k = 0; k < 4; k++) if (!(k & m)) {
+        var j = k | m, ar = re[k], ai = im[k], br = re[j], bi = im[j];
+        re[k] = s * (ar + br); im[k] = s * (ai + bi); re[j] = s * (ar - br); im[j] = s * (ai - bi);
+      }
+    }
+    function p(q, a) {
+      var c = Math.cos(a), s = Math.sin(a), m = 1 << q;
+      for (k = 0; k < 4; k++) if (k & m) { t = re[k]; re[k] = c * t - s * im[k]; im[k] = s * t + c * im[k]; }
+    }
+    function cx(a, b) {                      // control a, target b
+      var ma = 1 << a, mb = 1 << b;
+      for (k = 0; k < 4; k++) if ((k & ma) && !(k & mb)) {
+        var j = k | mb; t = re[k]; re[k] = re[j]; re[j] = t; t = im[k]; im[k] = im[j]; im[j] = t;
+      }
+    }
+    for (var r = 0; r < reps; r++) {
+      h(0); h(1); p(0, 2 * x[0]); p(1, 2 * x[1]);
+      cx(0, 1); p(1, 2 * (Math.PI - x[0]) * (Math.PI - x[1])); cx(0, 1);
+    }
+    return [re, im];
+  }
+  function zzKernel(x, y, reps) {
+    var a = zzState(x, reps), b = zzState(y, reps), sr = 0, si = 0;
+    for (var k = 0; k < 4; k++) { sr += a[0][k] * b[0][k] + a[1][k] * b[1][k]; si += a[0][k] * b[1][k] - a[1][k] * b[0][k]; }
+    return sr * sr + si * si;
+  }
+  function rbfKernel(x, y, gamma) {
+    var d0 = x[0] - y[0], d1 = x[1] - y[1];
+    return Math.exp(-gamma * (d0 * d0 + d1 * d1));
+  }
+
+  // ------------------------------------------------------------ the 4-spin Ising chain
+  var N = 4, D = 16;
+  function zbit(k, q) { return (k >> q) & 1 ? -1 : 1; }
+  function hamiltonian(J, h) {               // real symmetric 16 x 16: -J sum Z_i Z_(i+1) - h sum X_i
+    var H = [], k, q;
+    for (k = 0; k < D; k++) { H.push(new Array(D).fill(0)); }
+    for (k = 0; k < D; k++) {
+      for (q = 0; q < N - 1; q++) H[k][k] += -J * zbit(k, q) * zbit(k, q + 1);
+      for (q = 0; q < N; q++) H[k][k ^ (1 << q)] += -h;
+    }
+    return H;
+  }
+  function jacobi(A0) {                      // eigenvalues and eigenvectors (columns) of a real symmetric matrix
+    var n = A0.length, A = A0.map(function (r) { return r.slice(); }), V = [], i, j, k;
+    for (i = 0; i < n; i++) { V.push(new Array(n).fill(0)); V[i][i] = 1; }
+    for (var sweep = 0; sweep < 100; sweep++) {
+      var off = 0;
+      for (i = 0; i < n; i++) for (j = i + 1; j < n; j++) off += A[i][j] * A[i][j];
+      if (off < 1e-26) break;
+      for (var p = 0; p < n; p++) for (var q = p + 1; q < n; q++) {
+        if (Math.abs(A[p][q]) < 1e-300) continue;
+        var th = (A[q][q] - A[p][p]) / (2 * A[p][q]);
+        var t = (th >= 0 ? 1 : -1) / (Math.abs(th) + Math.sqrt(th * th + 1));
+        var c = 1 / Math.sqrt(t * t + 1), s = t * c;
+        for (k = 0; k < n; k++) {
+          var akp = A[k][p], akq = A[k][q];
+          A[k][p] = c * akp - s * akq; A[k][q] = s * akp + c * akq;
+        }
+        for (k = 0; k < n; k++) {
+          var apk = A[p][k], aqk = A[q][k];
+          A[p][k] = c * apk - s * aqk; A[q][k] = s * apk + c * aqk;
+        }
+        for (k = 0; k < n; k++) {
+          var vkp = V[k][p], vkq = V[k][q];
+          V[k][p] = c * vkp - s * vkq; V[k][q] = s * vkp + c * vkq;
+        }
+      }
+    }
+    return { E: A.map(function (r, i) { return r[i]; }), V: V };
+  }
+  function magOfProbs(pk) { var m = 0; for (var k = 0; k < D; k++) { var z = 0; for (var q = 0; q < N; q++) z += zbit(k, q); m += pk[k] * z / N; } return m; }
+  function exactMag(eig, t) {               // M(t) for exp(-iHt)|0000>
+    var amp_re = new Array(D).fill(0), amp_im = new Array(D).fill(0), pk = [];
+    for (var a = 0; a < D; a++) {
+      var w = eig.V[0][a], c = Math.cos(eig.E[a] * t), s = -Math.sin(eig.E[a] * t);
+      for (var k = 0; k < D; k++) { amp_re[k] += eig.V[k][a] * c * w; amp_im[k] += eig.V[k][a] * s * w; }
+    }
+    for (var k2 = 0; k2 < D; k2++) pk.push(amp_re[k2] * amp_re[k2] + amp_im[k2] * amp_im[k2]);
+    return magOfProbs(pk);
+  }
+  // density matrix as two Float64Arrays (re, im), row-major 16 x 16
+  function rx(R, I, q, theta) {
+    var c = Math.cos(theta / 2), s = Math.sin(theta / 2), m = 1 << q, a, b, k;
+    // rows: U rho
+    for (b = 0; b < D; b++) for (a = 0; a < D; a++) if (!(a & m)) {
+      var a2 = a | m, i0 = a * D + b, i1 = a2 * D + b;
+      var r0 = R[i0], m0 = I[i0], r1 = R[i1], m1 = I[i1];
+      R[i0] = c * r0 + s * m1; I[i0] = c * m0 - s * r1;   // c x0 - i s x1
+      R[i1] = c * r1 + s * m0; I[i1] = c * m1 - s * r0;   // -i s x0 + c x1
+    }
+    // columns: (U rho) U^dagger
+    for (a = 0; a < D; a++) for (k = 0; k < D; k++) if (!(k & m)) {
+      var k2 = k | m, j0 = a * D + k, j1 = a * D + k2;
+      var p0 = R[j0], n0 = I[j0], p1 = R[j1], n1 = I[j1];
+      R[j0] = c * p0 - s * n1; I[j0] = c * n0 + s * p1;   // c y0 + i s y1
+      R[j1] = c * p1 - s * n0; I[j1] = c * n1 + s * p0;   // i s y0 + c y1
+    }
+  }
+  function rzz(R, I, q1, q2, theta) {
+    for (var a = 0; a < D; a++) for (var b = 0; b < D; b++) {
+      var sa = zbit(a, q1) * zbit(a, q2), sb = zbit(b, q1) * zbit(b, q2);
+      var ph = -theta / 2 * (sa - sb);
+      if (ph === 0) continue;
+      var c = Math.cos(ph), s = Math.sin(ph), i = a * D + b, r = R[i], m = I[i];
+      R[i] = c * r - s * m; I[i] = s * r + c * m;
+    }
+  }
+  function depol2(R, I, q1, q2, p) {          // rho -> (1 - p) rho + p I/4 (x) Tr_{q1 q2} rho
+    if (p <= 0) return;
+    var mask = (1 << q1) | (1 << q2), sr = new Float64Array(D * D), si = new Float64Array(D * D), a, b;
+    var subs = [0, 1 << q1, 1 << q2, mask];
+    for (a = 0; a < D; a++) if (!(a & mask)) for (b = 0; b < D; b++) if (!(b & mask)) {
+      var tr = 0, ti = 0;
+      for (var m = 0; m < 4; m++) { tr += R[(a | subs[m]) * D + (b | subs[m])]; ti += I[(a | subs[m]) * D + (b | subs[m])]; }
+      sr[a * D + b] = tr; si[a * D + b] = ti;
+    }
+    for (a = 0; a < D; a++) for (b = 0; b < D; b++) {
+      var i = a * D + b;
+      R[i] *= (1 - p); I[i] *= (1 - p);
+      if ((a & mask) === (b & mask)) { var j = (a & ~mask) * D + (b & ~mask); R[i] += p / 4 * sr[j]; I[i] += p / 4 * si[j]; }
+    }
+  }
+  function trotterMag(J, h, t, n, order, p) {  // magnetization after n Trotter steps to time t, depolarizing p on each RZZ
+    var R = new Float64Array(D * D), I = new Float64Array(D * D), dt = t / n, q, s;
+    R[0] = 1;
+    for (s = 0; s < n; s++) {
+      if (order === 2) for (q = 0; q < N; q++) rx(R, I, q, -h * dt);
+      for (q = 0; q < N - 1; q++) { rzz(R, I, q, q + 1, -2 * J * dt); depol2(R, I, q, q + 1, p); }
+      for (q = 0; q < N; q++) rx(R, I, q, order === 2 ? -h * dt : -2 * h * dt);
+    }
+    var pk = []; for (var k = 0; k < D; k++) pk.push(R[k * D + k]);
+    return magOfProbs(pk);
+  }
+  return { zzKernel: zzKernel, rbfKernel: rbfKernel, hamiltonian: hamiltonian, jacobi: jacobi, exactMag: exactMag, trotterMag: trotterMag };
+})();
+if (typeof module !== 'undefined') module.exports = M4;
+
+var DATA = {"moons":{"X_train":[[2.020086,1.2497],[1.100367,2.783364],[1.339749,0.93511],[1.20956,3.141593],[2.062111,1.368415],[1.326586,1.800719],[2.216402,1.590114],[1.422356,0.986047],[1.981016,1.887685],[1.050901,2.749811],[1.507246,1.920236],[2.982746,1.138159],[1.519684,3.093184],[0.0,1.238467],[1.214212,1.186025],[1.534413,1.218697],[1.834927,0.448076],[1.981759,1.774624],[1.222248,3.103677],[1.672432,0.873604],[1.421522,1.764185],[2.122402,0.610481],[1.883697,2.204434],[2.947892,1.772438],[2.512182,0.818103],[1.832655,2.461588],[0.489459,1.751045],[0.443386,2.089518],[1.314518,2.870951],[1.665419,2.259862],[1.524245,0.784771],[2.580368,0.4356],[0.411115,2.346181],[2.506094,0.922976],[2.822856,1.532074],[0.518164,2.595877],[1.224561,1.293825],[2.116724,0.523806],[3.141593,2.349253],[0.398562,2.432782]],"y_train":[0,0,1,0,0,1,0,1,0,0,1,1,0,0,1,1,1,0,0,1,1,1,0,1,1,0,0,0,0,0,1,1,0,1,1,0,1,1,1,0],"X_test":[[1.037116,3.096442],[1.974698,0.92469],[1.067067,3.054375],[0.567297,2.106103],[2.79066,1.719176],[2.15711,0.114613],[0.289445,2.415034],[1.932767,2.260935],[2.968116,1.776924],[1.325902,2.852132],[2.945702,1.28334],[0.744327,2.709934],[2.325504,0.623053],[2.356864,0.0],[2.853072,1.115215],[0.270892,1.131867],[1.690663,2.900479],[2.104286,0.351807],[1.183542,2.001283],[0.394478,2.91371]],"y_test":[0,1,0,0,1,1,0,0,1,0,1,0,1,1,1,0,0,1,1,0]},"adhoc":{"X_train":[[3.375941,5.536746],[4.374454,1.839219],[4.290152,5.152688],[2.705716,3.686964],[5.787314,1.292923],[4.204252,3.286419],[2.336597,4.808586],[0.53815,1.487924],[3.009968,1.003669],[0.924032,1.758627],[4.945072,4.963198],[5.153086,1.594391],[5.210599,4.691928],[3.096649,5.337317],[3.013943,0.919447],[2.787836,5.483745],[0.53341,1.21597],[1.289514,4.657458],[2.218736,4.097099],[0.056338,0.403697],[4.271838,2.313983],[4.435671,0.325988],[6.281948,0.902498],[5.82212,5.710777],[2.546624,1.666019],[3.529955,2.511114],[2.458159,3.246774],[2.134551,1.414445],[1.061596,3.220745],[4.388342,1.834556],[2.191899,2.186672],[2.692803,4.767087],[1.87491,1.972832],[2.053167,0.854128],[5.066566,0.963988],[4.537495,1.37423],[1.343766,5.395006],[4.043057,2.456404],[5.679771,4.404371],[2.542137,4.180496]],"y_train":[0,1,0,1,1,1,1,1,0,0,0,0,0,1,0,1,1,0,0,0,0,1,1,0,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0],"X_test":[[1.997336,3.887134],[2.611932,5.323768],[2.351443,0.570844],[5.214333,4.132151],[1.342636,3.424227],[3.435315,5.789499],[5.95106,5.291167],[3.020622,3.369326],[3.813163,6.098201],[5.854957,1.532447],[4.198157,5.558828],[5.389014,4.021358],[4.422666,1.936834],[1.13278,4.692662],[4.440028,0.553755],[2.685533,5.918914],[1.092717,4.82442],[0.007216,2.138586],[3.659431,0.655958],[3.851024,1.235521]],"y_test":[0,1,0,0,1,0,1,1,0,1,0,0,1,0,1,0,0,1,1,1]}};
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var NS = 'http://www.w3.org/2000/svg';
+  function sv(p, tag, a, txt) { var e = document.createElementNS(NS, tag); for (var k in a) e.setAttribute(k, a[k]); if (txt !== undefined) e.textContent = txt; p.appendChild(e); return e; }
+  function clear(s) { while (s.firstChild) s.removeChild(s.firstChild); }
+  var tabs = document.querySelectorAll('.tabs button');
+  function openTab(t) {
+    tabs.forEach(function (b) { b.classList.toggle('on', b.dataset.t === t); });
+    document.querySelectorAll('.tool').forEach(function (s) { s.classList.toggle('on', s.id === 't-' + t); });
+  }
+  tabs.forEach(function (b) { b.onclick = function () { openTab(b.dataset.t); }; });
+  function fromHash() { openTab(location.hash.indexOf('trotter') >= 0 ? 'trotter' : 'kernel'); }
+  window.addEventListener('hashchange', fromHash);
+  fromHash();
+
+  // ---------------------------------------------------------------- tool 1: kernels
+  var KIND = 'zz', SET = 'none', X0 = [1.2, 2.0], G = 48, TWO_PI = 2 * Math.PI;
+  var M0 = 20, SZ = 380;
+  function colour(v) {                        // dark ink -> maroon -> gold -> white
+    var stops = [[36, 49, 61], [153, 0, 76], [201, 162, 39], [255, 248, 230]], x = Math.max(0, Math.min(1, v)) * 3, i = Math.min(2, Math.floor(x)), f = x - i;
+    var c = stops[i].map(function (a, j) { return Math.round(a + (stops[i + 1][j] - a) * f); });
+    return 'rgb(' + c.join(',') + ')';
+  }
+  function kval(x, y) {
+    return KIND === 'zz' ? M4.zzKernel(x, y, +$('kr').value) : M4.rbfKernel(x, y, Math.pow(10, +$('kg').value));
+  }
+  function drawKernel() {
+    var reps = +$('kr').value, gamma = Math.pow(10, +$('kg').value);
+    $('krv').textContent = reps; $('kgv').textContent = gamma.toFixed(2);
+    document.querySelectorAll('[data-k]').forEach(function (b) { b.classList.toggle('on', b.dataset.k === KIND); });
+    document.querySelectorAll('[data-d]').forEach(function (b) { b.classList.toggle('on', b.dataset.d === SET); });
+    $('kr').disabled = KIND !== 'zz'; $('kg').disabled = KIND !== 'rbf';
+    var s = $('kmap'); clear(s);
+    var cell = SZ / G, above = 0, sum = 0;
+    for (var i = 0; i < G; i++) for (var j = 0; j < G; j++) {
+      var x = [(i + 0.5) * TWO_PI / G, (j + 0.5) * TWO_PI / G], v = kval(X0, x);
+      sum += v; if (v > 0.5) above++;
+      sv(s, 'rect', { x: (M0 + i * cell).toFixed(2), y: (M0 + SZ - (j + 1) * cell).toFixed(2), width: (cell + 0.4).toFixed(2), height: (cell + 0.4).toFixed(2), fill: colour(v) });
+    }
+    sv(s, 'rect', { x: M0, y: M0, width: SZ, height: SZ, fill: 'none', stroke: '#24313D' });
+    ['0', 'π', '2π'].forEach(function (lab, k) {
+      sv(s, 'text', { x: M0 + k * SZ / 2, y: M0 + SZ + 16, 'font-size': 12, 'text-anchor': 'middle' }, lab);
+      sv(s, 'text', { x: M0 - 4, y: M0 + SZ - k * SZ / 2 + 4, 'font-size': 12, 'text-anchor': 'end' }, lab);
+    });
+    if (SET !== 'none') {
+      var d = DATA[SET];
+      [[d.X_train, d.y_train], [d.X_test, d.y_test]].forEach(function (pair, t) {
+        pair[0].forEach(function (p, k) {
+          var cx = M0 + p[0] / TWO_PI * SZ, cy = M0 + SZ - p[1] / TWO_PI * SZ;
+          if (pair[1][k] === 1) sv(s, 'circle', { cx: cx, cy: cy, r: 4.5, fill: t ? 'none' : '#FFFFFF', stroke: '#FFFFFF', 'stroke-width': 1.8 });
+          else sv(s, 'rect', { x: cx - 4, y: cy - 4, width: 8, height: 8, fill: t ? 'none' : '#6EC1FF', stroke: '#6EC1FF', 'stroke-width': 1.8 });
+        });
+      });
+    }
+    var gx = M0 + X0[0] / TWO_PI * SZ, gy = M0 + SZ - X0[1] / TWO_PI * SZ;
+    sv(s, 'line', { x1: gx - 9, y1: gy, x2: gx + 9, y2: gy, stroke: '#C9A227', 'stroke-width': 3 });
+    sv(s, 'line', { x1: gx, y1: gy - 9, x2: gx, y2: gy + 9, stroke: '#C9A227', 'stroke-width': 3 });
+    sv(s, 'text', { x: M0 + SZ / 2, y: 428, 'font-size': 12, 'text-anchor': 'middle', fill: '#6A626B' }, 'feature 1 across, feature 2 up' + (SET !== 'none' ? ' · circles class 1, squares class 0, filled = training' : ''));
+    $('kst').innerHTML = '<span>reference x₀</span><span class="v">(' + X0[0].toFixed(2) + ', ' + X0[1].toFixed(2) + ')</span>' +
+      '<span>mean K over the plane</span><span class="v">' + (sum / G / G).toFixed(3) + '</span>' +
+      '<span>share of the plane with K &gt; 0.5</span><span class="v">' + (100 * above / G / G).toFixed(1) + '%</span>';
+    $('kmsg').textContent = KIND === 'rbf'
+      ? 'The RBF kernel is one round bump around x₀: nearby points are similar, distant ones are not. γ sets its width; the lab tunes γ by cross-validation.'
+      : 'The ZZ kernel is not a single bump: x₀ looks similar to whole patches far away from it, in a pattern set by the circuit. More repetitions make the pattern finer. A quantum kernel helps only if this pattern matches how the classes are arranged, as it does for adhoc and not for moons.';
+  }
+  $('kmap').addEventListener('click', function (ev) {
+    var r = $('kmap').getBoundingClientRect(), sx = 420 / r.width;
+    var x = ((ev.clientX - r.left) * sx - M0) / SZ, y = 1 - ((ev.clientY - r.top) * sx - M0) / SZ;
+    if (x < 0 || x > 1 || y < 0 || y > 1) return;
+    X0 = [x * TWO_PI, y * TWO_PI]; drawKernel();
+  });
+  document.querySelectorAll('[data-k]').forEach(function (b) { b.onclick = function () { KIND = b.dataset.k; drawKernel(); }; });
+  document.querySelectorAll('[data-d]').forEach(function (b) { b.onclick = function () { SET = b.dataset.d; drawKernel(); }; });
+  $('kr').oninput = drawKernel; $('kg').oninput = drawKernel;
+  $('kr').value = 2; $('kg').value = 0;
+  drawKernel();
+
+  // ---------------------------------------------------------------- tool 2: Trotter
+  var ORDER = 1, TEND = 2, cache = {};
+  function eigFor(h) { var k = h.toFixed(2); if (!cache[k]) cache[k] = M4.jacobi(M4.hamiltonian(1, h)); return cache[k]; }
+  function axes(svg, x0, x1, yb, yt, xt, yt2, X, Y, xlab, ylab) {
+    yt2.forEach(function (v) { sv(svg, 'line', { x1: x0, y1: Y(v[0]), x2: x1, y2: Y(v[0]), stroke: '#E4DCE0' }); sv(svg, 'text', { x: x0 - 5, y: Y(v[0]) + 4, 'font-size': 11, 'text-anchor': 'end' }, v[1]); });
+    sv(svg, 'line', { x1: x0, y1: yb, x2: x1, y2: yb, stroke: '#24313D', 'stroke-width': 1.5 });
+    xt.forEach(function (v) { sv(svg, 'text', { x: X(v), y: yb + 15, 'font-size': 11, 'text-anchor': 'middle' }, v); });
+    sv(svg, 'text', { x: (x0 + x1) / 2, y: 266, 'font-size': 12, 'text-anchor': 'middle', fill: '#6A626B' }, xlab);
+    sv(svg, 'text', { x: 12, y: (yb + yt) / 2, 'font-size': 12, 'text-anchor': 'middle', fill: '#6A626B', transform: 'rotate(-90 12 ' + (yb + yt) / 2 + ')' }, ylab);
+  }
+  function drawTrotter() {
+    var h = +$('th').value, n = +$('tn').value, p = +$('tp').value;
+    $('thv').textContent = h.toFixed(2); $('tnv').textContent = n; $('tpv').textContent = (100 * p).toFixed(1) + '%';
+    document.querySelectorAll('[data-o]').forEach(function (b) { b.classList.toggle('on', +b.dataset.o === ORDER); });
+    var eig = eigFor(h), dt = TEND / n;
+    // left: magnetization over time
+    var s = $('tmag'); clear(s);
+    var x0 = 42, x1 = 320, yb = 236, yt = 14, X = function (t) { return x0 + (x1 - x0) * t / 3; }, Y = function (v) { return yb - (yb - yt) * (v + 1) / 2; };
+    axes(s, x0, x1, yb, yt, [0, 1, 2, 3], [[-1, '-1'], [0, '0'], [1, '1']], X, Y, 'time t', 'magnetization M');
+    var pts = [];
+    for (var t = 0; t <= 3.0001; t += 0.05) pts.push(X(t).toFixed(1) + ',' + Y(M4.exactMag(eig, t)).toFixed(1));
+    sv(s, 'polyline', { points: pts.join(' '), fill: 'none', stroke: '#99004C', 'stroke-width': 2.5 });
+    for (var k = 0; k * dt <= 3.0001; k++) {
+      var m = k === 0 ? 1 : M4.trotterMag(1, h, k * dt, k, ORDER, p);
+      sv(s, 'circle', { cx: X(k * dt), cy: Y(m), r: 3.6, fill: '#24313D' });
+    }
+    sv(s, 'line', { x1: X(2), y1: yt, x2: X(2), y2: yb, stroke: '#C9A227', 'stroke-dasharray': '4 3' });
+    // right: error at t = 2 against steps
+    var ex = M4.exactMag(eig, TEND), errs = [];
+    for (var j = 1; j <= 20; j++) errs.push(Math.abs(M4.trotterMag(1, h, TEND, j, ORDER, p) - ex));
+    var c = $('terr'); clear(c);
+    x0 = 58;
+    var lo = -4, hi = 0, Xn = function (v) { return x0 + (x1 - x0) * (v - 1) / 19; }, Ye = function (e) { var l = Math.log(Math.max(e, 1e-4)) / Math.LN10; return yb - (yb - yt) * (l - lo) / (hi - lo); };
+    axes(c, x0, x1, yb, yt, [1, 5, 10, 15, 20], [[1e-4, '1e-4'], [1e-3, '0.001'], [1e-2, '0.01'], [1e-1, '0.1'], [1, '1']], Xn, Ye, 'Trotter steps', '|M - M_exact| at t = 2');
+    sv(c, 'polyline', { points: errs.map(function (e, i) { return Xn(i + 1).toFixed(1) + ',' + Ye(e).toFixed(1); }).join(' '), fill: 'none', stroke: '#24313D', 'stroke-width': 2 });
+    var best = errs.indexOf(Math.min.apply(null, errs)) + 1;
+    errs.forEach(function (e, i) { sv(c, 'circle', { cx: Xn(i + 1), cy: Ye(e), r: i + 1 === n ? 6 : 3, fill: i + 1 === n ? '#99004C' : (i + 1 === best ? '#C9A227' : '#24313D') }); });
+    var mt = M4.trotterMag(1, h, TEND, n, ORDER, p);
+    $('tst').innerHTML = '<span>exact M at t = 2</span><span class="v">' + ex.toFixed(3) + '</span>' +
+      '<span>simulated M at t = 2</span><span class="v">' + mt.toFixed(3) + '</span>' +
+      '<span>error</span><span class="v">' + Math.abs(mt - ex).toFixed(4) + '</span>' +
+      '<span>noisy RZZ gates</span><span class="v">' + 3 * n + '</span>' +
+      '<span>best number of steps (gold)</span><span class="v">' + best + ' (' + errs[best - 1].toFixed(4) + ')</span>';
+    $('tmsg').textContent = p === 0
+      ? 'Without noise the error keeps falling as steps are added: only the Trotter error is left. Switch to the second order and see how much faster it falls.'
+      : 'With noise the error curve has a minimum (gold): fewer steps leave more Trotter error, more steps add more noisy gates. The second-order step reaches a lower minimum with about as many gates.';
+  }
+  $('th').oninput = drawTrotter; $('tn').oninput = drawTrotter; $('tp').oninput = drawTrotter;
+  document.querySelectorAll('[data-o]').forEach(function (b) { b.onclick = function () { ORDER = +b.dataset.o; drawTrotter(); }; });
+  $('tlab').onclick = function () { $('th').value = 0.5; $('tn').value = 5; $('tp').value = 0.005; ORDER = 1; drawTrotter(); };
+  $('tclean').onclick = function () { $('tp').value = 0; drawTrotter(); };
+  $('th').value = 0.5; $('tn').value = 5; $('tp').value = 0.005;
+  drawTrotter();
+})();
+</script>
+</body>
+</html>
