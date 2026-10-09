@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Module 3 Explorer: Echoes and Zero-Noise Extrapolation</title>
+<style>
+  :root { --maroon:#99004C; --ink:#24313D; --muted:#6A626B; --line:#E4DCE0; --tint:#F8F4F6; --gold:#C9A227; --ok:#2E7D4F; --bad:#B3261E; --grey:#B9AEB4; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:#fff; color:var(--ink); font-family:"Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size:15px; }
+  .tabs { display:flex; border-bottom:2px solid var(--line); background:var(--tint); }
+  .tabs button { flex:1; border:0; background:none; padding:10px 8px; font-size:15px; cursor:pointer; color:var(--muted); border-bottom:3px solid transparent; }
+  .tabs button.on { color:var(--maroon); border-bottom-color:var(--maroon); font-weight:600; background:#fff; }
+  .tool { display:none; padding:12px 16px; }
+  .tool.on { display:block; }
+  h2 { font-family:Georgia, serif; color:var(--maroon); font-size:19px; margin:0 0 4px; }
+  .hint { color:var(--muted); margin:0 0 10px; line-height:1.45; }
+  .grid { display:grid; grid-template-columns: 290px 1fr; gap:14px; align-items:start; }
+  @media (max-width: 660px) { .grid { grid-template-columns: 1fr; } }
+  .box { border:1px solid var(--line); border-radius:6px; padding:10px 12px; min-width:0; }
+  .box h3 { margin:0 0 6px; font-size:14.5px; color:var(--maroon); }
+  label { display:flex; justify-content:space-between; align-items:center; margin:8px 0 2px; font-size:14px; gap:8px; }
+  input[type=range] { width:100%; }
+  .row { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; align-items:center; }
+  button.act { border:2px solid var(--ink); background:#fff; color:var(--ink); padding:4px 9px; border-radius:5px; font-size:13.5px; cursor:pointer; }
+  button.act.on { background:var(--maroon); border-color:var(--maroon); color:#fff; }
+  .mono { font-family: Consolas, "Courier New", monospace; }
+  .note { margin-top:8px; padding:7px 10px; border-radius:4px; font-size:13.5px; background:var(--tint); color:var(--ink); line-height:1.45; }
+  .stats { display:grid; grid-template-columns: 1fr auto; gap:4px 10px; font-size:13.5px; margin-top:8px; }
+  .stats span.v { font-family:Consolas, monospace; text-align:right; }
+  .two { display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
+  @media (max-width: 760px) { .two { grid-template-columns: 1fr; } }
+  svg.chart { width:100%; height:auto; display:block; }
+  .far { color:var(--bad); font-weight:600; }
+  .credit { color:var(--muted); font-size:12px; padding:8px 16px 12px; border-top:1px solid var(--line); }
+  .qbtn { display:grid; grid-template-columns: 90px repeat(3, 1fr); gap:4px 6px; align-items:center; font-size:13.5px; margin-top:6px; }
+  .qbtn button { border:2px solid var(--grey); background:#fff; border-radius:5px; padding:4px 0; cursor:pointer; font-size:13.5px; }
+  .qbtn button.on { background:var(--maroon); border-color:var(--maroon); color:#fff; }
+  .verdict { margin-top:10px; padding:9px 12px; border-radius:5px; font-weight:600; }
+  .v-ok { background:#E8F3EC; color:var(--ok); }
+  .v-bad { background:#FBEAEA; color:var(--bad); }
+  .v-warn { background:#FFF6DC; color:#7A5B00; }
+  table.t { border-collapse:collapse; font-size:13.5px; margin-top:8px; }
+  table.t td, table.t th { border:1px solid var(--line); padding:3px 9px; text-align:right; }
+  table.t th { background:var(--tint); }
+</style>
+</head>
+<body>
+<div class="tabs" role="tablist">
+  <button type="button" data-t="echo" role="tab">1. The spin echo</button>
+  <button type="button" data-t="zne" role="tab">2. Zero-noise extrapolation</button>
+</div>
+
+<!-- TOOL 1 -->
+<section class="tool" id="t-echo">
+  <h2>What an echo can and cannot undo</h2>
+  <p class="hint">A qubit starts in |+⟩, an arrow along X on the equator of the Bloch sphere, and waits 10 steps. Each arrow below is one shot. A <strong>detuning</strong> turns every arrow by the same angle per step; a <strong>spread</strong> gives each shot its own steady angle per step (it differs from shot to shot but not during the wait); <strong>fast noise</strong> kicks each arrow at random at every step. ⟨X⟩ is the average of cos φ over 400 shots. Switch the echo on: an X after 5 steps and another at the end.</p>
+  <div class="grid">
+    <div class="box">
+      <h3>Noise while waiting</h3>
+      <label for="dm">detuning per step <span class="mono" id="dmv"></span></label><input type="range" id="dm" min="0" max="0.3" step="0.01">
+      <label for="ds">spread between shots <span class="mono" id="dsv"></span></label><input type="range" id="ds" min="0" max="0.3" step="0.01">
+      <label for="df">fast noise per step <span class="mono" id="dfv"></span></label><input type="range" id="df" min="0" max="0.3" step="0.01">
+      <div class="row"><button type="button" class="act" id="dd">Echo off</button></div>
+      <div class="row"><button type="button" class="act" id="e1">Lab's detuning</button><button type="button" class="act" id="e2">Spread only</button><button type="button" class="act" id="e3">Fast noise only</button></div>
+      <div class="stats" id="st1"></div>
+    </div>
+    <div class="box">
+      <h3>The arrows after 10 steps, and ⟨X⟩ step by step</h3>
+      <div class="two">
+        <svg class="chart" id="disk" viewBox="0 0 260 260" role="img" aria-label="Top view of the Bloch sphere equator with one arrow per shot"></svg>
+        <svg class="chart" id="trace" viewBox="0 0 300 260" role="img" aria-label="Coherence of the ensemble at each step, with and without the echo"></svg>
+      </div>
+      <div class="note" id="msg1"></div>
+    </div>
+  </div>
+</section>
+
+<!-- TOOL 2 -->
+<section class="tool" id="t-zne">
+  <h2>Extrapolating to zero noise</h2>
+  <p class="hint">Each CNOT multiplies ⟨XX⟩ by (1 − p). Folding runs the same circuit with 1, 3 or 5 CNOTs, so the measured value is E(λ) = E₀ (1 − p)^λ at noise scale λ. Fit the points and read the fit at λ = 0. The error bars show one standard deviation for the chosen number of shots per circuit.</p>
+  <div class="grid">
+    <div class="box">
+      <h3>Noise and method</h3>
+      <label for="zp">CNOT error p <span class="mono" id="zpv"></span></label><input type="range" id="zp" min="0" max="0.2" step="0.005">
+      <label for="zn">shots per circuit <span class="mono" id="znv"></span></label><input type="range" id="zn" min="2" max="5" step="any">
+      <div class="row"><span>scales</span><button type="button" class="act" data-s="135">1, 3, 5</button><button type="button" class="act" data-s="123">1, 2, 3</button></div>
+      <div class="row"><span>fit</span><button type="button" class="act" data-f="lin">linear</button><button type="button" class="act" data-f="quad">quadratic</button><button type="button" class="act" data-f="exp">exponential</button></div>
+      <table class="t" id="ztab"></table>
+      <div class="note" id="msg2"></div>
+    </div>
+    <div class="box">
+      <h3>Measured points and the fit</h3>
+      <svg class="chart" id="zchart" style="max-width:560px" viewBox="0 0 520 330" role="img" aria-label="Expectation value against noise scale with the fitted curve extended to zero"></svg>
+    </div>
+  </div>
+</section>
+
+<div class="credit">Module 3 explorer · SemiAcademy / ISEP-CSU · CC BY 4.0 · the models are the ones used in the Module 3 lab, simplified to one qubit (tool 1) and to the CNOT error only (tool 2).</div>
+
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var NS = 'http://www.w3.org/2000/svg';
+  function sv(p, tag, a, txt) { var e = document.createElementNS(NS, tag); for (var k in a) e.setAttribute(k, a[k]); if (txt !== undefined) e.textContent = txt; p.appendChild(e); return e; }
+  function clear(s) { while (s.firstChild) s.removeChild(s.firstChild); }
+  var tabs = document.querySelectorAll('.tabs button');
+  function openTab(t) {
+    tabs.forEach(function (b) { b.classList.toggle('on', b.dataset.t === t); });
+    document.querySelectorAll('.tool').forEach(function (s) { s.classList.toggle('on', s.id === 't-' + t); });
+  }
+  tabs.forEach(function (b) { b.onclick = function () { openTab(b.dataset.t); }; });
+  function fromHash() { openTab(location.hash.indexOf('zne') >= 0 ? 'zne' : 'echo'); }
+  window.addEventListener('hashchange', fromHash);
+  fromHash();
+
+  // ---------------------------------------------------------------- tool 1: the spin echo
+  var N = 10, SHOTS = 400, SHOW = 24;
+  function rng(seed) { return function () { seed |= 0; seed = seed + 0x6D2B79F5 | 0; var t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+  function gauss(r) { var u = 1 - r(), v = r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); }
+  var r0 = rng(31), G = [], K = [];
+  for (var i = 0; i < SHOTS; i++) { G.push(gauss(r0)); var row = []; for (var t = 0; t < N; t++) row.push(gauss(r0)); K.push(row); }
+  var echo = false;
+  function phases(dm, ds, df, dd) {
+    var all = [];
+    for (var i = 0; i < SHOTS; i++) {
+      var d = dm + ds * G[i], ph = 0, path = [0];
+      for (var t = 0; t < N; t++) {
+        var sign = (dd && t >= N / 2) ? -1 : 1;
+        ph += sign * (d + df * K[i][t]);
+        path.push(ph);
+      }
+      all.push(path);
+    }
+    return all;
+  }
+  function coh(all, t) { var c = 0, s = 0; all.forEach(function (p) { c += Math.cos(p[t]); s += Math.sin(p[t]); }); return [c / all.length, Math.sqrt(c * c + s * s) / all.length]; }
+  function drawEcho() {
+    var dm = +$('dm').value, ds = +$('ds').value, df = +$('df').value;
+    $('dmv').textContent = dm.toFixed(2) + ' rad'; $('dsv').textContent = ds.toFixed(2) + ' rad'; $('dfv').textContent = df.toFixed(2) + ' rad';
+    $('dd').textContent = echo ? 'Echo on' : 'Echo off'; $('dd').classList.toggle('on', echo);
+    var raw = phases(dm, ds, df, false), ech = phases(dm, ds, df, true), cur = echo ? ech : raw;
+    var s = $('disk'); clear(s);
+    var cx = 130, cy = 130, R = 105;
+    sv(s, 'circle', { cx: cx, cy: cy, r: R, fill: '#F8F4F6', stroke: '#B9AEB4', 'stroke-width': 2 });
+    sv(s, 'line', { x1: cx - R, y1: cy, x2: cx + R, y2: cy, stroke: '#E4DCE0' }); sv(s, 'line', { x1: cx, y1: cy - R, x2: cx, y2: cy + R, stroke: '#E4DCE0' });
+    sv(s, 'text', { x: cx + R - 4, y: cy - 6, 'font-size': 12, 'text-anchor': 'end', fill: '#6A626B' }, '+X');
+    sv(s, 'text', { x: cx + 4, y: cy - R + 14, 'font-size': 12, fill: '#6A626B' }, '+Y');
+    for (var i = 0; i < SHOW; i++) {
+      var ph = cur[i][N];
+      sv(s, 'line', { x1: cx, y1: cy, x2: cx + R * 0.9 * Math.cos(ph), y2: cy - R * 0.9 * Math.sin(ph), stroke: '#99004C', 'stroke-width': 1.6, opacity: 0.75 });
+    }
+    var m = coh(cur, N);
+    sv(s, 'line', { x1: cx, y1: cy, x2: cx + R * m[0], y2: cy, stroke: '#C9A227', 'stroke-width': 5 });
+    sv(s, 'text', { x: cx, y: 252, 'text-anchor': 'middle', 'font-size': 12, fill: '#6A626B' }, 'gold: the average along X, <X>');
+    // trace
+    var c = $('trace'); clear(c);
+    var x0 = 40, x1 = 290, yb = 220, yt = 20;
+    var X = function (t) { return x0 + (x1 - x0) * t / N; }, Y = function (v) { return yb - (yb - yt) * (v + 1) / 2; };
+    [-1, 0, 1].forEach(function (v) { sv(c, 'line', { x1: x0, y1: Y(v), x2: x1, y2: Y(v), stroke: '#E4DCE0' }); sv(c, 'text', { x: x0 - 6, y: Y(v) + 4, 'text-anchor': 'end', 'font-size': 11 }, v); });
+    [0, 5, 10].forEach(function (t) { sv(c, 'text', { x: X(t), y: yb + 15, 'text-anchor': 'middle', 'font-size': 11 }, t); });
+    sv(c, 'line', { x1: X(5), y1: yt, x2: X(5), y2: yb, stroke: '#B9AEB4', 'stroke-dasharray': '4 3' });
+    sv(c, 'text', { x: X(5) + 3, y: yt + 10, 'font-size': 11, fill: '#6A626B' }, 'X');
+    [[raw, '#24313D', '6 4', 'no echo'], [ech, '#99004C', '', 'echo']].forEach(function (a, j) {
+      var pts = [];
+      for (var t = 0; t <= N; t++) pts.push(X(t).toFixed(1) + ',' + Y(coh(a[0], t)[0]).toFixed(1));
+      sv(c, 'polyline', { points: pts.join(' '), fill: 'none', stroke: a[1], 'stroke-width': 2.5, 'stroke-dasharray': a[2] });
+      sv(c, 'text', { x: x1 - 60, y: yt + 24 + 15 * j, 'font-size': 12, fill: a[1] }, a[3]);
+    });
+    sv(c, 'text', { x: (x0 + x1) / 2, y: 252, 'text-anchor': 'middle', 'font-size': 12, fill: '#6A626B' }, 'step');
+    var vr = coh(raw, N)[0], ve = coh(ech, N)[0];
+    $('st1').innerHTML = '<span>&lt;X&gt; after 10 steps, no echo</span><span class="v">' + vr.toFixed(3) + '</span><span>&lt;X&gt; after 10 steps, with echo</span><span class="v">' + ve.toFixed(3) + '</span>';
+    var msg;
+    if (df > 0.005 && ve < 0.97) msg = 'Fast noise changes during the wait, so the second half does not mirror the first: the echo cannot undo it. That part needs better qubits, shorter waits or error correction.';
+    else if (ds > 0.005) msg = 'Each shot has its own detuning, so without the echo the arrows fan out and the average shrinks. Each detuning is steady during the wait, so the echo brings every arrow back to +X.';
+    else if (dm > 0.005) msg = 'A coherent detuning turns all arrows together: the average is cos(10 &times; detuning). The echo turns them back: after the X, the same rotation undoes the first half.';
+    else msg = 'No noise: the arrows stay along +X and &lt;X&gt; = 1. Move a slider.';
+    $('msg1').innerHTML = msg;
+  }
+  ['dm', 'ds', 'df'].forEach(function (k) { $(k).oninput = drawEcho; });
+  $('dd').onclick = function () { echo = !echo; drawEcho(); };
+  function preset(a, b, c) { $('dm').value = a; $('ds').value = b; $('df').value = c; drawEcho(); }
+  $('e1').onclick = function () { preset(0.05, 0, 0); };
+  $('e2').onclick = function () { preset(0, 0.15, 0); };
+  $('e3').onclick = function () { preset(0, 0, 0.15); };
+  preset(0.05, 0, 0);
+
+  // ---------------------------------------------------------------- tool 2: zero-noise extrapolation
+  var E0 = 0.87, SC = [1, 3, 5], FIT = 'lin';
+  function lsq(xs, ys, deg) {            // least-squares weights for the value at x = 0
+    var n = xs.length, m = deg + 1, A = [], i, j, k;
+    for (i = 0; i < n; i++) { A.push([]); for (j = 0; j < m; j++) A[i].push(Math.pow(xs[i], j)); }
+    var M = [], b;
+    for (j = 0; j < m; j++) { M.push([]); for (k = 0; k < m; k++) { var s = 0; for (i = 0; i < n; i++) s += A[i][j] * A[i][k]; M[j].push(s); } }
+    // invert M (at most 3 x 3) by Gauss-Jordan
+    var I = M.map(function (r, a) { return r.concat(M.map(function (_, c) { return a === c ? 1 : 0; })); });
+    for (j = 0; j < m; j++) {
+      var piv = I[j][j];
+      for (k = 0; k < 2 * m; k++) I[j][k] /= piv;
+      for (i = 0; i < m; i++) if (i !== j) { var f = I[i][j]; for (k = 0; k < 2 * m; k++) I[i][k] -= f * I[j][k]; }
+    }
+    var w = [];
+    for (i = 0; i < n; i++) { var s2 = 0; for (k = 0; k < m; k++) s2 += I[0][m + k] * A[i][k]; w.push(s2); }
+    var coef = [];
+    for (j = 0; j < m; j++) { var c2 = 0; for (i = 0; i < n; i++) { var r2 = 0; for (k = 0; k < m; k++) r2 += I[j][m + k] * A[i][k]; c2 += r2 * ys[i]; } coef.push(c2); }
+    return { w: w, coef: coef };
+  }
+  function drawZne() {
+    var p = +$('zp').value, shots = Math.round(Math.pow(10, +$('zn').value));
+    $('zpv').textContent = (100 * p).toFixed(1) + '%'; $('znv').textContent = shots.toLocaleString('en-US');
+    document.querySelectorAll('[data-s]').forEach(function (b) { b.classList.toggle('on', b.dataset.s === SC.join('')); });
+    document.querySelectorAll('[data-f]').forEach(function (b) { b.classList.toggle('on', b.dataset.f === FIT); });
+    var ys = SC.map(function (l) { return E0 * Math.pow(1 - p, l); });
+    var sd = ys.map(function (y) { return Math.sqrt(Math.max(1 - y * y, 0)) / Math.sqrt(shots); });
+    var est, sdev, curve;
+    if (FIT === 'exp') {
+      var f = lsq(SC, ys.map(Math.log), 1);
+      est = Math.exp(f.coef[0]);
+      sdev = est * Math.sqrt(f.w.reduce(function (a, w, i) { return a + w * w * Math.pow(sd[i] / ys[i], 2); }, 0));
+      curve = function (x) { return Math.exp(f.coef[0] + f.coef[1] * x); };
+    } else {
+      var g = lsq(SC, ys, FIT === 'lin' ? 1 : 2);
+      est = g.coef[0];
+      sdev = Math.sqrt(g.w.reduce(function (a, w, i) { return a + w * w * sd[i] * sd[i]; }, 0));
+      curve = function (x) { var v = 0; g.coef.forEach(function (c, j) { v += c * Math.pow(x, j); }); return v; };
+    }
+    var c = $('zchart'); clear(c);
+    var x0 = 60, x1 = 500, yb = 280, yt = 20, lo = 0.3, hi = 1.0;
+    var X = function (l) { return x0 + (x1 - x0) * l / 5.5; }, Y = function (v) { return yb - (yb - yt) * (v - lo) / (hi - lo); };
+    [0.3, 0.5, 0.7, 0.9, 1.0].forEach(function (v) { sv(c, 'line', { x1: x0, y1: Y(v), x2: x1, y2: Y(v), stroke: '#E4DCE0' }); sv(c, 'text', { x: x0 - 6, y: Y(v) + 4, 'text-anchor': 'end', 'font-size': 11 }, v.toFixed(1)); });
+    [0, 1, 2, 3, 4, 5].forEach(function (l) { sv(c, 'text', { x: X(l), y: yb + 16, 'text-anchor': 'middle', 'font-size': 11 }, l); });
+    sv(c, 'line', { x1: x0, y1: yb, x2: x1, y2: yb, stroke: '#24313D', 'stroke-width': 2 });
+    var pts = []; for (var k = 0; k <= 110; k++) { var l = 5.5 * k / 110; pts.push(X(l).toFixed(1) + ',' + Y(Math.max(lo, Math.min(hi, curve(l)))).toFixed(1)); }
+    sv(c, 'polyline', { points: pts.join(' '), fill: 'none', stroke: '#99004C', 'stroke-width': 2.5, 'stroke-dasharray': '6 4' });
+    var tp = []; for (k = 0; k <= 110; k++) { var l2 = 5.5 * k / 110; tp.push(X(l2).toFixed(1) + ',' + Y(E0 * Math.pow(1 - p, l2)).toFixed(1)); }
+    sv(c, 'polyline', { points: tp.join(' '), fill: 'none', stroke: '#B9AEB4', 'stroke-width': 1.5 });
+    SC.forEach(function (l, i) {
+      sv(c, 'line', { x1: X(l), y1: Y(ys[i] - sd[i]), x2: X(l), y2: Y(ys[i] + sd[i]), stroke: '#24313D', 'stroke-width': 2 });
+      sv(c, 'circle', { cx: X(l), cy: Y(ys[i]), r: 5, fill: '#24313D' });
+    });
+    sv(c, 'line', { x1: X(0), y1: Y(Math.max(lo, est - sdev)), x2: X(0), y2: Y(Math.min(hi, est + sdev)), stroke: '#99004C', 'stroke-width': 3 });
+    sv(c, 'circle', { cx: X(0), cy: Y(Math.max(lo, Math.min(hi, est))), r: 6, fill: '#99004C' });
+    sv(c, 'text', { x: X(0) + 10, y: Y(E0) - 8, 'font-size': 12, fill: '#C9A227' }, 'true value ' + E0);
+    sv(c, 'line', { x1: X(0) - 6, y1: Y(E0), x2: X(0) + 6, y2: Y(E0), stroke: '#C9A227', 'stroke-width': 3 });
+    sv(c, 'text', { x: (x0 + x1) / 2, y: 318, 'text-anchor': 'middle', 'font-size': 12, fill: '#6A626B' }, 'noise scale λ (number of CNOTs)');
+    var raw = ys[0], rawsd = sd[0];
+    $('ztab').innerHTML = '<tr><th></th><th>value</th><th>error from truth</th><th>std. dev.</th></tr>' +
+      '<tr><td style="text-align:left">scale 1 (no ZNE)</td><td>' + raw.toFixed(3) + '</td><td>' + (raw - E0).toFixed(3) + '</td><td>' + rawsd.toFixed(4) + '</td></tr>' +
+      '<tr><td style="text-align:left">ZNE estimate</td><td>' + est.toFixed(3) + '</td><td>' + (est - E0).toFixed(3) + '</td><td>' + sdev.toFixed(4) + '</td></tr>';
+    var amp = sdev / rawsd;
+    $('msg2').innerHTML = 'ZNE moves the bias from ' + (raw - E0).toFixed(3) + ' to ' + (est - E0).toFixed(3) + ', and the standard deviation grows ' + amp.toFixed(1) +
+      ' times: about ' + (amp * amp).toFixed(1) + ' times the shots per circuit for the same precision. ' +
+      (FIT === 'exp' ? 'The exponential fit matches this model exactly; real noise is rarely that tidy.' : (FIT === 'quad' ? 'A quadratic fit through three points has no bias left to average out, and the largest scatter.' : 'A line cannot follow the curve, so some bias remains; it grows with p.'));
+  }
+  $('zp').oninput = drawZne; $('zn').oninput = drawZne;
+  document.querySelectorAll('[data-s]').forEach(function (b) { b.onclick = function () { SC = b.dataset.s.split('').map(Number); drawZne(); }; });
+  document.querySelectorAll('[data-f]').forEach(function (b) { b.onclick = function () { FIT = b.dataset.f; drawZne(); }; });
+  $('zp').value = 0.04; $('zn').value = 3.60206;
+  drawZne();
+})();
+</script>
+</body>
+</html>

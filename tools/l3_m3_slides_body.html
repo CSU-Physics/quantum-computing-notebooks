@@ -1,0 +1,240 @@
+<!-- 1 -->
+<section class="slide title-slide">
+  <div class="kicker">Quantum Computing Advanced · Module 3</div>
+  <h1>Error suppression and mitigation</h1>
+  <p style="font-size:30px;max-width:620px">Better answers from noisy qubits today: change the circuit so less error happens, and correct the average afterwards.</p>
+  <div style="position:absolute;right:70px;top:190px;width:430px">/*TITLE_FIG*/</div>
+  <div class="foot"><span>SemiAcademy · ISEP-CSU</span><span>CC BY 4.0</span></div>
+</section>
+
+<!-- 2 -->
+<section class="slide">
+  <h2>By the end of this module you can</h2>
+  <ul>
+    <li>tell <strong>suppression</strong>, <strong>mitigation</strong> and <strong>correction</strong> apart, and say what each costs;</li>
+    <li>tell <strong>coherent</strong> errors from <strong>incoherent</strong> ones, and say which tool can remove each;</li>
+    <li>apply <strong>dynamical decoupling</strong>, <strong>readout mitigation</strong> and <strong>zero-noise extrapolation</strong> to one expectation value;</li>
+    <li>measure the price of mitigation in shots;</li>
+    <li>choose the matching options of IBM's Estimator, and judge whether each one improved a result.</li>
+  </ul>
+  <p class="small" style="margin-top:24px">Course outcome 3: tell error suppression, mitigation and correction apart, apply suppression and mitigation to an expectation value, and judge whether each improves it.</p>
+  <div class="foot"><span>Module 3 · Error suppression and mitigation</span><span>2</span></div>
+</section>
+
+<!-- 3 -->
+<section class="slide">
+  <h2>Three ways to fight noise</h2>
+  <table style="font-size:21px">
+    <tr><th></th><th>what it does</th><th>example</th><th>cost</th></tr>
+    <tr><td><strong>suppression</strong></td><td>changes the circuit so that less error happens</td><td>dynamical decoupling, better compilation</td><td>almost none</td></tr>
+    <tr><td><strong>mitigation</strong></td><td>runs extra circuits and corrects the <em>average</em> result afterwards</td><td>readout mitigation, zero-noise extrapolation</td><td>more circuits and shots; larger statistical error</td></tr>
+    <tr><td><strong>correction</strong></td><td>finds and fixes errors in each shot, while the circuit runs</td><td>the repetition code, the surface code</td><td>many qubits per logical qubit</td></tr>
+  </table>
+  <p style="font-size:23px;margin-top:22px">Mitigation gives better <em>expectation values</em>, not better individual shots. It suits today's circuits; long computations need correction.</p>
+  <div class="foot"><span>Module 3 · Error suppression and mitigation</span><span>3</span></div>
+</section>
+
+<!-- 4 -->
+<section class="slide">
+  <h2>One expectation value, all module long</h2>
+  <div style="margin:10px 0 18px">/*CIRCUIT*/</div>
+  <ul>
+    <li style="font-size:23px">H and a CNOT make the Bell state (|00⟩ + |11⟩)/√2; the qubits wait 10 µs, as qubits do while others are busy.</li>
+    <li style="font-size:23px">H on both qubits, then measure: ⟨XX⟩ is the average of (−1)<sup>number of 1s</sup>. Ideally <strong>⟨XX⟩ = 1</strong>.</li>
+  </ul>
+  <div class="foot"><span>Module 3 · Error suppression and mitigation</span><span>4</span></div>
+</section>
+
+<!-- 5 -->
+<section class="slide">
+  <h2>Four kinds of noise, one at a time</h2>
+  <div class="cols">
+    <div style="flex:0 0 600px">/*NOISE_BARS*/</div>
+    <div>
+      <p style="font-size:22px">The lab's noise: T1 = 200 µs and T2 = 150 µs while waiting; a <strong>detuning</strong> of 0.05 rad per µs; readout errors of 2% (0 → 1) and 4% (1 → 0); 2% depolarizing error on the CNOT.</p>
+      <p style="font-size:22px">Together: ⟨XX⟩ = <strong>/*RAW*/</strong> instead of 1. The detuning costs the most: a relative phase of 1 rad gives about cos 1.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Module 3 · Error suppression and mitigation</span><span>5</span></div>
+</section>
+
+<!-- 6 -->
+<section class="slide">
+  <h2>Coherent and incoherent errors</h2>
+  <div class="cols">
+    <div style="flex:1">
+      <h3 style="color:var(--maroon);margin:0 0 8px">coherent</h3>
+      <p style="font-size:22px">The same unitary every time: an over-rotation, a qubit frequency slightly off (detuning), a steady coupling to a neighbour.</p>
+      <p style="font-size:22px">Errors add up in <em>amplitude</em>: N steps of angle δ give angle Nδ. They can be <strong>reversed</strong> by the right extra gates.</p>
+    </div>
+    <div style="flex:1">
+      <h3 style="color:var(--maroon);margin:0 0 8px">incoherent</h3>
+      <p style="font-size:22px">Random from shot to shot and moment to moment: relaxation (T1), fast dephasing (T2), depolarizing gate errors, readout errors.</p>
+      <p style="font-size:22px">They add up in <em>probability</em>, and no gate undoes them. Mitigation can still correct their effect on the <strong>average</strong>.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Module 3 · Error suppression and mitigation</span><span>6</span></div>
+</section>
+
+<!-- 7 -->
+<section class="slide">
+  <h2>The spin echo: the simplest dynamical decoupling</h2>
+  <div style="margin:4px 0 10px">/*ECHO_FIG*/</div>
+  <ul>
+    <li style="font-size:22px">Wait half the time: each qubit turns by φ/2 around Z. Apply X: the next φ/2 now turns the state <em>back</em>. A final X restores the frame.</li>
+    <li style="font-size:22px">On the Bell state, X on both qubits changes nothing (|00⟩ + |11⟩ → |11⟩ + |00⟩), so only the unwanted rotation is affected.</li>
+  </ul>
+  <div class="foot"><span>Module 3 · Error suppression and mitigation</span><span>7</span></div>
+</section>
+
+<!-- 8 -->
+<section class="slide">
+  <h2>Decoupling removes the detuning</h2>
+  <div class="cols">
+    <div style="flex:0 0 560px">/*DD_CURVES*/</div>
+    <div>
+      <p style="font-size:23px">With the echo, ⟨XX⟩ rises from /*RAW*/ to <strong>/*DD*/</strong>, and it no longer depends on the detuning.</p>
+      <p style="font-size:23px">Without any detuning, the echo changes nothing (/*CALM_RAW*/ against /*CALM_DD*/): fast random dephasing does not reverse, and the two X gates add a little error.</p>
+      <p style="font-size:21px">Real devices use longer sequences, such as <strong>XY4</strong> (X, Y, X, Y), which also cancel errors around other axes.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Module 3 · Error suppression and mitigation</span><span>8</span></div>
+</section>
+
+<!-- 9 -->
+<section class="slide">
+  <h2>Pause and predict</h2>
+  <p>Each shot has a slightly different qubit frequency, but in any one shot it stays the same during the wait. Can the echo help? And if the frequency jumps at random several times during the wait?</p>
+  <div class="reveal"><button type="button">Show the answer</button>
+    <div class="ans">A frequency that differs from shot to shot but is <strong>steady during the wait</strong> is refocused shot by shot: each shot's second half undoes its own first half, so the echo restores ⟨X⟩ fully. This "spread" is common on hardware (slow drifts, low-frequency noise). Noise that <strong>changes during the wait</strong> breaks the mirror symmetry, and the echo removes only its slow part. Try both in tab 1 of the explorer.</div></div>
+  <div class="foot"><span>Module 3 · Error suppression and mitigation</span><span>9</span></div>
+</section>
+
+<!-- 10 -->
+<section class="slide">
+  <h2>Readout errors and the calibration matrix</h2>
+  <div class="cols">
+    <div style="flex:0 0 540px">/*A_TABLE*/</div>
+    <div>
+      <p style="font-size:22px">Prepare each of 00, 01, 10 and 11 with X gates and measure. Column j of <strong>A</strong> holds the probabilities of the four results for the prepared string j.</p>
+      <div class="eq" style="font-size:24px">p<sub>measured</sub> = A p<sub>true</sub>  ⟹  p<sub>true</sub> = A⁻¹ p<sub>measured</sub></div>
+      <p style="font-size:21px">In the lab you write <code>mitigate_readout(probs, A)</code> with <code>np.linalg.solve</code>.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Module 3 · Error suppression and mitigation</span><span>10</span></div>
+</section>
+
+<!-- 11 -->
+<section class="slide">
+  <h2>Readout mitigation at work</h2>
+  <ul>
+    <li style="font-size:23px">With the echo and readout mitigation, ⟨XX⟩ goes from /*DD*/ to <strong>/*DD_RO*/</strong>.</li>
+    <li style="font-size:23px">The corrected "probabilities" can be slightly negative: they are estimates of the true distribution, and averages computed from them are still good estimates.</li>
+    <li style="font-size:23px">A full matrix has 4<sup>n</sup> entries and needs 2<sup>n</sup> calibration circuits: fine for 2 qubits, impossible for 100. Real methods assume the qubits' errors are independent, or, like IBM's <strong>TREX</strong> (twirled readout error extinction), randomize the measurement so that one number per observable is enough.</li>
+    <li style="font-size:23px">A calibration measured with shots, and taken earlier in the day, is itself noisy and can drift.</li>
+  </ul>
+  <div class="foot"><span>Module 3 · Error suppression and mitigation</span><span>11</span></div>
+</section>
+
+<!-- 12 -->
+<section class="slide">
+  <h2>Zero-noise extrapolation: add noise on purpose</h2>
+  <div style="margin:6px 0 14px">/*FOLD_FIG*/</div>
+  <ul>
+    <li style="font-size:22px">A CNOT is its own inverse, so CNOT·CNOT·CNOT = CNOT: the same circuit, with about three times the CNOT noise (<strong>scale 3</strong>). Five CNOTs give scale 5.</li>
+    <li style="font-size:22px">Measure at scales 1, 3, 5; fit a line, a parabola or an exponential; read the fit at <strong>scale 0</strong>.</li>
+    <li style="font-size:22px">ZNE removes only the noise it amplifies: here the CNOT error, not the waiting.</li>
+  </ul>
+  <div class="foot"><span>Module 3 · Error suppression and mitigation</span><span>12</span></div>
+</section>
+
+<!-- 13 -->
+<section class="slide">
+  <h2>Extrapolating to zero</h2>
+  <div class="cols">
+    <div style="flex:0 0 560px">/*ZNE_PLOT*/</div>
+    <div>
+      <p style="font-size:23px">Measured (with echo and readout mitigation): /*ZNE_POINTS*/ at scales 1, 3, 5.</p>
+      <p style="font-size:23px">Zero-noise estimate: <strong>/*LIN*/</strong> (line), /*QUAD*/ (parabola). The same circuit with no CNOT error gives /*TARGET*/.</p>
+      <p style="font-size:21px">Still not 1: the dephasing during the wait is untouched by all three tools.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Module 3 · Error suppression and mitigation</span><span>13</span></div>
+</section>
+
+<!-- 14 -->
+<section class="slide">
+  <h2>The price: statistical error</h2>
+  <div class="cols">
+    <div style="flex:0 0 560px">/*STD_BARS*/</div>
+    <div>
+      <p style="font-size:22px">300 repeats of the experiment, 4,000 shots per circuit. The averages are right, but the scatter grows: about /*AMP*/ times for ZNE, so about /*AMP2*/ times the shots per circuit, on three circuits instead of one.</p>
+      <p style="font-size:22px"><strong>Mitigation trades bias for variance.</strong> The stronger the noise it removes, the higher the price; for large circuits it grows quickly.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Module 3 · Error suppression and mitigation</span><span>14</span></div>
+</section>
+
+<!-- 15 -->
+<section class="slide">
+  <h2>With a device's noise</h2>
+  <div class="cols">
+    <div style="flex:0 0 580px">/*DEVICE*/</div>
+    <div>
+      <p style="font-size:21px">FakePittsburgh (ibm_pittsburgh, 17 April 2026), qubits 97 and 107, a 20 µs delay, 40,000 shots per circuit, simulated with Qiskit Aer.</p>
+      <p style="font-size:21px">The model has no coherent idle errors, so the echo changes ⟨XX⟩ only within its statistical error (±/*SE*/). Readout mitigation helps most; ZNE little, because the CZ error is only /*CZ*/%.</p>
+      <p style="font-size:21px">What remains is the dephasing during the delay: exp(−t/T₂) for the two qubits is /*DEPH*/.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Module 3 · Error suppression and mitigation</span><span>15</span></div>
+</section>
+
+<!-- 16 -->
+<section class="slide">
+  <h2>IBM's Estimator does it for you</h2>
+  <table style="font-size:19px">
+    <tr><th>Estimator option (qiskit-ibm-runtime 0.50)</th><th>what it does</th></tr>
+    <tr><td><code>dynamical_decoupling.enable = True</code></td><td>inserts DD sequences into idle periods; <code>sequence_type</code> "XX", "XpXm" or "XY4"</td></tr>
+    <tr><td><code>resilience.measure_mitigation = True</code></td><td>readout mitigation by TREX</td></tr>
+    <tr><td><code>resilience.zne_mitigation = True</code></td><td>ZNE; <code>zne.noise_factors</code> such as (1, 3, 5), <code>zne.extrapolator</code> such as "linear" or "exponential", <code>zne.amplifier</code> "gate_folding" or "pea"</td></tr>
+    <tr><td><code>resilience.pec_mitigation = True</code></td><td>probabilistic error cancellation: no bias, cost exponential in circuit size</td></tr>
+    <tr><td><code>resilience_level</code></td><td>0: none · 1 (default): readout mitigation · 2: adds ZNE</td></tr>
+  </table>
+  <p style="font-size:21px;margin-top:14px">The Estimator now runs on your own computer (<code>executor_estimator.Estimator</code>) and sends the circuits to IBM. The optional Colab notebook runs the lab's experiment with these options, on a real IBM computer or on a small simulated device.</p>
+  <div class="foot"><span>Module 3 · Error suppression and mitigation</span><span>16</span></div>
+</section>
+
+<!-- 17 -->
+<section class="slide">
+  <h2>Did it help? Judge each step</h2>
+  <ul>
+    <li style="font-size:23px">Compare with a value you know: an ideal value from a simulator, a symmetry, or a circuit run forwards and backwards (which should return to the start).</li>
+    <li style="font-size:23px">Report every estimate with its <strong>statistical error</strong>. A change smaller than the error is no change (the echo on FakePittsburgh).</li>
+    <li style="font-size:23px">Check the fit: points that do not follow a smooth curve, or a value outside [−1, 1], mean the extrapolation cannot be trusted.</li>
+    <li style="font-size:23px">Say what is left: here, dephasing during the wait. Mitigation cannot beat the decoherence it does not touch.</li>
+  </ul>
+  <div class="foot"><span>Module 3 · Error suppression and mitigation</span><span>17</span></div>
+</section>
+
+<!-- 18 -->
+<section class="slide">
+  <h2>Summary</h2>
+  <ul>
+    <li style="font-size:23px"><strong>Suppression</strong> changes the circuit: dynamical decoupling cancels coherent and slow errors while qubits wait, at almost no cost.</li>
+    <li style="font-size:23px"><strong>Mitigation</strong> corrects averages: readout mitigation inverts a calibration; zero-noise extrapolation amplifies the noise and extrapolates to zero. Both cost shots.</li>
+    <li style="font-size:23px">Neither removes everything; only <strong>correction</strong> makes arbitrarily long computations possible.</li>
+    <li style="font-size:23px">In the lab: /*RAW*/ → /*DD*/ → /*DD_RO*/ → /*LIN*/ for an ideal value of 1.</li>
+  </ul>
+  <div class="eq" style="font-size:22px;margin-top:12px"><strong>Next:</strong> the Module 3 lab. You write <code>idle_block()</code>, <code>mitigate_readout()</code>, <code>fold_cx()</code> and <code>extrapolate_zero()</code>.</div>
+  <div class="foot"><span>Module 3 · Error suppression and mitigation</span><span>18</span></div>
+</section>
+
+<!-- 19 -->
+<section class="slide">
+  <h2>Credits and license</h2>
+  <p>These slides were written for SemiAcademy's <em>Quantum Computing Advanced</em> course, developed through the Intel Semiconductor Education Program at Central State University (ISEP-CSU).</p>
+  <p>License: <strong>Creative Commons Attribution 4.0 International (CC BY 4.0)</strong>, https://creativecommons.org/licenses/by/4.0/. You may copy, adapt and share them, with credit.</p>
+  <p>Suggested credit: "Module 3 slides, Quantum Computing Advanced, SemiAcademy / ISEP-CSU, CC BY 4.0."</p>
+  <p class="small">Device data: the FakePittsburgh model in qiskit-ibm-runtime (Apache License 2.0), calibration of 17 April 2026, simulated with Qiskit Aer. Estimator options: qiskit-ibm-runtime 0.50.0 documentation. All other results were computed for these slides with qsim /*QSIM_V*/ and checked with Qiskit 2.5.2 and Qiskit Aer 0.17.2. Source: github.com/CSU-Physics/quantum-computing-notebooks (media/level3/m3-slides.html).</p>
+  <div class="foot"><span>Module 3 · Error suppression and mitigation</span><span>19</span></div>
+</section>
