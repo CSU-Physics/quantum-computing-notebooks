@@ -1,0 +1,343 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Module 3 Slides: Error Suppression and Mitigation</title>
+<style>
+  :root { --maroon:#99004C; --ink:#24313D; --muted:#6A626B; --line:#E4DCE0; --tint:#F8F4F6; --gold:#C9A227; --ok:#2E7D4F; }
+  * { box-sizing:border-box; }
+  html, body { margin:0; height:100%; background:#2B2230; font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color:var(--ink); }
+  #viewport { position:absolute; inset:0 0 44px 0; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+  #stage { width:1280px; height:720px; flex-shrink:0; position:relative; transform-origin:center center; }
+  .slide { position:absolute; inset:0; background:#fff; padding:56px 72px 64px; display:none; flex-direction:column; border-top:10px solid var(--maroon); }
+  .slide.on { display:flex; }
+  .slide h1 { font-family: Georgia, serif; color:var(--maroon); font-size:56px; margin:0 0 18px; line-height:1.1; }
+  .slide h2 { font-family: Georgia, serif; color:var(--maroon); font-size:40px; margin:0 0 22px; line-height:1.15; }
+  .slide p, .slide li { font-size:27px; line-height:1.45; margin:0 0 14px; }
+  .slide ul { margin:0 0 10px 0; padding-left:34px; }
+  .kicker { font-size:20px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); margin-bottom:10px; }
+  .eq { background:var(--tint); border-left:6px solid var(--maroon); padding:16px 24px; font-size:34px; margin:10px 0 18px; font-family: Georgia, serif; }
+  .small { font-size:20px !important; color:var(--muted); }
+  .cols { display:flex; gap:40px; align-items:flex-start; flex:1; }
+  .cols > div { flex:1; }
+  .card { border:2px solid var(--line); border-radius:10px; padding:18px 22px; }
+  .card h3 { margin:0 0 8px; font-size:27px; color:var(--maroon); }
+  .card p { font-size:23px; margin:0; }
+  table { border-collapse:collapse; font-size:26px; }
+  th, td { border:1px solid var(--line); padding:10px 18px; text-align:left; }
+  th { background:var(--tint); }
+  .foot { position:absolute; left:72px; right:72px; bottom:20px; display:flex; justify-content:space-between; font-size:15px; color:var(--muted); }
+  .reveal { margin-top:10px; }
+  .reveal button { font-size:22px; padding:8px 18px; border:2px solid var(--maroon); background:#fff; color:var(--maroon); border-radius:6px; cursor:pointer; }
+  .reveal .ans { display:none; margin-top:14px; background:#EEF6F0; border-left:6px solid var(--ok); padding:12px 20px; font-size:25px; line-height:1.45; }
+  .reveal.open .ans { display:block; }
+  .reveal.open button { display:none; }
+  .title-slide { background: linear-gradient(135deg, #fff 0%, #fff 58%, var(--tint) 58%); }
+  #bar { position:absolute; left:0; right:0; bottom:0; height:44px; background:#1E1722; display:flex; align-items:center; justify-content:center; gap:10px; color:#fff; font-size:14px; }
+  #bar button { background:#3A2F40; color:#fff; border:0; border-radius:4px; padding:7px 14px; font-size:14px; cursor:pointer; }
+  #bar button:hover { background:var(--maroon); }
+  #count { min-width:70px; text-align:center; }
+  .slide code { font-family: Consolas, "Courier New", monospace; font-size:0.9em; }
+  .slide table td, .slide table th { padding:5px 12px; text-align:left; }
+  svg text { font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  @media print {
+    @page { size: 1280px 720px; margin:0; }
+    html, body { background:#fff; height:auto; }
+    #bar { display:none; }
+    #viewport { position:static; display:block; }
+    #stage { transform:none !important; width:1280px; height:auto; }
+    .slide { display:flex !important; position:relative; width:1280px; height:720px; page-break-after:always; break-after:page; }
+    .reveal .ans { display:block !important; }
+    .reveal button { display:none !important; }
+  }
+</style>
+</head>
+<body>
+<div id="viewport"><div id="stage">
+
+<!-- 1 -->
+<section class="slide title-slide">
+  <div class="kicker">Quantum Computing Advanced · Module 3</div>
+  <h1>Error suppression and mitigation</h1>
+  <p style="font-size:30px;max-width:620px">Better answers from noisy qubits today: change the circuit so less error happens, and correct the average afterwards.</p>
+  <div style="position:absolute;right:70px;top:190px;width:430px"><svg width="430" height="240" viewBox="0 0 430 240" aria-label="Measured values rising towards the ideal value as each tool is added"><rect x="40" y="130.5" width="60" height="69.5" fill="#B9AEB4"/><text x="70" y="222" font-size="15" text-anchor="middle">raw</text><text x="70" y="122.5" font-size="15" text-anchor="middle">0.41</text><rect x="135" y="72.0" width="60" height="128.0" fill="#99004C"/><text x="165" y="222" font-size="15" text-anchor="middle">DD</text><text x="165" y="64.0" font-size="15" text-anchor="middle">0.75</text><rect x="230" y="55.1" width="60" height="144.9" fill="#99004C"/><text x="260" y="222" font-size="15" text-anchor="middle">+ readout</text><text x="260" y="47.1" font-size="15" text-anchor="middle">0.85</text><rect x="325" y="52.3" width="60" height="147.7" fill="#99004C"/><text x="355" y="222" font-size="15" text-anchor="middle">+ ZNE</text><text x="355" y="44.3" font-size="15" text-anchor="middle">0.87</text><line x1="25" y1="30" x2="420" y2="30" stroke="#C9A227" stroke-width="2.5" stroke-dasharray="6 4"/><text x="418" y="22" font-size="15" text-anchor="end" fill="#6A626B">ideal 1</text></svg></div>
+  <div class="foot"><span>SemiAcademy · ISEP-CSU</span><span>CC BY 4.0</span></div>
+</section>
+
+<!-- 2 -->
+<section class="slide">
+  <h2>By the end of this module you can</h2>
+  <ul>
+    <li>tell <strong>suppression</strong>, <strong>mitigation</strong> and <strong>correction</strong> apart, and say what each costs;</li>
+    <li>tell <strong>coherent</strong> errors from <strong>incoherent</strong> ones, and say which tool can remove each;</li>
+    <li>apply <strong>dynamical decoupling</strong>, <strong>readout mitigation</strong> and <strong>zero-noise extrapolation</strong> to one expectation value;</li>
+    <li>measure the price of mitigation in shots;</li>
+    <li>choose the matching options of IBM's Estimator, and judge whether each one improved a result.</li>
+  </ul>
+  <p class="small" style="margin-top:24px">Course outcome 3: tell error suppression, mitigation and correction apart, apply suppression and mitigation to an expectation value, and judge whether each improves it.</p>
+  <div class="foot"><span>Module 3 · Error suppression and mitigation</span><span>2</span></div>
+</section>
+
+<!-- 3 -->
+<section class="slide">
+  <h2>Three ways to fight noise</h2>
+  <table style="font-size:21px">
+    <tr><th></th><th>what it does</th><th>example</th><th>cost</th></tr>
+    <tr><td><strong>suppression</strong></td><td>changes the circuit so that less error happens</td><td>dynamical decoupling, better compilation</td><td>almost none</td></tr>
+    <tr><td><strong>mitigation</strong></td><td>runs extra circuits and corrects the <em>average</em> result afterwards</td><td>readout mitigation, zero-noise extrapolation</td><td>more circuits and shots; larger statistical error</td></tr>
+    <tr><td><strong>correction</strong></td><td>finds and fixes errors in each shot, while the circuit runs</td><td>the repetition code, the surface code</td><td>many qubits per logical qubit</td></tr>
+  </table>
+  <p style="font-size:23px;margin-top:22px">Mitigation gives better <em>expectation values</em>, not better individual shots. It suits today's circuits; long computations need correction.</p>
+  <div class="foot"><span>Module 3 · Error suppression and mitigation</span><span>3</span></div>
+</section>
+
+<!-- 4 -->
+<section class="slide">
+  <h2>One expectation value, all module long</h2>
+  <div style="margin:10px 0 18px"><svg width="1100" height="170" viewBox="0 0 1100 170" aria-label="The experiment: H, CNOT, a 10 microsecond wait, H on both qubits and measurement"><text x="0" y="51" font-size="17">qubit 0</text><line x1="85" y1="45" x2="1090" y2="45" stroke="#24313D" stroke-width="2.5"/><text x="0" y="126" font-size="17">qubit 1</text><line x1="85" y1="120" x2="1090" y2="120" stroke="#24313D" stroke-width="2.5"/><rect x="107.0" y="25" width="46" height="40" rx="5" fill="#fff" stroke="#24313D" stroke-width="2.5"/><text x="130" y="52" font-size="18" text-anchor="middle" fill="#24313D">H</text><line x1="200" y1="45" x2="200" y2="136" stroke="#24313D" stroke-width="2.5"/><circle cx="200" cy="45" r="7" fill="#24313D"/><circle cx="200" cy="120" r="16" fill="#fff" stroke="#24313D" stroke-width="2.5"/><line x1="184" y1="120" x2="216" y2="120" stroke="#24313D" stroke-width="2.5"/><line x1="200" y1="104" x2="200" y2="136" stroke="#24313D" stroke-width="2.5"/><rect x="250" y="15" width="560" height="135" rx="10" fill="#F8F4F6" stroke="#B9AEB4" stroke-dasharray="7 5"/><text x="530" y="168" font-size="15" text-anchor="middle" fill="#6A626B">wait 10 µs (10 id steps): detuning, dephasing</text><rect x="265.0" y="25" width="40" height="40" rx="5" fill="#fff" stroke="#B9AEB4" stroke-width="2.5"/><text x="285" y="52" font-size="15" text-anchor="middle" fill="#B9AEB4">id</text><rect x="265.0" y="100" width="40" height="40" rx="5" fill="#fff" stroke="#B9AEB4" stroke-width="2.5"/><text x="285" y="127" font-size="15" text-anchor="middle" fill="#B9AEB4">id</text><rect x="319.0" y="25" width="40" height="40" rx="5" fill="#fff" stroke="#B9AEB4" stroke-width="2.5"/><text x="339" y="52" font-size="15" text-anchor="middle" fill="#B9AEB4">id</text><rect x="319.0" y="100" width="40" height="40" rx="5" fill="#fff" stroke="#B9AEB4" stroke-width="2.5"/><text x="339" y="127" font-size="15" text-anchor="middle" fill="#B9AEB4">id</text><rect x="373.0" y="25" width="40" height="40" rx="5" fill="#fff" stroke="#B9AEB4" stroke-width="2.5"/><text x="393" y="52" font-size="15" text-anchor="middle" fill="#B9AEB4">id</text><rect x="373.0" y="100" width="40" height="40" rx="5" fill="#fff" stroke="#B9AEB4" stroke-width="2.5"/><text x="393" y="127" font-size="15" text-anchor="middle" fill="#B9AEB4">id</text><rect x="427.0" y="25" width="40" height="40" rx="5" fill="#fff" stroke="#B9AEB4" stroke-width="2.5"/><text x="447" y="52" font-size="15" text-anchor="middle" fill="#B9AEB4">id</text><rect x="427.0" y="100" width="40" height="40" rx="5" fill="#fff" stroke="#B9AEB4" stroke-width="2.5"/><text x="447" y="127" font-size="15" text-anchor="middle" fill="#B9AEB4">id</text><rect x="481.0" y="25" width="40" height="40" rx="5" fill="#fff" stroke="#B9AEB4" stroke-width="2.5"/><text x="501" y="52" font-size="15" text-anchor="middle" fill="#B9AEB4">id</text><rect x="481.0" y="100" width="40" height="40" rx="5" fill="#fff" stroke="#B9AEB4" stroke-width="2.5"/><text x="501" y="127" font-size="15" text-anchor="middle" fill="#B9AEB4">id</text><rect x="535.0" y="25" width="40" height="40" rx="5" fill="#fff" stroke="#B9AEB4" stroke-width="2.5"/><text x="555" y="52" font-size="15" text-anchor="middle" fill="#B9AEB4">id</text><rect x="535.0" y="100" width="40" height="40" rx="5" fill="#fff" stroke="#B9AEB4" stroke-width="2.5"/><text x="555" y="127" font-size="15" text-anchor="middle" fill="#B9AEB4">id</text><rect x="589.0" y="25" width="40" height="40" rx="5" fill="#fff" stroke="#B9AEB4" stroke-width="2.5"/><text x="609" y="52" font-size="15" text-anchor="middle" fill="#B9AEB4">id</text><rect x="589.0" y="100" width="40" height="40" rx="5" fill="#fff" stroke="#B9AEB4" stroke-width="2.5"/><text x="609" y="127" font-size="15" text-anchor="middle" fill="#B9AEB4">id</text><rect x="643.0" y="25" width="40" height="40" rx="5" fill="#fff" stroke="#B9AEB4" stroke-width="2.5"/><text x="663" y="52" font-size="15" text-anchor="middle" fill="#B9AEB4">id</text><rect x="643.0" y="100" width="40" height="40" rx="5" fill="#fff" stroke="#B9AEB4" stroke-width="2.5"/><text x="663" y="127" font-size="15" text-anchor="middle" fill="#B9AEB4">id</text><rect x="697.0" y="25" width="40" height="40" rx="5" fill="#fff" stroke="#B9AEB4" stroke-width="2.5"/><text x="717" y="52" font-size="15" text-anchor="middle" fill="#B9AEB4">id</text><rect x="697.0" y="100" width="40" height="40" rx="5" fill="#fff" stroke="#B9AEB4" stroke-width="2.5"/><text x="717" y="127" font-size="15" text-anchor="middle" fill="#B9AEB4">id</text><rect x="751.0" y="25" width="40" height="40" rx="5" fill="#fff" stroke="#B9AEB4" stroke-width="2.5"/><text x="771" y="52" font-size="15" text-anchor="middle" fill="#B9AEB4">id</text><rect x="751.0" y="100" width="40" height="40" rx="5" fill="#fff" stroke="#B9AEB4" stroke-width="2.5"/><text x="771" y="127" font-size="15" text-anchor="middle" fill="#B9AEB4">id</text><rect x="847.0" y="25" width="46" height="40" rx="5" fill="#fff" stroke="#24313D" stroke-width="2.5"/><text x="870" y="52" font-size="18" text-anchor="middle" fill="#24313D">H</text><rect x="927.0" y="25" width="46" height="40" rx="5" fill="#fff" stroke="#99004C" stroke-width="2.5"/><text x="950" y="52" font-size="18" text-anchor="middle" fill="#99004C">M</text><rect x="847.0" y="100" width="46" height="40" rx="5" fill="#fff" stroke="#24313D" stroke-width="2.5"/><text x="870" y="127" font-size="18" text-anchor="middle" fill="#24313D">H</text><rect x="927.0" y="100" width="46" height="40" rx="5" fill="#fff" stroke="#99004C" stroke-width="2.5"/><text x="950" y="127" font-size="18" text-anchor="middle" fill="#99004C">M</text><text x="1020" y="88.5" font-size="18">⟨XX⟩</text></svg></div>
+  <ul>
+    <li style="font-size:23px">H and a CNOT make the Bell state (|00⟩ + |11⟩)/√2; the qubits wait 10 µs, as qubits do while others are busy.</li>
+    <li style="font-size:23px">H on both qubits, then measure: ⟨XX⟩ is the average of (−1)<sup>number of 1s</sup>. Ideally <strong>⟨XX⟩ = 1</strong>.</li>
+  </ul>
+  <div class="foot"><span>Module 3 · Error suppression and mitigation</span><span>4</span></div>
+</section>
+
+<!-- 5 -->
+<section class="slide">
+  <h2>Four kinds of noise, one at a time</h2>
+  <div class="cols">
+    <div style="flex:0 0 600px"><svg width="600" height="300" viewBox="0 0 600 300" aria-label="XX expectation with each kind of noise alone and all together"><text x="220" y="43.0" font-size="17" text-anchor="end">dephasing and relaxation</text><rect x="230" y="20" width="261.8" height="34" fill="#B9AEB4"/><text x="499.8" y="43.0" font-size="16">0.873</text><text x="220" y="95.0" font-size="17" text-anchor="end">detuning</text><rect x="230" y="72" width="161.6" height="34" fill="#99004C"/><text x="399.6" y="95.0" font-size="16">0.539</text><text x="220" y="147.0" font-size="17" text-anchor="end">readout error</text><rect x="230" y="124" width="264.4" height="34" fill="#B9AEB4"/><text x="502.4" y="147.0" font-size="16">0.881</text><text x="220" y="199.0" font-size="17" text-anchor="end">CNOT error</text><rect x="230" y="176" width="293.1" height="34" fill="#B9AEB4"/><text x="531.1" y="199.0" font-size="16">0.977</text><text x="220" y="251.0" font-size="17" text-anchor="end">all four</text><rect x="230" y="228" width="122.6" height="34" fill="#24313D"/><text x="360.6" y="251.0" font-size="16">0.409</text><line x1="230" y1="270" x2="530" y2="270" stroke="#24313D" stroke-width="2"/><line x1="530.0" y1="10" x2="530.0" y2="270" stroke="#C9A227" stroke-width="2" stroke-dasharray="6 4"/><text x="526.0" y="290" font-size="14" text-anchor="end" fill="#6A626B">ideal ⟨XX⟩ = 1</text></svg></div>
+    <div>
+      <p style="font-size:22px">The lab's noise: T1 = 200 µs and T2 = 150 µs while waiting; a <strong>detuning</strong> of 0.05 rad per µs; readout errors of 2% (0 → 1) and 4% (1 → 0); 2% depolarizing error on the CNOT.</p>
+      <p style="font-size:22px">Together: ⟨XX⟩ = <strong>0.409</strong> instead of 1. The detuning costs the most: a relative phase of 1 rad gives about cos 1.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Module 3 · Error suppression and mitigation</span><span>5</span></div>
+</section>
+
+<!-- 6 -->
+<section class="slide">
+  <h2>Coherent and incoherent errors</h2>
+  <div class="cols">
+    <div style="flex:1">
+      <h3 style="color:var(--maroon);margin:0 0 8px">coherent</h3>
+      <p style="font-size:22px">The same unitary every time: an over-rotation, a qubit frequency slightly off (detuning), a steady coupling to a neighbour.</p>
+      <p style="font-size:22px">Errors add up in <em>amplitude</em>: N steps of angle δ give angle Nδ. They can be <strong>reversed</strong> by the right extra gates.</p>
+    </div>
+    <div style="flex:1">
+      <h3 style="color:var(--maroon);margin:0 0 8px">incoherent</h3>
+      <p style="font-size:22px">Random from shot to shot and moment to moment: relaxation (T1), fast dephasing (T2), depolarizing gate errors, readout errors.</p>
+      <p style="font-size:22px">They add up in <em>probability</em>, and no gate undoes them. Mitigation can still correct their effect on the <strong>average</strong>.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Module 3 · Error suppression and mitigation</span><span>6</span></div>
+</section>
+
+<!-- 7 -->
+<section class="slide">
+  <h2>The spin echo: the simplest dynamical decoupling</h2>
+  <div style="margin:4px 0 10px"><svg width="1100" height="150" viewBox="0 0 1100 150" aria-label="Spin echo: wait half, X, wait half, X"><line x1="20" y1="70" x2="1080" y2="70" stroke="#24313D" stroke-width="2.5"/><rect x="60" y="30" width="380" height="80" rx="10" fill="#F8F4F6" stroke="#B9AEB4" stroke-dasharray="7 5"/><text x="250" y="76" font-size="18" text-anchor="middle">wait: turn by +φ/2</text><rect x="467.0" y="50" width="46" height="40" rx="5" fill="#fff" stroke="#99004C" stroke-width="2.5"/><text x="490" y="77" font-size="18" text-anchor="middle" fill="#99004C">X</text><rect x="540" y="30" width="380" height="80" rx="10" fill="#F8F4F6" stroke="#B9AEB4" stroke-dasharray="7 5"/><text x="730" y="76" font-size="18" text-anchor="middle">wait: the same rotation now undoes it</text><rect x="947.0" y="50" width="46" height="40" rx="5" fill="#fff" stroke="#99004C" stroke-width="2.5"/><text x="970" y="77" font-size="18" text-anchor="middle" fill="#99004C">X</text><text x="550" y="142" font-size="15" text-anchor="middle" fill="#6A626B">on both qubits; net effect of a steady Z rotation: none</text></svg></div>
+  <ul>
+    <li style="font-size:22px">Wait half the time: each qubit turns by φ/2 around Z. Apply X: the next φ/2 now turns the state <em>back</em>. A final X restores the frame.</li>
+    <li style="font-size:22px">On the Bell state, X on both qubits changes nothing (|00⟩ + |11⟩ → |11⟩ + |00⟩), so only the unwanted rotation is affected.</li>
+  </ul>
+  <div class="foot"><span>Module 3 · Error suppression and mitigation</span><span>7</span></div>
+</section>
+
+<!-- 8 -->
+<section class="slide">
+  <h2>Decoupling removes the detuning</h2>
+  <div class="cols">
+    <div style="flex:0 0 560px"><svg width="560" height="370" viewBox="0 0 560 370" aria-label="XX against detuning, raw and with dynamical decoupling"><line x1="70" y1="310.0" x2="540" y2="310.0" stroke="#E4DCE0"/><text x="62" y="315.0" font-size="14" text-anchor="end">-1</text><line x1="70" y1="237.5" x2="540" y2="237.5" stroke="#E4DCE0"/><text x="62" y="242.5" font-size="14" text-anchor="end">-0.5</text><line x1="70" y1="165.0" x2="540" y2="165.0" stroke="#E4DCE0"/><text x="62" y="170.0" font-size="14" text-anchor="end">0</text><line x1="70" y1="92.5" x2="540" y2="92.5" stroke="#E4DCE0"/><text x="62" y="97.5" font-size="14" text-anchor="end">0.5</text><line x1="70" y1="20.0" x2="540" y2="20.0" stroke="#E4DCE0"/><text x="62" y="25.0" font-size="14" text-anchor="end">1</text><line x1="70" y1="310" x2="540" y2="310" stroke="#24313D" stroke-width="2"/><text x="70.0" y="330" font-size="14" text-anchor="middle">0</text><text x="187.5" y="330" font-size="14" text-anchor="middle">0.05</text><text x="305.0" y="330" font-size="14" text-anchor="middle">0.1</text><text x="422.5" y="330" font-size="14" text-anchor="middle">0.15</text><text x="540.0" y="330" font-size="14" text-anchor="middle">0.2</text><text x="305.0" y="362" font-size="15" text-anchor="middle" fill="#6A626B">detuning per step (rad)</text><text x="16" y="165.0" font-size="15" text-anchor="middle" fill="#6A626B" transform="rotate(-90 16 165.0)">⟨XX⟩</text><polyline points="70.0,55.4 81.8,55.9 93.5,57.6 105.2,60.3 117.0,64.0 128.8,68.8 140.5,74.5 152.2,81.1 164.0,88.6 175.8,96.8 187.5,105.7 199.2,115.2 211.0,125.2 222.8,135.6 234.5,146.3 246.2,157.2 258.0,168.1 269.8,179.1 281.5,189.8 293.2,200.4 305.0,210.5 316.8,220.3 328.5,229.4 340.2,237.9 352.0,245.7 363.8,252.7 375.5,258.8 387.2,264.0 399.0,268.2 410.7,271.3 422.5,273.4 434.2,274.4 446.0,274.3 457.7,273.1 469.5,270.9 481.3,267.5 493.0,263.2 504.8,257.9 516.5,251.6 528.2,244.5 540.0,236.6" fill="none" stroke="#24313D" stroke-width="3" stroke-dasharray="7 5"/><polyline points="70.0,55.8 81.8,55.8 93.5,55.8 105.2,55.8 117.0,55.8 128.8,55.8 140.5,55.8 152.2,55.8 164.0,55.8 175.8,55.8 187.5,55.8 199.2,55.8 211.0,55.8 222.8,55.8 234.5,55.8 246.2,55.8 258.0,55.8 269.8,55.8 281.5,55.8 293.2,55.8 305.0,55.8 316.8,55.8 328.5,55.8 340.2,55.8 352.0,55.8 363.8,55.8 375.5,55.8 387.2,55.8 399.0,55.8 410.7,55.8 422.5,55.8 434.2,55.8 446.0,55.8 457.7,55.8 469.5,55.8 481.3,55.8 493.0,55.8 504.8,55.8 516.5,55.8 528.2,55.8 540.0,55.8" fill="none" stroke="#99004C" stroke-width="3.5"/><line x1="187.5" y1="20" x2="187.5" y2="310" stroke="#C9A227" stroke-width="2"/><line x1="85" y1="260" x2="107" y2="260" stroke="#24313D" stroke-width="3" stroke-dasharray="6 4"/><text x="115" y="265" font-size="15">raw</text><line x1="85" y1="282" x2="107" y2="282" stroke="#99004C" stroke-width="3"/><text x="115" y="287" font-size="15">dynamical decoupling</text></svg></div>
+    <div>
+      <p style="font-size:23px">With the echo, ⟨XX⟩ rises from 0.409 to <strong>0.753</strong>, and it no longer depends on the detuning.</p>
+      <p style="font-size:23px">Without any detuning, the echo changes nothing (0.756 against 0.753): fast random dephasing does not reverse, and the two X gates add a little error.</p>
+      <p style="font-size:21px">Real devices use longer sequences, such as <strong>XY4</strong> (X, Y, X, Y), which also cancel errors around other axes.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Module 3 · Error suppression and mitigation</span><span>8</span></div>
+</section>
+
+<!-- 9 -->
+<section class="slide">
+  <h2>Pause and predict</h2>
+  <p>Each shot has a slightly different qubit frequency, but in any one shot it stays the same during the wait. Can the echo help? And if the frequency jumps at random several times during the wait?</p>
+  <div class="reveal"><button type="button">Show the answer</button>
+    <div class="ans">A frequency that differs from shot to shot but is <strong>steady during the wait</strong> is refocused shot by shot: each shot's second half undoes its own first half, so the echo restores ⟨X⟩ fully. This "spread" is common on hardware (slow drifts, low-frequency noise). Noise that <strong>changes during the wait</strong> breaks the mirror symmetry, and the echo removes only its slow part. Try both in tab 1 of the explorer.</div></div>
+  <div class="foot"><span>Module 3 · Error suppression and mitigation</span><span>9</span></div>
+</section>
+
+<!-- 10 -->
+<section class="slide">
+  <h2>Readout errors and the calibration matrix</h2>
+  <div class="cols">
+    <div style="flex:0 0 540px"><table style="font-size:20px"><tr><th>measured ↓ / prepared →</th><th>00</th><th>01</th><th>10</th><th>11</th></tr><tr><th>00</th><td>0.9604</td><td>0.0397</td><td>0.0397</td><td>0.0016</td></tr><tr><th>01</th><td>0.0196</td><td>0.9403</td><td>0.0008</td><td>0.0388</td></tr><tr><th>10</th><td>0.0196</td><td>0.0008</td><td>0.9403</td><td>0.0388</td></tr><tr><th>11</th><td>0.0004</td><td>0.0192</td><td>0.0192</td><td>0.9207</td></tr></table></div>
+    <div>
+      <p style="font-size:22px">Prepare each of 00, 01, 10 and 11 with X gates and measure. Column j of <strong>A</strong> holds the probabilities of the four results for the prepared string j.</p>
+      <div class="eq" style="font-size:24px">p<sub>measured</sub> = A p<sub>true</sub>  ⟹  p<sub>true</sub> = A⁻¹ p<sub>measured</sub></div>
+      <p style="font-size:21px">In the lab you write <code>mitigate_readout(probs, A)</code> with <code>np.linalg.solve</code>.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Module 3 · Error suppression and mitigation</span><span>10</span></div>
+</section>
+
+<!-- 11 -->
+<section class="slide">
+  <h2>Readout mitigation at work</h2>
+  <ul>
+    <li style="font-size:23px">With the echo and readout mitigation, ⟨XX⟩ goes from 0.753 to <strong>0.853</strong>.</li>
+    <li style="font-size:23px">The corrected "probabilities" can be slightly negative: they are estimates of the true distribution, and averages computed from them are still good estimates.</li>
+    <li style="font-size:23px">A full matrix has 4<sup>n</sup> entries and needs 2<sup>n</sup> calibration circuits: fine for 2 qubits, impossible for 100. Real methods assume the qubits' errors are independent, or, like IBM's <strong>TREX</strong> (twirled readout error extinction), randomize the measurement so that one number per observable is enough.</li>
+    <li style="font-size:23px">A calibration measured with shots, and taken earlier in the day, is itself noisy and can drift.</li>
+  </ul>
+  <div class="foot"><span>Module 3 · Error suppression and mitigation</span><span>11</span></div>
+</section>
+
+<!-- 12 -->
+<section class="slide">
+  <h2>Zero-noise extrapolation: add noise on purpose</h2>
+  <div style="margin:6px 0 14px"><svg width="1100" height="120" viewBox="0 0 1100 120" aria-label="One CNOT and three CNOTs in a row do the same thing"><line x1="80" y1="35" x2="390" y2="35" stroke="#24313D" stroke-width="2.5"/><line x1="80" y1="95" x2="390" y2="95" stroke="#24313D" stroke-width="2.5"/><line x1="150" y1="35" x2="150" y2="111" stroke="#24313D" stroke-width="2.5"/><circle cx="150" cy="35" r="7" fill="#24313D"/><circle cx="150" cy="95" r="16" fill="#fff" stroke="#24313D" stroke-width="2.5"/><line x1="134" y1="95" x2="166" y2="95" stroke="#24313D" stroke-width="2.5"/><line x1="150" y1="79" x2="150" y2="111" stroke="#24313D" stroke-width="2.5"/><text x="70" y="71.0" font-size="17" fill="#6A626B" text-anchor="end">scale 1</text><line x1="400" y1="35" x2="710" y2="35" stroke="#24313D" stroke-width="2.5"/><line x1="400" y1="95" x2="710" y2="95" stroke="#24313D" stroke-width="2.5"/><line x1="480" y1="35" x2="480" y2="111" stroke="#24313D" stroke-width="2.5"/><circle cx="480" cy="35" r="7" fill="#24313D"/><circle cx="480" cy="95" r="16" fill="#fff" stroke="#24313D" stroke-width="2.5"/><line x1="464" y1="95" x2="496" y2="95" stroke="#24313D" stroke-width="2.5"/><line x1="480" y1="79" x2="480" y2="111" stroke="#24313D" stroke-width="2.5"/><line x1="560" y1="35" x2="560" y2="111" stroke="#24313D" stroke-width="2.5"/><circle cx="560" cy="35" r="7" fill="#24313D"/><circle cx="560" cy="95" r="16" fill="#fff" stroke="#24313D" stroke-width="2.5"/><line x1="544" y1="95" x2="576" y2="95" stroke="#24313D" stroke-width="2.5"/><line x1="560" y1="79" x2="560" y2="111" stroke="#24313D" stroke-width="2.5"/><line x1="640" y1="35" x2="640" y2="111" stroke="#24313D" stroke-width="2.5"/><circle cx="640" cy="35" r="7" fill="#24313D"/><circle cx="640" cy="95" r="16" fill="#fff" stroke="#24313D" stroke-width="2.5"/><line x1="624" y1="95" x2="656" y2="95" stroke="#24313D" stroke-width="2.5"/><line x1="640" y1="79" x2="640" y2="111" stroke="#24313D" stroke-width="2.5"/><text x="390" y="71.0" font-size="17" fill="#6A626B" text-anchor="end">scale 3</text><text x="740" y="71.0" font-size="20">the same gate, about 3 × the noise</text></svg></div>
+  <ul>
+    <li style="font-size:22px">A CNOT is its own inverse, so CNOT·CNOT·CNOT = CNOT: the same circuit, with about three times the CNOT noise (<strong>scale 3</strong>). Five CNOTs give scale 5.</li>
+    <li style="font-size:22px">Measure at scales 1, 3, 5; fit a line, a parabola or an exponential; read the fit at <strong>scale 0</strong>.</li>
+    <li style="font-size:22px">ZNE removes only the noise it amplifies: here the CNOT error, not the waiting.</li>
+  </ul>
+  <div class="foot"><span>Module 3 · Error suppression and mitigation</span><span>12</span></div>
+</section>
+
+<!-- 13 -->
+<section class="slide">
+  <h2>Extrapolating to zero</h2>
+  <div class="cols">
+    <div style="flex:0 0 560px"><svg width="560" height="370" viewBox="0 0 560 370" aria-label="XX at noise scales 1, 3 and 5 with linear and quadratic fits extended to zero"><line x1="70" y1="310.0" x2="540" y2="310.0" stroke="#E4DCE0"/><text x="62" y="315.0" font-size="14" text-anchor="end">0.75</text><line x1="70" y1="213.3" x2="540" y2="213.3" stroke="#E4DCE0"/><text x="62" y="218.3" font-size="14" text-anchor="end">0.80</text><line x1="70" y1="116.7" x2="540" y2="116.7" stroke="#E4DCE0"/><text x="62" y="121.7" font-size="14" text-anchor="end">0.85</text><line x1="70" y1="20.0" x2="540" y2="20.0" stroke="#E4DCE0"/><text x="62" y="25.0" font-size="14" text-anchor="end">0.90</text><line x1="70" y1="310" x2="540" y2="310" stroke="#24313D" stroke-width="2"/><text x="70.0" y="330" font-size="14" text-anchor="middle">0</text><text x="155.5" y="330" font-size="14" text-anchor="middle">1</text><text x="240.9" y="330" font-size="14" text-anchor="middle">2</text><text x="326.4" y="330" font-size="14" text-anchor="middle">3</text><text x="411.8" y="330" font-size="14" text-anchor="middle">4</text><text x="497.3" y="330" font-size="14" text-anchor="middle">5</text><text x="305.0" y="362" font-size="15" text-anchor="middle" fill="#6A626B">noise scale (number of CNOTs)</text><text x="16" y="165.0" font-size="15" text-anchor="middle" fill="#6A626B" transform="rotate(-90 16 165.0)">⟨XX⟩</text><polyline points="70.0,80.2 78.0,83.2 85.9,86.2 93.9,89.2 101.9,92.1 109.8,95.1 117.8,98.1 125.8,101.1 133.7,104.1 141.7,107.0 149.7,110.0 157.6,113.0 165.6,116.0 173.6,119.0 181.5,122.0 189.5,124.9 197.5,127.9 205.4,130.9 213.4,133.9 221.4,136.9 229.3,139.8 237.3,142.8 245.3,145.8 253.2,148.8 261.2,151.8 269.2,154.8 277.1,157.7 285.1,160.7 293.1,163.7 301.0,166.7 309.0,169.7 316.9,172.6 324.9,175.6 332.9,178.6 340.8,181.6 348.8,184.6 356.8,187.6 364.7,190.5 372.7,193.5 380.7,196.5 388.6,199.5 396.6,202.5 404.6,205.4 412.5,208.4 420.5,211.4 428.5,214.4 436.4,217.4 444.4,220.4 452.4,223.3 460.3,226.3 468.3,229.3 476.3,232.3 484.2,235.3 492.2,238.3 500.2,241.2 508.1,244.2 516.1,247.2 524.1,250.2 532.0,253.2 540.0,256.1" fill="none" stroke="#99004C" stroke-width="2.5" stroke-dasharray="7 5"/><polyline points="70.0,78.2 78.0,81.3 85.9,84.5 93.9,87.6 101.9,90.8 109.8,93.9 117.8,97.0 125.8,100.2 133.7,103.3 141.7,106.4 149.7,109.5 157.6,112.6 165.6,115.7 173.6,118.8 181.5,121.9 189.5,125.0 197.5,128.0 205.4,131.1 213.4,134.2 221.4,137.2 229.3,140.3 237.3,143.3 245.3,146.4 253.2,149.4 261.2,152.4 269.2,155.5 277.1,158.5 285.1,161.5 293.1,164.5 301.0,167.5 309.0,170.5 316.9,173.5 324.9,176.5 332.9,179.5 340.8,182.4 348.8,185.4 356.8,188.4 364.7,191.3 372.7,194.3 380.7,197.2 388.6,200.2 396.6,203.1 404.6,206.0 412.5,209.0 420.5,211.9 428.5,214.8 436.4,217.7 444.4,220.6 452.4,223.5 460.3,226.4 468.3,229.3 476.3,232.2 484.2,235.0 492.2,237.9 500.2,240.8 508.1,243.6 516.1,246.5 524.1,249.3 532.0,252.2 540.0,255.0" fill="none" stroke="#C9A227" stroke-width="2.5" stroke-dasharray="3 4"/><circle cx="155.5" cy="111.8" r="7" fill="#24313D"/><circle cx="326.4" cy="177.0" r="7" fill="#24313D"/><circle cx="497.3" cy="239.7" r="7" fill="#24313D"/><path d="M 61.0 78.1 l 9 -9 l 9 9 l -9 9 z" fill="#2E7D4F"/><line x1="300" y1="40" x2="322" y2="40" stroke="#24313D" stroke-width="3"/><text x="330" y="45" font-size="15">measured</text><line x1="300" y1="62" x2="322" y2="62" stroke="#99004C" stroke-width="3" stroke-dasharray="6 4"/><text x="330" y="67" font-size="15">linear fit</text><line x1="300" y1="84" x2="322" y2="84" stroke="#C9A227" stroke-width="3" stroke-dasharray="6 4"/><text x="330" y="89" font-size="15">quadratic fit</text><line x1="300" y1="106" x2="322" y2="106" stroke="#2E7D4F" stroke-width="3"/><text x="330" y="111" font-size="15">no CNOT error</text></svg></div>
+    <div>
+      <p style="font-size:23px">Measured (with echo and readout mitigation): 0.853, 0.819, 0.786 at scales 1, 3, 5.</p>
+      <p style="font-size:23px">Zero-noise estimate: <strong>0.869</strong> (line), 0.870 (parabola). The same circuit with no CNOT error gives 0.870.</p>
+      <p style="font-size:21px">Still not 1: the dephasing during the wait is untouched by all three tools.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Module 3 · Error suppression and mitigation</span><span>13</span></div>
+</section>
+
+<!-- 14 -->
+<section class="slide">
+  <h2>The price: statistical error</h2>
+  <div class="cols">
+    <div style="flex:0 0 560px"><svg width="600" height="220" viewBox="0 0 600 220" aria-label="Standard deviation of three estimates of XX"><text x="220" y="43.0" font-size="17" text-anchor="end">DD</text><rect x="230" y="20" width="150.9" height="34" fill="#B9AEB4"/><text x="388.9" y="43.0" font-size="16">0.0101</text><text x="220" y="95.0" font-size="17" text-anchor="end">DD + readout</text><rect x="230" y="72" width="192.3" height="34" fill="#99004C"/><text x="430.3" y="95.0" font-size="16">0.0128</text><text x="220" y="147.0" font-size="17" text-anchor="end">DD + readout + ZNE</text><rect x="230" y="124" width="229.6" height="34" fill="#24313D"/><text x="467.6" y="147.0" font-size="16">0.0153</text><line x1="230" y1="166" x2="530" y2="166" stroke="#24313D" stroke-width="2"/><text x="380.0" y="190" font-size="15" text-anchor="middle" fill="#6A626B">standard deviation of ⟨XX⟩, 4,000 shots per circuit</text></svg></div>
+    <div>
+      <p style="font-size:22px">300 repeats of the experiment, 4,000 shots per circuit. The averages are right, but the scatter grows: about 1.5 times for ZNE, so about 2.3 times the shots per circuit, on three circuits instead of one.</p>
+      <p style="font-size:22px"><strong>Mitigation trades bias for variance.</strong> The stronger the noise it removes, the higher the price; for large circuits it grows quickly.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Module 3 · Error suppression and mitigation</span><span>14</span></div>
+</section>
+
+<!-- 15 -->
+<section class="slide">
+  <h2>With a device's noise</h2>
+  <div class="cols">
+    <div style="flex:0 0 580px"><svg width="580" height="260" viewBox="0 0 580 260" aria-label="XX on FakePittsburgh: raw, with DD, with readout mitigation, with ZNE"><text x="210" y="43.0" font-size="17" text-anchor="end">raw</text><rect x="220" y="20" width="256.3" height="34" fill="#B9AEB4"/><text x="484.3" y="43.0" font-size="16">0.884</text><text x="210" y="95.0" font-size="17" text-anchor="end">DD</text><rect x="220" y="72" width="257.1" height="34" fill="#B9AEB4"/><text x="485.1" y="95.0" font-size="16">0.887</text><text x="210" y="147.0" font-size="17" text-anchor="end">DD + readout</text><rect x="220" y="124" width="260.9" height="34" fill="#99004C"/><text x="488.9" y="147.0" font-size="16">0.900</text><text x="210" y="199.0" font-size="17" text-anchor="end">DD + readout + ZNE</text><rect x="220" y="176" width="261.4" height="34" fill="#24313D"/><text x="489.4" y="199.0" font-size="16">0.901</text><line x1="220" y1="218" x2="510" y2="218" stroke="#24313D" stroke-width="2"/><line x1="474.9" y1="37" x2="477.8" y2="37" stroke="#C9A227" stroke-width="3"/><line x1="475.7" y1="89" x2="478.6" y2="89" stroke="#C9A227" stroke-width="3"/><line x1="479.4" y1="141" x2="482.3" y2="141" stroke="#C9A227" stroke-width="3"/><line x1="479.9" y1="193" x2="482.8" y2="193" stroke="#C9A227" stroke-width="3"/><line x1="481.8" y1="10" x2="481.8" y2="218" stroke="#2E7D4F" stroke-width="2" stroke-dasharray="6 4"/><text x="477.8" y="238" font-size="14" text-anchor="end" fill="#2E7D4F">dephasing limit 0.903</text></svg></div>
+    <div>
+      <p style="font-size:21px">FakePittsburgh (ibm_pittsburgh, 17 April 2026), qubits 97 and 107, a 20 µs delay, 40,000 shots per circuit, simulated with Qiskit Aer.</p>
+      <p style="font-size:21px">The model has no coherent idle errors, so the echo changes ⟨XX⟩ only within its statistical error (±0.005). Readout mitigation helps most; ZNE little, because the CZ error is only 0.2%.</p>
+      <p style="font-size:21px">What remains is the dephasing during the delay: exp(−t/T₂) for the two qubits is 0.903.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Module 3 · Error suppression and mitigation</span><span>15</span></div>
+</section>
+
+<!-- 16 -->
+<section class="slide">
+  <h2>IBM's Estimator does it for you</h2>
+  <table style="font-size:19px">
+    <tr><th>Estimator option (qiskit-ibm-runtime 0.50)</th><th>what it does</th></tr>
+    <tr><td><code>dynamical_decoupling.enable = True</code></td><td>inserts DD sequences into idle periods; <code>sequence_type</code> "XX", "XpXm" or "XY4"</td></tr>
+    <tr><td><code>resilience.measure_mitigation = True</code></td><td>readout mitigation by TREX</td></tr>
+    <tr><td><code>resilience.zne_mitigation = True</code></td><td>ZNE; <code>zne.noise_factors</code> such as (1, 3, 5), <code>zne.extrapolator</code> such as "linear" or "exponential", <code>zne.amplifier</code> "gate_folding" or "pea"</td></tr>
+    <tr><td><code>resilience.pec_mitigation = True</code></td><td>probabilistic error cancellation: no bias, cost exponential in circuit size</td></tr>
+    <tr><td><code>resilience_level</code></td><td>0: none · 1 (default): readout mitigation · 2: adds ZNE</td></tr>
+  </table>
+  <p style="font-size:21px;margin-top:14px">The Estimator now runs on your own computer (<code>executor_estimator.Estimator</code>) and sends the circuits to IBM. The optional Colab notebook runs the lab's experiment with these options, on a real IBM computer or on a small simulated device.</p>
+  <div class="foot"><span>Module 3 · Error suppression and mitigation</span><span>16</span></div>
+</section>
+
+<!-- 17 -->
+<section class="slide">
+  <h2>Did it help? Judge each step</h2>
+  <ul>
+    <li style="font-size:23px">Compare with a value you know: an ideal value from a simulator, a symmetry, or a circuit run forwards and backwards (which should return to the start).</li>
+    <li style="font-size:23px">Report every estimate with its <strong>statistical error</strong>. A change smaller than the error is no change (the echo on FakePittsburgh).</li>
+    <li style="font-size:23px">Check the fit: points that do not follow a smooth curve, or a value outside [−1, 1], mean the extrapolation cannot be trusted.</li>
+    <li style="font-size:23px">Say what is left: here, dephasing during the wait. Mitigation cannot beat the decoherence it does not touch.</li>
+  </ul>
+  <div class="foot"><span>Module 3 · Error suppression and mitigation</span><span>17</span></div>
+</section>
+
+<!-- 18 -->
+<section class="slide">
+  <h2>Summary</h2>
+  <ul>
+    <li style="font-size:23px"><strong>Suppression</strong> changes the circuit: dynamical decoupling cancels coherent and slow errors while qubits wait, at almost no cost.</li>
+    <li style="font-size:23px"><strong>Mitigation</strong> corrects averages: readout mitigation inverts a calibration; zero-noise extrapolation amplifies the noise and extrapolates to zero. Both cost shots.</li>
+    <li style="font-size:23px">Neither removes everything; only <strong>correction</strong> makes arbitrarily long computations possible.</li>
+    <li style="font-size:23px">In the lab: 0.409 → 0.753 → 0.853 → 0.869 for an ideal value of 1.</li>
+  </ul>
+  <div class="eq" style="font-size:22px;margin-top:12px"><strong>Next:</strong> the Module 3 lab. You write <code>idle_block()</code>, <code>mitigate_readout()</code>, <code>fold_cx()</code> and <code>extrapolate_zero()</code>.</div>
+  <div class="foot"><span>Module 3 · Error suppression and mitigation</span><span>18</span></div>
+</section>
+
+<!-- 19 -->
+<section class="slide">
+  <h2>Credits and license</h2>
+  <p>These slides were written for SemiAcademy's <em>Quantum Computing Advanced</em> course, developed through the Intel Semiconductor Education Program at Central State University (ISEP-CSU).</p>
+  <p>License: <strong>Creative Commons Attribution 4.0 International (CC BY 4.0)</strong>, https://creativecommons.org/licenses/by/4.0/. You may copy, adapt and share them, with credit.</p>
+  <p>Suggested credit: "Module 3 slides, Quantum Computing Advanced, SemiAcademy / ISEP-CSU, CC BY 4.0."</p>
+  <p class="small">Device data: the FakePittsburgh model in qiskit-ibm-runtime (Apache License 2.0), calibration of 17 April 2026, simulated with Qiskit Aer. Estimator options: qiskit-ibm-runtime 0.50.0 documentation. All other results were computed for these slides with qsim 1.11.0 and checked with Qiskit 2.5.2 and Qiskit Aer 0.17.2. Source: github.com/CSU-Physics/quantum-computing-notebooks (media/level3/m3-slides.html).</p>
+  <div class="foot"><span>Module 3 · Error suppression and mitigation</span><span>19</span></div>
+</section>
+
+</div></div>
+<div id="bar">
+  <button type="button" id="prev" aria-label="Previous slide">◀ Prev</button>
+  <span id="count">1 / 19</span>
+  <button type="button" id="next" aria-label="Next slide">Next ▶</button>
+  <button type="button" id="full">Full screen</button>
+  <button type="button" id="print">Print / PDF</button>
+</div>
+<script>
+(function () {
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide')), i = 0;
+  var m = /[#&]s=?(\d+)/.exec(location.hash); if (m) i = Math.min(slides.length - 1, Math.max(0, parseInt(m[1], 10) - 1));
+  function show(n) {
+    i = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach(function (s, j) { s.classList.toggle('on', j === i); });
+    document.getElementById('count').textContent = (i + 1) + ' / ' + slides.length;
+    try { history.replaceState(null, '', '#s' + (i + 1)); } catch (e) {}
+  }
+  function fit() {
+    var vp = document.getElementById('viewport'), st = document.getElementById('stage');
+    var sc = Math.min(vp.clientWidth / 1280, vp.clientHeight / 720);
+    st.style.transform = 'scale(' + sc + ')';
+  }
+  document.getElementById('prev').onclick = function () { show(i - 1); };
+  document.getElementById('next').onclick = function () { show(i + 1); };
+  document.getElementById('full').onclick = function () { var d = document.documentElement; if (!document.fullscreenElement && d.requestFullscreen) d.requestFullscreen(); else if (document.exitFullscreen) document.exitFullscreen(); };
+  document.getElementById('print').onclick = function () { window.print(); };
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { show(i + 1); e.preventDefault(); }
+    if (e.key === 'ArrowLeft' || e.key === 'PageUp') { show(i - 1); e.preventDefault(); }
+    if (e.key === 'Home') show(0); if (e.key === 'End') show(slides.length - 1);
+  });
+  var tx = null;
+  document.addEventListener('touchstart', function (e) { tx = e.touches[0].clientX; }, { passive: true });
+  document.addEventListener('touchend', function (e) { if (tx === null) return; var dx = e.changedTouches[0].clientX - tx; if (Math.abs(dx) > 50) show(i + (dx < 0 ? 1 : -1)); tx = null; });
+  document.getElementById('stage').addEventListener('click', function (e) {
+    var b = e.target.closest('.reveal button'); if (b) b.parentNode.classList.add('open');
+  });
+  window.addEventListener('resize', fit);
+  fit(); show(i);
+})();
+</script>
+</body>
+</html>
