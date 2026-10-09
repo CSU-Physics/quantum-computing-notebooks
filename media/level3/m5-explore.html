@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Module 5 Explorer: Comparing Quantum Hardware</title>
+<style>
+  :root { --maroon:#99004C; --ink:#24313D; --muted:#6A626B; --line:#E4DCE0; --tint:#F8F4F6; --gold:#C9A227; --ok:#2E7D4F; --grey:#B9AEB4; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:#fff; color:var(--ink); font-family:"Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size:15px; }
+  .tabs { display:flex; border-bottom:2px solid var(--line); background:var(--tint); }
+  .tabs button { flex:1; border:0; background:none; padding:10px 8px; font-size:15px; cursor:pointer; color:var(--muted); border-bottom:3px solid transparent; }
+  .tabs button.on { color:var(--maroon); border-bottom-color:var(--maroon); font-weight:600; background:#fff; }
+  .tool { display:none; padding:12px 16px; }
+  .tool.on { display:block; }
+  h2 { font-family:Georgia, serif; color:var(--maroon); font-size:19px; margin:0 0 4px; }
+  .hint { color:var(--muted); margin:0 0 10px; line-height:1.45; }
+  .grid { display:grid; grid-template-columns: 290px 1fr; gap:14px; align-items:start; }
+  @media (max-width: 660px) { .grid { grid-template-columns: 1fr; } }
+  .box { border:1px solid var(--line); border-radius:6px; padding:10px 12px; min-width:0; }
+  .box h3 { margin:0 0 6px; font-size:14.5px; color:var(--maroon); }
+  label { display:flex; justify-content:space-between; align-items:center; margin:8px 0 2px; font-size:14px; gap:8px; }
+  input[type=range] { width:100%; }
+  .row { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; align-items:center; font-size:13.5px; }
+  button.act { border:2px solid var(--ink); background:#fff; color:var(--ink); padding:4px 9px; border-radius:5px; font-size:13.5px; cursor:pointer; }
+  button.act.on { background:var(--maroon); border-color:var(--maroon); color:#fff; }
+  .mono { font-family: Consolas, "Courier New", monospace; }
+  .note { margin-top:8px; padding:7px 10px; border-radius:4px; font-size:13.5px; background:var(--tint); color:var(--ink); line-height:1.45; }
+  .stats { display:grid; grid-template-columns: 1fr auto; gap:4px 10px; font-size:13.5px; margin-top:8px; }
+  .stats span.v { font-family:Consolas, monospace; text-align:right; }
+  svg.chart { width:100%; height:auto; display:block; }
+  .credit { color:var(--muted); font-size:12px; padding:8px 16px 12px; border-top:1px solid var(--line); }
+</style>
+</head>
+<body>
+<div class="tabs" role="tablist">
+  <button type="button" data-t="budget" role="tab">1. Error budget across platforms</button>
+  <button type="button" data-t="spread" role="tab">2. One chip, many qubits</button>
+</div>
+
+<!-- TOOL 1 -->
+<section class="tool" id="t-budget">
+  <h2>How likely is a circuit to run without any error?</h2>
+  <p class="hint">A circuit on n qubits with L layers. Each layer has one single-qubit gate on every qubit and a two-qubit gate on every pair of neighbours, n/2 of them; every qubit is measured at the end. The bars show P = (1 − e1)^n1 (1 − e2)^n2 (1 − e_ro)^nm with each device's published error rates (the same model as the lab). Grey rows have too few qubits.</p>
+  <div class="grid">
+    <div class="box">
+      <h3>Circuit</h3>
+      <label for="bq">qubits n <span class="mono" id="bqv"></span></label><input type="range" id="bq" min="2" max="100" step="2">
+      <label for="bl">layers L <span class="mono" id="blv"></span></label><input type="range" id="bl" min="1" max="100" step="1">
+      <h3 style="margin-top:12px">IBM error rates</h3>
+      <div class="row"><button type="button" class="act" data-m="median">median</button><button type="button" class="act" data-m="best">best qubits</button><button type="button" class="act" data-m="worst">worst qubits</button></div>
+      <div class="row"><button type="button" class="act" id="bghz">GHZ, 20 qubits</button><button type="button" class="act" id="blay">20 layers, 50 qubits</button></div>
+      <div class="stats" id="bst"></div>
+    </div>
+    <div class="box">
+      <h3>Probability of no error</h3>
+      <svg class="chart" id="bchart" viewBox="0 0 560 300" role="img" aria-label="Bars: probability of an error-free run on each device"></svg>
+      <div class="note" id="bmsg"></div>
+    </div>
+  </div>
+</section>
+
+<!-- TOOL 2 -->
+<section class="tool" id="t-spread">
+  <h2>The calibration of every qubit and every pair</h2>
+  <p class="hint">IBM publishes the calibration of each qubit and each connected pair. The histogram shows one figure of one chip (calibration of 17 April 2026): the dashed line is the median, gold marks the best value and maroon the worst. Error rates of 1, which mark a qubit or pair that IBM reports as unusable, are left out.</p>
+  <div class="grid">
+    <div class="box">
+      <h3>Device</h3>
+      <div class="row" id="sdev"></div>
+      <h3 style="margin-top:12px">Figure</h3>
+      <div class="row" id="smet"></div>
+      <div class="stats" id="sst"></div>
+    </div>
+    <div class="box">
+      <svg class="chart" id="schart" viewBox="0 0 560 300" role="img" aria-label="Histogram of a calibration figure over the qubits or pairs of one chip"></svg>
+      <div class="note" id="smsg"></div>
+    </div>
+  </div>
+</section>
+<div class="credit">Module 5 explorer · SemiAcademy / ISEP-CSU · CC BY 4.0 · published figures and IBM calibration snapshots as in the Module 5 lab (l3_m5_data.json); every value is computed in this page.</div>
+
+<script>
+var DATA = {"note":"Published figures as stated by each source; see each row's kind and source. Missing figures are null.","platforms":[{"name":"IBM Heron r3 (ibm_boston)","platform":"superconducting","qubits":156,"e1":0.000144,"e2":0.001271,"e_ro":0.005127,"t1_us":292.4,"t2_us":353.0,"t2q_us":0.068,"kind":"median over qubits and pairs, calibration of 17 Apr 2026","source":"IBM calibration data shipped in qiskit-ibm-runtime 0.50.0 (FakeBoston)","year":2026},{"name":"IBM Nighthawk r1 (ibm_miami)","platform":"superconducting","qubits":120,"e1":0.0001971,"e2":0.002928,"e_ro":0.01788,"t1_us":330.2,"t2_us":241.9,"t2q_us":0.138,"kind":"median over qubits and pairs, calibration of 17 Apr 2026","source":"IBM calibration data shipped in qiskit-ibm-runtime 0.50.0 (FakeMiami)","year":2026},{"name":"Google Willow","platform":"superconducting","qubits":105,"e1":0.00035,"e2":0.0033,"e_ro":0.0077,"t1_us":68,"t2_us":null,"t2q_us":null,"kind":"mean, all qubits operated simultaneously (chip 1, error correction)","source":"Google Quantum AI, Willow spec sheet (2024)","year":2024},{"name":"Quantinuum Helios","platform":"trapped ions (barium-137)","qubits":98,"e1":2.5e-05,"e2":0.00079,"e_ro":0.00048,"t1_us":null,"t2_us":null,"t2q_us":70,"kind":"average from randomized benchmarking; SPAM error as readout","source":"Quantinuum, 'Helios: a 98-qubit trapped-ion quantum computer', arXiv:2511.05465 (2025)","year":2025},{"name":"IonQ Aria 1","platform":"trapped ions (ytterbium-171)","qubits":25,"e1":0.0005,"e2":0.004,"e_ro":0.0039,"t1_us":null,"t2_us":1000000,"t2q_us":600,"kind":"as listed by the cloud provider; two-qubit value not SPAM corrected","source":"Microsoft Azure Quantum documentation, IonQ provider page (2026)","year":2026},{"name":"Harvard / MIT / QuEra array","platform":"neutral atoms (rubidium-87)","qubits":60,"e1":0.0003,"e2":0.0048,"e_ro":null,"t1_us":null,"t2_us":null,"t2q_us":0.27,"kind":"CZ fidelity 99.52% from repeated gates; up to 60 atoms in parallel","source":"Evered et al., Nature 622, 268 (2023)","year":2023},{"name":"Caltech 6,100-atom array","platform":"neutral atoms (caesium-133)","qubits":6100,"e1":null,"e2":null,"e_ro":null,"t1_us":null,"t2_us":12600000,"t2q_us":null,"kind":"trapping and coherence only, no two-qubit gates; coherence 12.6 s","source":"Manetsch et al., Nature 647, 60 (2025)","year":2025},{"name":"Diraq / imec silicon unit cells","platform":"silicon spin qubits","qubits":2,"e1":0.01,"e2":0.01,"e_ro":0.001,"t1_us":null,"t2_us":null,"t2q_us":null,"kind":"bounds: one- and two-qubit fidelities above 99% on all four devices; SPAM up to 99.9%","source":"Steinacker et al., Nature 646, 81 (2025)","year":2025},{"name":"Intel Tunnel Falls","platform":"silicon spin qubits","qubits":12,"e1":null,"e2":null,"e_ro":null,"t1_us":null,"t2_us":112,"t2q_us":null,"kind":"Hahn-echo T2 across the 12-dot array; fidelities not reported","source":"George et al., arXiv:2410.16583 (2024)","year":2024},{"name":"PsiQuantum Omega","platform":"photons (silicon photonics)","qubits":null,"e1":null,"e2":0.0078,"e_ro":0.0002,"t1_us":null,"t2_us":null,"t2q_us":null,"kind":"two-qubit fusion 99.22%, single-qubit SPAM 99.98%, not counting photon loss","source":"PsiQuantum, Nature (2025), doi:10.1038/s41586-025-08820-7","year":2025},{"name":"Xanadu Aurora","platform":"photons (squeezed light)","qubits":12,"e1":null,"e2":null,"e_ro":null,"t1_us":null,"t2_us":null,"t2q_us":null,"kind":"12 qubit modes per clock cycle, 35 chips; about 14 dB end-to-end loss","source":"Aghaee Rad et al., Nature 638, 912 (2025)","year":2025}],"devices":{"ibm_boston":{"name":"ibm_boston","qubits":156,"calibrated":"2026-04-17","qubit_data":{"t1_us":[281.0,293.2,16.2,292.9,242.8,285.4,262.5,210.4,137.2,69.0,230.4,140.9,236.7,319.5,236.5,277.6,326.7,109.9,287.4,285.3,330.2,318.7,284.7,336.8,260.4,287.5,295.3,319.7,204.9,302.8,227.0,382.6,348.6,330.9,336.0,318.9,253.2,260.9,255.5,296.4,244.0,290.0,313.0,230.4,259.2,231.7,8.4,293.1,225.2,217.1,220.4,327.1,277.3,320.9,274.3,364.1,287.6,297.7,182.0,30.6,266.6,271.8,261.4,371.0,28.4,345.5,312.3,307.7,295.9,336.8,106.3,265.4,245.0,303.2,319.8,324.2,283.2,260.0,297.3,262.4,283.9,356.4,288.2,348.2,281.2,6.8,219.2,229.3,324.8,234.4,185.8,274.6,334.6,366.1,310.3,333.5,271.9,300.8,308.3,321.5,195.2,368.8,250.7,403.8,302.7,344.9,201.3,27.2,291.7,324.4,257.1,347.5,45.2,371.9,292.0,363.9,240.1,281.9,285.5,282.9,302.0,285.2,319.7,376.6,332.0,280.4,330.7,311.0,259.7,329.8,297.7,359.5,316.4,345.0,319.0,353.2,356.4,338.7,332.8,315.5,324.4,384.4,305.2,389.5,162.9,306.5,18.4,387.1,261.4,100.7,242.4,307.1,335.5,296.1,361.6,365.1],"t2_us":[403.1,471.9,34.4,378.9,385.3,604.9,292.1,296.0,241.7,101.1,298.8,137.8,349.4,454.6,391.5,388.6,523.6,132.4,257.7,408.7,564.4,300.2,380.7,475.3,345.0,305.8,274.3,386.2,336.1,242.4,264.6,290.8,361.3,255.6,455.2,583.5,354.7,326.3,343.3,288.1,453.5,345.4,390.1,198.5,280.8,221.2,161.4,301.0,366.9,194.5,210.1,324.3,312.6,345.8,371.9,593.4,340.6,334.8,200.0,53.1,418.8,352.3,262.8,433.4,50.9,283.9,265.2,398.3,203.8,329.7,184.2,357.7,324.0,291.4,297.6,499.8,273.4,394.4,443.3,196.1,520.4,353.6,362.9,517.9,370.7,5.4,295.3,307.9,370.3,242.4,249.2,385.8,444.0,481.4,340.2,420.6,413.6,534.6,416.0,402.6,377.1,331.5,366.8,402.7,484.8,398.2,292.7,47.6,475.8,400.8,258.9,484.6,89.2,376.2,446.9,565.8,269.3,363.3,405.5,321.2,342.8,236.2,382.8,286.2,510.3,403.5,448.2,364.6,301.4,350.6,427.4,411.2,453.4,321.0,414.7,414.8,438.7,514.3,446.2,309.1,426.7,495.8,265.7,417.8,240.1,304.8,17.9,515.6,335.4,148.0,330.2,379.1,470.4,344.5,404.1,378.2],"e1":[0.0001319,9.252e-05,0.0008005,0.0001781,0.0001094,0.0001456,0.0001476,0.0001647,0.0001223,0.0005362,0.0004339,0.0006841,0.0001106,0.0002271,0.0001741,0.0001232,8.772e-05,0.0001912,7.963e-05,0.0001425,9.469e-05,0.0001325,8.074e-05,0.0001148,0.0001878,0.0001185,0.0001487,0.0009813,0.0001584,0.0002139,0.0002354,7.677e-05,0.0001727,0.0001303,8.122e-05,8.956e-05,0.0001162,0.0001544,0.0001531,0.0001334,7.324e-05,0.0001501,0.0001454,8.604e-05,0.0001578,0.0001185,0.01073,0.0001307,0.0003259,0.0004085,0.0001237,0.0001164,0.0002342,0.0001355,0.0001513,0.0001501,6.833e-05,0.000156,0.0001891,0.0004254,0.0001697,0.0001583,7.543e-05,0.0001333,0.0006515,0.0001887,0.0001909,7.907e-05,0.0001037,7.217e-05,0.0002055,0.0001273,0.0002622,0.00014,0.000114,7.851e-05,0.0001813,0.0002209,0.0001892,0.0001421,0.0002537,0.0001598,0.0001082,7.442e-05,0.0001051,0.02798,0.0001158,0.0001467,0.0001626,8.349e-05,0.0001301,0.0001865,0.0001184,0.0002018,0.0001982,0.0001068,0.0001346,0.000114,9.139e-05,0.0002047,0.0003244,9.227e-05,0.0001521,0.0001049,0.0006814,0.0001142,0.0001384,0.000119,0.0001473,0.0001366,0.0002465,0.0001264,0.0003792,0.0001656,0.000144,9.686e-05,0.000204,0.0001394,0.0001397,0.0001007,0.0001331,0.0001925,0.000273,0.0001215,0.0001263,0.0001599,0.0002005,0.0001749,0.0001556,8.314e-05,0.0001792,3.83e-05,0.0001221,0.0003337,0.0001159,0.0001803,0.0001182,0.000281,0.0002595,9.597e-05,6.198e-05,0.0001644,0.0001184,0.0001061,7.53e-05,0.0001192,1.0,0.0001065,0.0001611,0.0001618,0.0001483,0.000128,0.0001032,0.0001662,0.0001828,0.0001559],"e_ro":[0.00415,0.004639,0.01367,0.001709,0.00415,0.003906,0.003418,0.002197,0.004883,0.005127,0.0332,0.002441,0.002686,0.01245,0.0009766,0.002441,0.005371,0.009766,0.00415,0.003662,0.003662,0.005859,0.001465,0.002197,0.00293,0.005615,0.004395,0.04077,0.003174,0.004395,0.006104,0.001709,0.002441,0.005615,0.005371,0.002441,0.003662,0.006836,0.003906,0.007568,0.003418,0.005859,0.00415,0.003662,0.00293,0.004639,0.08203,0.003174,0.002197,0.006104,0.00415,0.00293,0.004883,0.01343,0.005615,0.002441,0.003174,0.004639,0.004883,0.005615,0.003418,0.006836,0.001953,0.004395,0.01318,0.01685,0.002686,0.002686,0.003662,0.003906,0.002686,0.003418,0.01538,0.006104,0.008789,0.002686,0.005371,0.005859,0.004395,0.005127,0.002197,0.00293,0.005371,0.003662,0.004639,0.2053,0.003418,0.00708,0.008545,0.006592,0.003906,0.009277,0.007324,0.007568,0.004395,0.003418,0.007812,0.01001,0.009766,0.006836,0.005615,0.005859,0.003174,0.003418,0.01514,0.007324,0.007324,0.0009766,0.005127,0.00293,0.01123,0.003418,0.008301,0.01636,0.007568,0.004883,0.02661,0.005859,0.008545,0.01343,0.004395,0.005127,0.006592,0.00415,0.00708,0.005371,0.006348,0.003906,0.008789,0.003662,0.009766,0.00415,0.003906,0.004883,0.006104,0.005859,0.007324,0.008301,0.006348,0.01343,0.007568,0.0105,0.007324,0.003662,0.008057,0.007812,0.2261,0.01099,0.003906,0.005127,0.005371,0.002686,0.006348,0.005371,0.005371,0.003906]},"pairs":[[0,1],[1,2],[2,3],[3,4],[3,16],[4,5],[5,6],[6,7],[7,8],[7,17],[8,9],[9,10],[10,11],[11,12],[11,18],[12,13],[13,14],[14,15],[15,19],[16,23],[17,27],[18,31],[19,35],[20,21],[21,22],[21,36],[22,23],[23,24],[24,25],[25,26],[25,37],[26,27],[27,28],[28,29],[29,30],[29,38],[30,31],[31,32],[32,33],[33,34],[33,39],[34,35],[36,41],[37,45],[38,49],[39,53],[40,41],[41,42],[42,43],[43,44],[43,56],[44,45],[45,46],[46,47],[47,48],[47,57],[48,49],[49,50],[50,51],[51,52],[51,58],[52,53],[53,54],[54,55],[55,59],[56,63],[57,67],[58,71],[59,75],[60,61],[61,62],[61,76],[62,63],[63,64],[64,65],[65,66],[65,77],[66,67],[67,68],[68,69],[69,70],[69,78],[70,71],[71,72],[72,73],[73,74],[73,79],[74,75],[76,81],[77,85],[78,89],[79,93],[80,81],[81,82],[82,83],[83,84],[83,96],[84,85],[85,86],[86,87],[87,88],[87,97],[88,89],[89,90],[90,91],[91,92],[91,98],[92,93],[93,94],[94,95],[95,99],[96,103],[97,107],[98,111],[99,115],[100,101],[101,102],[101,116],[102,103],[103,104],[104,105],[105,106],[105,117],[106,107],[107,108],[108,109],[109,110],[109,118],[110,111],[111,112],[112,113],[113,114],[113,119],[114,115],[116,121],[117,125],[118,129],[119,133],[120,121],[121,122],[122,123],[123,124],[123,136],[124,125],[125,126],[126,127],[127,128],[127,137],[128,129],[129,130],[130,131],[131,132],[131,138],[132,133],[133,134],[134,135],[135,139],[136,143],[137,147],[138,151],[139,155],[140,141],[141,142],[142,143],[143,144],[144,145],[145,146],[146,147],[147,148],[148,149],[149,150],[150,151],[151,152],[152,153],[153,154],[154,155]],"e2":[0.0008309,0.008873,0.009571,0.0009253,0.0009491,0.005654,0.0009071,0.0009113,0.000925,0.001935,0.003142,0.01,0.004631,0.008319,0.004161,0.001088,0.0008813,0.0009171,0.001078,0.0008808,0.002609,0.0008538,0.001196,0.0008354,0.001119,0.001069,0.001106,0.001039,0.001396,0.001041,0.0009101,0.002459,0.00317,0.001242,0.001407,0.0009528,0.004665,0.0008128,0.003424,0.0009952,0.001587,0.001109,0.0009983,0.0007289,0.0009853,0.001552,0.001151,0.001586,0.001071,0.002081,0.0007369,0.001319,0.1259,0.02865,0.001295,0.002157,0.001825,0.001357,0.002645,0.0009554,0.001284,0.001355,0.003779,0.0008091,0.001441,0.0008198,0.00142,0.001172,0.001811,0.001003,0.001725,0.001162,0.0009619,0.002375,0.002922,0.002162,0.001731,0.002722,0.001013,0.001058,0.001349,0.001096,0.001079,0.0008584,0.001174,0.0009523,0.001089,0.001773,0.001262,0.1598,0.001496,0.000888,0.001699,0.001043,0.001809,0.002976,0.0009876,1.0,0.1499,0.002481,0.0008889,0.001427,0.001363,0.001405,0.001208,0.0009251,0.001082,0.001067,0.001208,0.001271,0.0008396,0.00301,0.001421,0.0007897,0.001036,0.001656,0.006444,0.001442,0.001384,0.001666,0.001899,0.0008108,0.001608,0.0009727,0.001145,0.001789,0.001634,0.002361,0.002413,0.001748,0.001542,0.001787,0.002927,0.001393,0.001993,0.001279,0.001023,0.0009773,0.001115,0.001823,0.001051,0.0009408,0.001209,0.001332,0.0009234,0.001119,0.001226,0.001237,0.00146,0.0008936,0.00208,0.0008843,0.001249,0.00185,0.0009803,0.001124,0.000741,0.0009058,0.001483,0.00145,0.0008492,0.001148,0.0012,0.001087,0.0009923,0.001324,0.06348,0.139,0.001075,0.001671,0.001619,0.00483,0.000915,0.0008811,0.001514,0.001677],"t2q_ns":[68.0,68.0,88.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,88.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,88.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,68.0,88.0,68.0,108.0,68.0,68.0,68.0,88.0,68.0,68.0,68.0,96.0,68.0]},"ibm_miami":{"name":"ibm_miami","qubits":120,"calibrated":"2026-04-17","qubit_data":{"t1_us":[465.4,433.0,430.4,313.6,547.8,354.7,24.3,108.1,231.8,294.9,362.0,108.2,364.9,385.4,292.1,211.5,410.1,437.6,292.4,396.1,216.7,285.5,405.5,351.4,244.7,423.2,378.7,339.4,211.8,450.1,331.3,389.0,365.2,288.8,431.8,362.4,350.9,407.5,232.3,255.7,429.5,381.8,247.6,423.5,478.9,240.1,332.3,372.3,342.3,328.9,302.9,341.2,193.6,281.3,306.0,532.5,357.8,275.7,277.5,350.3,263.6,283.4,242.2,415.0,214.9,250.0,333.8,379.2,372.8,241.0,293.3,286.3,329.1,136.0,134.4,378.0,301.4,265.4,386.5,414.2,225.7,423.7,136.1,207.3,263.2,56.6,461.6,459.7,252.2,268.0,370.0,430.9,246.3,191.9,244.0,373.7,309.6,194.0,368.8,315.1,449.3,272.7,392.0,257.0,291.7,403.9,347.4,374.1,133.5,336.9,519.5,397.4,286.1,314.8,250.4,427.0,228.5,389.1,368.9,204.0],"t2_us":[370.0,332.6,398.4,400.6,446.3,423.1,50.6,177.0,311.4,336.3,309.2,124.1,361.9,246.4,323.2,210.7,317.9,373.5,295.0,356.4,235.7,309.2,428.3,361.0,211.6,268.2,38.4,260.7,181.6,376.8,368.0,320.3,307.9,267.1,282.8,266.6,284.7,193.3,224.0,237.2,383.5,205.2,180.1,338.8,245.7,184.2,185.9,256.9,283.2,286.8,277.3,209.0,154.7,214.1,208.1,230.6,223.6,185.5,205.5,306.8,222.9,239.8,192.5,215.5,189.6,197.6,243.9,300.5,248.9,222.5,203.6,155.5,159.1,234.5,186.9,239.1,217.9,73.8,307.2,438.4,178.5,283.5,130.5,233.5,199.9,80.3,312.2,320.1,239.1,186.3,235.8,239.9,172.7,156.9,197.7,218.3,224.3,122.0,290.2,296.5,379.1,127.9,174.4,265.5,228.5,331.9,272.6,205.1,206.9,358.1,478.6,278.5,269.6,327.3,187.6,310.6,287.5,327.0,415.6,182.2],"e1":[6.231e-05,0.0001381,0.0002364,9.114e-05,0.0001222,0.0001367,0.0006056,0.0001632,0.0001359,6.5e-05,0.0001241,0.0005197,0.0001925,0.0001686,0.0003095,0.0001499,0.0001856,0.0001295,0.0003874,0.0002186,0.0001545,0.0002202,0.0002001,0.0001715,0.0002023,0.0001897,0.0006345,0.0001114,0.0006157,0.0001406,0.000115,0.0002204,0.0004936,0.000419,0.0001383,0.0001656,0.0001482,0.0002334,0.0001911,0.0003718,9.15e-05,0.0004284,0.0004692,0.0001222,0.000227,0.0002834,0.0001908,0.0001723,0.0009392,0.0001885,0.0001821,0.0002553,0.000176,0.0001921,0.0003345,0.0002374,0.0002345,0.0004427,0.0002129,8.652e-05,0.0008917,0.0001487,0.0002372,0.000327,0.0001942,0.0003416,0.0002889,0.000136,0.0002479,0.0001636,0.0001249,0.0001475,0.0001625,0.0002667,0.0001602,0.0003217,0.0002311,0.0003496,0.0002761,0.0002268,0.0002438,0.0001639,0.0002329,0.0002405,0.0001605,0.004025,0.0001806,0.000185,0.000178,0.00018,0.0001286,0.0001231,0.000175,0.003261,0.0001492,0.0001742,0.0003192,0.0001689,0.0001703,0.0004172,0.0001846,0.0002009,0.0001546,0.0001894,0.000203,0.0004573,0.00014,0.0004482,0.00564,0.0002228,0.0002419,0.0002108,0.0001125,0.000129,0.0004259,0.0002524,0.0003963,0.0005104,0.0003168,0.000542],"e_ro":[0.01599,0.01404,0.01917,0.01917,0.01404,0.01709,0.01611,0.02405,0.02722,0.01013,0.01733,0.02307,0.02319,0.008545,0.008789,0.00708,0.01038,0.01331,0.01636,0.01538,0.01025,0.01514,0.01367,0.03833,0.0177,0.01196,0.03467,0.02625,0.02588,0.021,0.01331,0.03577,0.02295,0.03833,0.01733,0.01501,0.02966,0.01807,0.01941,0.01465,0.01611,0.01514,0.01501,0.01221,0.01172,0.02417,0.0166,0.02319,0.08569,0.02612,0.01416,0.04358,0.05493,0.01672,0.01233,0.01416,0.02991,0.02136,0.02209,0.01721,0.01196,0.01172,0.02246,0.02625,0.01306,0.01636,0.02869,0.03113,0.02734,0.01624,0.01099,0.02869,0.04102,0.03589,0.02783,0.00769,0.009766,0.0166,0.01343,0.01575,0.0166,0.01758,0.01355,0.05078,0.01245,0.1495,0.06812,0.03687,0.1348,0.03064,0.0127,0.01392,0.04004,0.04456,0.009766,0.02686,0.04053,0.0769,0.03333,0.03394,0.01257,0.008545,0.01172,0.01892,0.0144,0.05286,0.0249,0.04443,0.09363,0.01318,0.01587,0.01843,0.01917,0.01953,0.09692,0.01172,0.02856,0.02039,0.02222,0.01221]},"pairs":[[0,1],[0,10],[1,2],[1,11],[2,3],[2,12],[3,4],[3,13],[4,5],[4,14],[5,6],[5,15],[6,7],[6,16],[7,8],[7,17],[8,9],[8,18],[9,19],[10,11],[10,20],[11,12],[11,21],[12,13],[12,22],[13,14],[13,23],[14,15],[14,24],[15,16],[15,25],[16,17],[16,26],[17,18],[17,27],[18,19],[18,28],[19,29],[20,21],[20,30],[21,22],[21,31],[22,23],[22,32],[23,24],[23,33],[24,25],[24,34],[25,26],[25,35],[26,27],[26,36],[27,28],[27,37],[28,29],[28,38],[29,39],[30,31],[30,40],[31,32],[31,41],[32,33],[32,42],[33,34],[33,43],[34,35],[34,44],[35,36],[35,45],[36,37],[36,46],[37,38],[37,47],[38,39],[38,48],[39,49],[40,41],[40,50],[41,42],[41,51],[42,43],[42,52],[43,44],[43,53],[44,45],[44,54],[45,46],[45,55],[46,47],[46,56],[47,48],[47,57],[48,49],[48,58],[49,59],[50,51],[50,60],[51,52],[51,61],[52,53],[52,62],[53,54],[53,63],[54,55],[54,64],[55,56],[55,65],[56,57],[56,66],[57,58],[57,67],[58,59],[58,68],[59,69],[60,61],[60,70],[61,62],[61,71],[62,63],[62,72],[63,64],[63,73],[64,65],[64,74],[65,66],[65,75],[66,67],[66,76],[67,68],[67,77],[68,69],[68,78],[69,79],[70,71],[70,80],[71,72],[71,81],[72,73],[72,82],[73,74],[73,83],[74,75],[74,84],[75,76],[75,85],[76,77],[76,86],[77,78],[77,87],[78,79],[78,88],[79,89],[80,81],[80,90],[81,82],[81,91],[82,83],[82,92],[83,84],[83,93],[84,85],[84,94],[85,86],[85,95],[86,87],[86,96],[87,88],[87,97],[88,89],[88,98],[89,99],[90,91],[90,100],[91,92],[91,101],[92,93],[92,102],[93,94],[93,103],[94,95],[94,104],[95,96],[95,105],[96,97],[96,106],[97,98],[97,107],[98,99],[98,108],[99,109],[100,101],[100,110],[101,102],[101,111],[102,103],[102,112],[103,104],[103,113],[104,105],[104,114],[105,106],[105,115],[106,107],[106,116],[107,108],[107,117],[108,109],[108,118],[109,119],[110,111],[111,112],[112,113],[113,114],[114,115],[115,116],[116,117],[117,118],[118,119]],"e2":[0.00153,0.001742,0.001596,0.002405,0.001638,0.002537,0.001474,0.001247,0.00152,0.003584,0.006457,0.001882,0.01306,0.03274,0.002391,0.001998,0.004429,0.004037,0.001208,0.001886,0.001458,0.002213,0.001587,0.001358,0.002196,0.003065,0.002669,0.002877,0.003881,0.002127,0.002585,0.002657,0.004873,0.003421,0.006239,0.002884,0.004496,0.001656,0.001207,0.001155,0.001556,1.0,0.003711,0.003125,0.003402,0.002184,0.001743,0.001555,0.003746,0.002805,0.005708,0.004081,0.006038,0.005042,0.003286,0.005418,0.001906,0.00202,0.00183,0.002305,0.002778,0.003363,0.003775,0.002117,0.002745,0.002214,0.001813,0.001822,0.004774,0.001758,0.002655,0.002364,0.004189,0.001827,0.1019,0.001841,0.002018,0.001387,0.002907,0.002363,0.003587,0.003849,0.002083,0.001475,0.008369,0.003122,0.005052,0.003192,0.003555,0.002485,0.02929,0.004663,0.02908,0.07625,0.001618,0.001752,0.004131,0.002332,0.002526,0.002593,0.003344,0.002146,0.003105,0.004265,0.005881,0.002902,0.002125,0.00323,0.002259,0.002861,0.004703,0.001661,0.003272,0.001653,0.005367,0.005414,0.002414,0.002917,0.00204,0.001889,0.001791,0.005208,0.002162,0.004335,0.003512,0.003681,1.0,0.003991,0.002408,0.004449,0.002824,1.0,0.002532,0.002941,0.006791,0.001573,0.002619,0.003711,0.005672,0.005783,0.1404,0.03861,1.0,0.004003,0.007732,0.003203,0.004391,0.003389,0.002966,0.002478,0.004349,0.002928,0.002599,0.001781,0.00343,0.001315,0.003695,0.00526,0.001957,0.01129,0.008853,0.003292,0.01049,0.01002,0.002463,0.002052,0.001895,0.002991,0.003057,0.002866,0.001669,0.001894,0.002258,0.002952,1.0,0.01275,0.002181,0.009735,1.0,0.003369,0.003297,0.001644,0.001737,0.00265,0.002754,0.003378,0.002607,0.001123,0.01018,0.001643,0.003215,0.001054,0.002392,0.003026,0.1051,0.002761,0.002473,0.003537,0.00248,0.004917,0.005159,0.005916,0.006299,0.005137,0.009312,0.003357,0.0122,0.01046,0.009476,0.002034,1.0,0.002109,0.007648,0.006829,0.005364,0.004336,0.007918,0.007509],"t2q_ns":[128.0,128.0,128.0,128.0,128.0,148.0,128.0,128.0,148.0,228.0,128.0,128.0,128.0,488.0,128.0,128.0,128.0,128.0,128.0,128.0,128.0,128.0,128.0,148.0,208.0,268.0,228.0,128.0,228.0,148.0,288.0,128.0,248.0,128.0,128.0,128.0,88.0,88.0,128.0,128.0,128.0,180.0,148.0,168.0,228.0,148.0,148.0,128.0,128.0,208.0,88.0,268.0,108.0,108.0,68.0,228.0,128.0,188.0,128.0,188.0,128.0,208.0,188.0,128.0,248.0,68.0,128.0,108.0,148.0,88.0,148.0,148.0,148.0,168.0,188.0,208.0,128.0,128.0,128.0,128.0,128.0,128.0,188.0,128.0,508.0,128.0,128.0,128.0,208.0,188.0,128.0,168.0,128.0,248.0,128.0,128.0,68.0,128.0,128.0,128.0,128.0,148.0,228.0,228.0,208.0,168.0,148.0,128.0,128.0,168.0,308.0,168.0,248.0,128.0,128.0,128.0,288.0,188.0,128.0,128.0,188.0,148.0,128.0,208.0,128.0,208.0,68.0,228.0,188.0,208.0,168.0,228.0,188.0,68.0,208.0,128.0,208.0,128.0,188.0,288.0,168.0,128.0,168.0,148.0,128.0,148.0,168.0,208.0,248.0,288.0,268.0,68.0,128.0,88.0,68.0,88.0,68.0,168.0,168.0,128.0,148.0,208.0,168.0,188.0,128.0,208.0,148.0,328.0,108.0,248.0,68.0,68.0,68.0,208.0,168.0,188.0,268.0,168.0,448.0,168.0,168.0,128.0,148.0,168.0,188.0,248.0,128.0,68.0,348.0,188.0,188.0,128.0,128.0,248.0,368.0,168.0,128.0,428.0,128.0,128.0,148.0,148.0,188.0,128.0,168.0,208.0,128.0,128.0,128.0,128.0,128.0,168.0,128.0,128.0,128.0,128.0,128.0,128.0]}}};
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var NS = 'http://www.w3.org/2000/svg';
+  function sv(p, tag, a, txt) { var e = document.createElementNS(NS, tag); for (var k in a) e.setAttribute(k, a[k]); if (txt !== undefined) e.textContent = txt; p.appendChild(e); return e; }
+  function clear(s) { while (s.firstChild) s.removeChild(s.firstChild); }
+  var tabs = document.querySelectorAll('.tabs button');
+  function openTab(t) {
+    tabs.forEach(function (b) { b.classList.toggle('on', b.dataset.t === t); });
+    document.querySelectorAll('.tool').forEach(function (s) { s.classList.toggle('on', s.id === 't-' + t); });
+  }
+  tabs.forEach(function (b) { b.onclick = function () { openTab(b.dataset.t); }; });
+  function fromHash() { openTab(location.hash.indexOf('spread') >= 0 ? 'spread' : 'budget'); }
+  window.addEventListener('hashchange', fromHash);
+  fromHash();
+
+  function usable(v) { return v.filter(function (x) { return x < 1; }); }
+  function median(v) { var s = v.slice().sort(function (a, b) { return a - b; }), m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; }
+  function fmt(x) { return x >= 10 ? x.toFixed(1) : x >= 0.01 ? x.toFixed(3) : x.toPrecision(2); }
+
+  // ---------------------------------------------------------------- tool 1: error budget
+  var MODE = 'median';
+  var IBM = { 'IBM Heron r3 (ibm_boston)': 'ibm_boston', 'IBM Nighthawk r1 (ibm_miami)': 'ibm_miami' };
+  function ibmRates(dev, mode) {
+    var d = DATA.devices[dev], f = mode === 'best' ? function (v) { return Math.min.apply(null, v); } : mode === 'worst' ? function (v) { return Math.max.apply(null, v); } : median;
+    return [f(usable(d.qubit_data.e1)), f(usable(d.e2)), f(usable(d.qubit_data.e_ro))];
+  }
+  var ROWS = DATA.platforms.filter(function (p) { return p.e1 !== null && p.e2 !== null && p.e_ro !== null && p.qubits; });
+  function drawBudget() {
+    var n = +$('bq').value, L = +$('bl').value;
+    $('bqv').textContent = n; $('blv').textContent = L;
+    document.querySelectorAll('[data-m]').forEach(function (b) { b.classList.toggle('on', b.dataset.m === MODE); });
+    var n1 = n * L, n2 = Math.floor(n / 2) * L, nm = n;
+    var c = $('bchart'); clear(c);
+    var x0 = 210, x1 = 520, top = 26, bh = 34, gap = 14;
+    [0, 0.25, 0.5, 0.75, 1].forEach(function (v) {
+      var x = x0 + (x1 - x0) * v;
+      sv(c, 'line', { x1: x, y1: top - 8, x2: x, y2: top + ROWS.length * (bh + gap) - gap + 4, stroke: '#E4DCE0' });
+      sv(c, 'text', { x: x, y: top - 12, 'font-size': 12, 'text-anchor': 'middle', fill: '#6A626B' }, v.toFixed(2));
+    });
+    var best = null, msgs = [];
+    ROWS.forEach(function (p, i) {
+      var r = IBM[p.name] ? ibmRates(IBM[p.name], MODE) : [p.e1, p.e2, p.e_ro];
+      var y = top + i * (bh + gap), enough = p.qubits >= n;
+      var P = Math.pow(1 - r[0], n1) * Math.pow(1 - r[1], n2) * Math.pow(1 - r[2], nm);
+      sv(c, 'text', { x: x0 - 8, y: y + bh / 2 - 2, 'font-size': 13, 'text-anchor': 'end', fill: enough ? '#24313D' : '#B9AEB4' }, p.name.replace(' (', ' ('));
+      sv(c, 'text', { x: x0 - 8, y: y + bh / 2 + 13, 'font-size': 11, 'text-anchor': 'end', fill: '#6A626B' }, 'e2 = ' + fmt(r[1]) + ' · ' + p.qubits + ' qubits');
+      if (!enough) {
+        sv(c, 'rect', { x: x0, y: y, width: x1 - x0, height: bh, fill: '#F8F4F6' });
+        sv(c, 'text', { x: x0 + 8, y: y + bh / 2 + 5, 'font-size': 12, fill: '#6A626B' }, 'only ' + p.qubits + ' qubits');
+        return;
+      }
+      sv(c, 'rect', { x: x0, y: y, width: Math.max(1, (x1 - x0) * P), height: bh, fill: IBM[p.name] ? '#99004C' : '#24313D' });
+      sv(c, 'text', { x: x0 + (x1 - x0) * P + (P > 0.85 ? -6 : 6), y: y + bh / 2 + 5, 'font-size': 13, 'text-anchor': P > 0.85 ? 'end' : 'start', fill: P > 0.85 ? '#FFFFFF' : '#24313D' }, P < 0.001 ? P.toExponential(1) : P.toFixed(3));
+      if (!best || P > best[1]) best = [p.name, P];
+    });
+    var e2s = ROWS.map(function (p) { return IBM[p.name] ? ibmRates(IBM[p.name], MODE)[1] : p.e2; });
+    $('bst').innerHTML = '<span>single-qubit gates n1</span><span class="v">' + n1 + '</span>' +
+      '<span>two-qubit gates n2</span><span class="v">' + n2 + '</span>' +
+      '<span>measurements nm</span><span class="v">' + nm + '</span>' +
+      '<span>two-qubit gates for P = 0.5 at e2 = 0.001</span><span class="v">692</span>';
+    $('bmsg').textContent = !best ? 'No listed device has ' + n + ' qubits with all three error rates published.'
+      : (MODE !== 'median' ? 'IBM rows now use the ' + MODE + ' qubit, pair and readout of the chip. A real circuit uses many qubits, so the median is the fair choice; the best values describe one pair, not the chip. '
+        : '') + (n2 > 300 ? 'With ' + n2 + ' two-qubit gates, small differences in e2 become large differences in P: the error rate is raised to the number of gates.'
+        : 'Highest here: ' + best[0] + ' (' + best[1].toFixed(3) + '). Add layers and watch the bars fall at different rates.');
+  }
+  $('bq').oninput = drawBudget; $('bl').oninput = drawBudget;
+  document.querySelectorAll('[data-m]').forEach(function (b) { b.onclick = function () { MODE = b.dataset.m; drawBudget(); }; });
+  $('bghz').onclick = function () { $('bq').value = 20; $('bl').value = 1; MODE = 'median'; drawBudget(); };
+  $('blay').onclick = function () { $('bq').value = 50; $('bl').value = 20; MODE = 'median'; drawBudget(); };
+  $('bq').value = 20; $('bl').value = 10;
+  drawBudget();
+
+  // ---------------------------------------------------------------- tool 2: spread over one chip
+  var DEV = 'ibm_boston', MET = 'e2';
+  var METS = { t1: ['T1 (µs)', true, false], t2: ['T2 (µs)', true, false], e1: ['single-qubit error', false, true], e2: ['CZ error of each pair', false, true], e_ro: ['readout error', false, true] };
+  Object.keys(DATA.devices).forEach(function (k) { var b = document.createElement('button'); b.type = 'button'; b.className = 'act'; b.dataset.dev = k; b.textContent = k; $('sdev').appendChild(b); });
+  Object.keys(METS).forEach(function (k) { var b = document.createElement('button'); b.type = 'button'; b.className = 'act'; b.dataset.met = k; b.textContent = METS[k][0].split(' (')[0].replace(' of each pair', ''); $('smet').appendChild(b); });
+  function values(dev, met) {
+    var d = DATA.devices[dev], q = d.qubit_data;
+    if (met === 't1') return q.t1_us; if (met === 't2') return q.t2_us; if (met === 'e2') return usable(d.e2);
+    return usable(q[met]);
+  }
+  function drawSpread() {
+    document.querySelectorAll('[data-dev]').forEach(function (b) { b.classList.toggle('on', b.dataset.dev === DEV); });
+    document.querySelectorAll('[data-met]').forEach(function (b) { b.classList.toggle('on', b.dataset.met === MET); });
+    var v = values(DEV, MET), m = METS[MET], hib = m[1], logx = m[2], d = DATA.devices[DEV];
+    var f = logx ? function (x) { return Math.log(x) / Math.LN10; } : function (x) { return x; };
+    var lo = Math.min.apply(null, v.map(f)), hi = Math.max.apply(null, v.map(f));
+    if (logx) { lo = Math.floor(lo * 2) / 2; hi = Math.ceil(hi * 2) / 2; } else { lo = 0; hi = Math.ceil(hi / 100) * 100; }
+    var B = 30, counts = new Array(B).fill(0);
+    v.forEach(function (x) { var k = Math.min(B - 1, Math.floor((f(x) - lo) / (hi - lo) * B)); counts[k]++; });
+    var c = $('schart'); clear(c);
+    var x0 = 48, x1 = 540, yb = 250, yt = 20, cmax = Math.max.apply(null, counts);
+    var X = function (u) { return x0 + (x1 - x0) * (u - lo) / (hi - lo); }, Y = function (n) { return yb - (yb - yt) * n / cmax; };
+    sv(c, 'line', { x1: x0, y1: yb, x2: x1, y2: yb, stroke: '#24313D', 'stroke-width': 2 });
+    counts.forEach(function (n, k) { if (n) sv(c, 'rect', { x: X(lo + (hi - lo) * k / B) + 1, y: Y(n), width: (x1 - x0) / B - 2, height: yb - Y(n), fill: '#B9AEB4' }); });
+    var ticks = [];
+    if (logx) { for (var t = Math.ceil(lo); t <= hi; t++) ticks.push([t, t < 0 ? Math.pow(10, t).toFixed(-t) : String(Math.pow(10, t))]); }
+    else { for (var t2 = 0; t2 <= hi; t2 += hi > 400 ? 200 : 100) ticks.push([t2, String(t2)]); }
+    ticks.forEach(function (t) { sv(c, 'text', { x: X(t[0]), y: yb + 18, 'font-size': 12, 'text-anchor': 'middle' }, t[1]); });
+    sv(c, 'text', { x: (x0 + x1) / 2, y: 292, 'font-size': 13, 'text-anchor': 'middle', fill: '#6A626B' }, m[0] + (logx ? ' (log scale)' : ''));
+    sv(c, 'text', { x: 14, y: 140, 'font-size': 13, 'text-anchor': 'middle', fill: '#6A626B', transform: 'rotate(-90 14 140)' }, MET === 'e2' ? 'pairs' : 'qubits');
+    var med = median(v), best = hib ? Math.max.apply(null, v) : Math.min.apply(null, v), worst = hib ? Math.min.apply(null, v) : Math.max.apply(null, v);
+    [[med, '#24313D', '6 4', 'median'], [best, '#C9A227', '', 'best'], [worst, '#99004C', '', 'worst']].forEach(function (a, i) {
+      var x = X(f(a[0])), xm = X(f(med)), side = i === 0 ? 1 : (x < xm ? -1 : 1);
+      if (side < 0 && x - 45 < x0) side = 1;
+      if (side > 0 && x + 45 > x1) side = -1;
+      sv(c, 'line', { x1: x, y1: yt - 4, x2: x, y2: yb, stroke: a[1], 'stroke-width': 3, 'stroke-dasharray': a[2] });
+      sv(c, 'text', { x: x + 5 * side, y: yt + 10 + 14 * i, 'font-size': 12, fill: a[1], 'text-anchor': side < 0 ? 'end' : 'start' }, a[3]);
+    });
+    var all = MET === 'e2' ? d.e2 : MET === 't1' || MET === 't2' ? [] : d.qubit_data[MET];
+    var left = all.filter(function (x) { return x >= 1; }).length;
+    $('sst').innerHTML = '<span>' + (MET === 'e2' ? 'pairs' : 'qubits') + ' shown</span><span class="v">' + v.length + '</span>' +
+      '<span>left out (error 1)</span><span class="v">' + left + '</span>' +
+      '<span>median</span><span class="v">' + fmt(med) + '</span>' +
+      '<span>best</span><span class="v">' + fmt(best) + '</span>' +
+      '<span>worst</span><span class="v">' + fmt(worst) + '</span>' +
+      '<span>' + (hib ? 'median / worst' : 'worst / median') + '</span><span class="v">' + (hib ? med / worst : worst / med).toFixed(1) + '</span>';
+    $('smsg').textContent = hib
+      ? 'Most qubits sit near the median, but a few are far worse. A circuit placed on them would lose its state ' + (med / worst).toFixed(0) + ' times faster; the transpiler avoids them using this calibration.'
+      : 'The worst value is ' + (worst / med).toFixed(0) + ' times the median and the best ' + (med / best).toFixed(1) + ' times better than the median. A headline "best" number describes one ' + (MET === 'e2' ? 'pair' : 'qubit') + ', not the chip.';
+  }
+  document.querySelectorAll('[data-dev]').forEach(function (b) { b.onclick = function () { DEV = b.dataset.dev; drawSpread(); }; });
+  document.querySelectorAll('[data-met]').forEach(function (b) { b.onclick = function () { MET = b.dataset.met; drawSpread(); }; });
+  drawSpread();
+})();
+</script>
+</body>
+</html>

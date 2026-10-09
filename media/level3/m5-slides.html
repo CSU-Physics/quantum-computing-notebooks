@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Module 5 Slides: Quantum Hardware and Careers</title>
+<style>
+  :root { --maroon:#99004C; --ink:#24313D; --muted:#6A626B; --line:#E4DCE0; --tint:#F8F4F6; --gold:#C9A227; --ok:#2E7D4F; }
+  * { box-sizing:border-box; }
+  html, body { margin:0; height:100%; background:#2B2230; font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color:var(--ink); }
+  #viewport { position:absolute; inset:0 0 44px 0; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+  #stage { width:1280px; height:720px; flex-shrink:0; position:relative; transform-origin:center center; }
+  .slide { position:absolute; inset:0; background:#fff; padding:56px 72px 64px; display:none; flex-direction:column; border-top:10px solid var(--maroon); }
+  .slide.on { display:flex; }
+  .slide h1 { font-family: Georgia, serif; color:var(--maroon); font-size:56px; margin:0 0 18px; line-height:1.1; }
+  .slide h2 { font-family: Georgia, serif; color:var(--maroon); font-size:40px; margin:0 0 22px; line-height:1.15; }
+  .slide p, .slide li { font-size:27px; line-height:1.45; margin:0 0 14px; }
+  .slide ul { margin:0 0 10px 0; padding-left:34px; }
+  .kicker { font-size:20px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); margin-bottom:10px; }
+  .eq { background:var(--tint); border-left:6px solid var(--maroon); padding:16px 24px; font-size:34px; margin:10px 0 18px; font-family: Georgia, serif; }
+  .small { font-size:20px !important; color:var(--muted); }
+  .cols { display:flex; gap:40px; align-items:flex-start; flex:1; }
+  .cols > div { flex:1; }
+  .card { border:2px solid var(--line); border-radius:10px; padding:18px 22px; }
+  .card h3 { margin:0 0 8px; font-size:27px; color:var(--maroon); }
+  .card p { font-size:23px; margin:0; }
+  table { border-collapse:collapse; font-size:26px; }
+  th, td { border:1px solid var(--line); padding:10px 18px; text-align:left; }
+  th { background:var(--tint); }
+  .foot { position:absolute; left:72px; right:72px; bottom:20px; display:flex; justify-content:space-between; font-size:15px; color:var(--muted); }
+  .reveal { margin-top:10px; }
+  .reveal button { font-size:22px; padding:8px 18px; border:2px solid var(--maroon); background:#fff; color:var(--maroon); border-radius:6px; cursor:pointer; }
+  .reveal .ans { display:none; margin-top:14px; background:#EEF6F0; border-left:6px solid var(--ok); padding:12px 20px; font-size:25px; line-height:1.45; }
+  .reveal.open .ans { display:block; }
+  .reveal.open button { display:none; }
+  .title-slide { background: linear-gradient(135deg, #fff 0%, #fff 58%, var(--tint) 58%); }
+  #bar { position:absolute; left:0; right:0; bottom:0; height:44px; background:#1E1722; display:flex; align-items:center; justify-content:center; gap:10px; color:#fff; font-size:14px; }
+  #bar button { background:#3A2F40; color:#fff; border:0; border-radius:4px; padding:7px 14px; font-size:14px; cursor:pointer; }
+  #bar button:hover { background:var(--maroon); }
+  #count { min-width:70px; text-align:center; }
+  .slide code { font-family: Consolas, "Courier New", monospace; font-size:0.9em; }
+  .slide table td, .slide table th { padding:5px 12px; text-align:left; }
+  svg text { font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  @media print {
+    @page { size: 1280px 720px; margin:0; }
+    html, body { background:#fff; height:auto; }
+    #bar { display:none; }
+    #viewport { position:static; display:block; }
+    #stage { transform:none !important; width:1280px; height:auto; }
+    .slide { display:flex !important; position:relative; width:1280px; height:720px; page-break-after:always; break-after:page; }
+    .reveal .ans { display:block !important; }
+    .reveal button { display:none !important; }
+  }
+</style>
+</head>
+<body>
+<div id="viewport"><div id="stage">
+
+<!-- 1 -->
+<section class="slide title-slide">
+  <div class="kicker">Quantum Computing Advanced · Module 5</div>
+  <h1>Quantum hardware and careers</h1>
+  <p style="font-size:30px;max-width:620px">Five ways to build a qubit, how to read the numbers each one publishes, and the people who build them.</p>
+  <div style="position:absolute;right:70px;top:200px;width:430px"><svg width="430" height="300" viewBox="0 0 430 300" aria-label="Published two-qubit errors against qubit count for the platforms"><line x1="70" y1="250.0" x2="398" y2="250.0" stroke="#E4DCE0"/><text x="62" y="255.0" font-size="14" text-anchor="end">0.0001</text><line x1="70" y1="158.0" x2="398" y2="158.0" stroke="#E4DCE0"/><text x="62" y="163.0" font-size="14" text-anchor="end">0.001</text><line x1="70" y1="66.0" x2="398" y2="66.0" stroke="#E4DCE0"/><text x="62" y="71.0" font-size="14" text-anchor="end">0.01</text><line x1="70" y1="250" x2="398" y2="250" stroke="#24313D" stroke-width="2"/><text x="70.0" y="270" font-size="14" text-anchor="middle">1</text><text x="152.0" y="270" font-size="14" text-anchor="middle">10</text><text x="234.0" y="270" font-size="14" text-anchor="middle">100</text><text x="316.0" y="270" font-size="14" text-anchor="middle">1,000</text><text x="398.0" y="270" font-size="14" text-anchor="middle">10,000</text><text x="234.0" y="292" font-size="15" text-anchor="middle" fill="#6A626B">qubits (log scale)</text><text x="16" y="135.0" font-size="15" text-anchor="middle" fill="#6A626B" transform="rotate(-90 16 135.0)">two-qubit error</text><circle cx="249.8" cy="148.4" r="7" fill="#99004C"/><circle cx="240.5" cy="115.1" r="7" fill="#99004C"/><circle cx="235.7" cy="110.3" r="7" fill="#99004C"/><circle cx="233.3" cy="167.4" r="7" fill="#24313D"/><circle cx="184.6" cy="102.6" r="7" fill="#24313D"/><circle cx="215.8" cy="95.3" r="7" fill="#C08A00"/><circle cx="94.7" cy="66.0" r="7" fill="#2E7D32"/></svg></div>
+  <div class="foot"><span>SemiAcademy · ISEP-CSU</span><span>CC BY 4.0</span></div>
+</section>
+
+<!-- 2 -->
+<section class="slide">
+  <h2>By the end of this module you can</h2>
+  <ul>
+    <li>name what a qubit platform must deliver and the numbers that describe it;</li>
+    <li>explain how superconducting circuits, trapped ions, neutral atoms, silicon spins and photons store a qubit;</li>
+    <li>read a published figure for what it is: median, mean, best value or bound;</li>
+    <li>estimate how deep a circuit a device allows from its error rates;</li>
+    <li>explain why silicon spin qubits matter to the semiconductor industry;</li>
+    <li>name roles in the quantum workforce and the skills they need.</li>
+  </ul>
+  <p class="small" style="margin-top:24px">Course outcome 5: compare qubit technologies, including silicon spin qubits made with semiconductor processes, and name roles in the quantum workforce.</p>
+  <div class="foot"><span>Module 5 · Quantum hardware and careers</span><span>2</span></div>
+</section>
+
+<!-- 3 -->
+<section class="slide">
+  <h2>What a qubit platform must deliver</h2>
+  <div class="cols">
+    <div class="card"><h3>Qubits that last</h3><p>Two well-defined states that keep their phase (T2) much longer than a gate takes.</p></div>
+    <div class="card"><h3>Gates and readout</h3><p>A universal gate set and a measurement, all with small errors.</p></div>
+    <div class="card"><h3>Room to grow</h3><p>Many qubits that can be prepared, wired, controlled and connected, ideally made in a factory.</p></div>
+  </div>
+  <p style="font-size:24px;margin-top:20px">These are DiVincenzo's criteria (2000), in short. Every platform meets them; they differ in how well, how fast and at what scale.</p>
+  <div class="foot"><span>Module 5 · Quantum hardware and careers</span><span>3</span></div>
+</section>
+
+<!-- 4 -->
+<section class="slide">
+  <h2>The numbers on a spec sheet</h2>
+  <table style="font-size:22px">
+    <tr><td><strong>qubits</strong></td><td>how many, and which pairs can interact (connectivity)</td></tr>
+    <tr><td><strong>e1, e2</strong></td><td>error per single-qubit and two-qubit gate (0.001 = 99.9% fidelity)</td></tr>
+    <tr><td><strong>e_ro</strong></td><td>readout error, or SPAM error (preparation and measurement)</td></tr>
+    <tr><td><strong>T1, T2</strong></td><td>energy relaxation and dephasing times (Module 1)</td></tr>
+    <tr><td><strong>gate time</strong></td><td>how long an operation takes; with T2 it says how many gates fit</td></tr>
+  </table>
+  <p style="font-size:24px;margin-top:14px">Always ask what kind of number it is: median over a chip, mean with all qubits running, best pair, or a bound.</p>
+  <div class="foot"><span>Module 5 · Quantum hardware and careers</span><span>4</span></div>
+</section>
+
+<!-- 5 -->
+<section class="slide">
+  <h2>Superconducting circuits</h2>
+  <ul>
+    <li style="font-size:24px">A transmon is a tiny circuit: a capacitor and a Josephson junction (two aluminium layers with a thin oxide between them). Its two lowest energy levels, a few GHz apart, are the qubit.</li>
+    <li style="font-size:24px">Made with lithography on silicon or sapphire wafers; cooled to about 15 mK in a dilution refrigerator; controlled with microwave pulses.</li>
+    <li style="font-size:24px">Fast: a CZ on ibm_boston takes 68 ns. Median CZ error 0.0013, T2 353 µs (calibration of 17 Apr 2026). Google Willow: mean CZ error 0.33% with all 105 qubits running.</li>
+    <li style="font-size:24px">Fixed wiring: each qubit talks only to its neighbours (3 or 4).</li>
+  </ul>
+  <div class="foot"><span>Module 5 · Quantum hardware and careers</span><span>5</span></div>
+</section>
+
+<!-- 6 -->
+<section class="slide">
+  <h2>Trapped ions</h2>
+  <ul>
+    <li style="font-size:24px">Single charged atoms held by electric fields in a vacuum chamber, above a chip-like trap. The qubit is two hyperfine levels of each ion.</li>
+    <li style="font-size:24px">Lasers or microwaves drive the gates; ions are moved around the trap so that any two can interact.</li>
+    <li style="font-size:24px">Quantinuum Helios (98 barium ions, 2025): two-qubit error 7.9 × 10⁻⁴, single-qubit 2.5 × 10⁻⁵, among the best published.</li>
+    <li style="font-size:24px">Slow: about 70 µs per two-qubit gate on Helios, 600 µs on IonQ Aria, against tens of nanoseconds on a superconducting chip.</li>
+  </ul>
+  <div class="foot"><span>Module 5 · Quantum hardware and careers</span><span>6</span></div>
+</section>
+
+<!-- 7 -->
+<section class="slide">
+  <h2>Neutral atoms</h2>
+  <ul>
+    <li style="font-size:24px">Uncharged atoms (rubidium, caesium) held in arrays of laser beams, "optical tweezers", in a vacuum cell.</li>
+    <li style="font-size:24px">Two-qubit gates excite atoms to large Rydberg states for a few hundred nanoseconds: 99.52% fidelity on up to 60 atoms in parallel (Harvard, MIT, QuEra, 2023).</li>
+    <li style="font-size:24px">Scale: 6,100 caesium atoms trapped with 12.6 s coherence (Caltech, 2025), without gates yet.</li>
+    <li style="font-size:24px">Atoms can be moved to change connectivity; moving and reading out atoms is slow, and atoms are sometimes lost.</li>
+  </ul>
+  <div class="foot"><span>Module 5 · Quantum hardware and careers</span><span>7</span></div>
+</section>
+
+<!-- 8 -->
+<section class="slide">
+  <h2>Silicon spin qubits: transistors that hold one electron</h2>
+  <ul>
+    <li style="font-size:23px">A gate electrode traps a single electron in a quantum dot a few tens of nanometres across, under gates much like a transistor's. Its spin, up or down in a magnetic field, is the qubit.</li>
+    <li style="font-size:23px">Intel's Tunnel Falls: 12 dots made on 300 mm wafers with EUV lithography; 96% of the devices tested reached the single-electron regime.</li>
+    <li style="font-size:23px">Diraq and imec (Nature, 2025): devices from a 300 mm foundry line with one- and two-qubit fidelities above 99%. A remaining error source is silicon-29, whose nuclear spins disturb the electron: purified silicon-28 helps.</li>
+    <li style="font-size:23px">Tiny and factory-made, but the largest arrays have only about a dozen qubits so far.</li>
+  </ul>
+  <div class="foot"><span>Module 5 · Quantum hardware and careers</span><span>8</span></div>
+</section>
+
+<!-- 9 -->
+<section class="slide">
+  <h2>Photons</h2>
+  <ul>
+    <li style="font-size:24px">Qubits carried by single photons or squeezed light in waveguides on silicon-photonics chips. Most of the hardware runs at room temperature; the photon detectors are cooled.</li>
+    <li style="font-size:24px">PsiQuantum (Nature, 2025): single-qubit preparation and measurement 99.98%, two-qubit fusion 99.22%, not counting photon loss.</li>
+    <li style="font-size:24px">Xanadu Aurora (Nature, 2025): 35 chips in four racks, 12 qubit modes per clock cycle, about 14 dB of loss end to end.</li>
+    <li style="font-size:24px">Loss is the main error: a lost photon is a lost qubit.</li>
+  </ul>
+  <div class="foot"><span>Module 5 · Quantum hardware and careers</span><span>9</span></div>
+</section>
+
+<!-- 10 -->
+<section class="slide">
+  <h2>The platforms side by side</h2>
+  <div class="cols">
+    <div style="flex:0 0 600px"><svg width="600" height="380" viewBox="0 0 600 380" aria-label="Published two-qubit errors against qubit count for the platforms"><line x1="70" y1="330.0" x2="568" y2="330.0" stroke="#E4DCE0"/><text x="62" y="335.0" font-size="14" text-anchor="end">0.0001</text><line x1="70" y1="206.0" x2="568" y2="206.0" stroke="#E4DCE0"/><text x="62" y="211.0" font-size="14" text-anchor="end">0.001</text><line x1="70" y1="82.0" x2="568" y2="82.0" stroke="#E4DCE0"/><text x="62" y="87.0" font-size="14" text-anchor="end">0.01</text><line x1="70" y1="330" x2="568" y2="330" stroke="#24313D" stroke-width="2"/><text x="70.0" y="350" font-size="14" text-anchor="middle">1</text><text x="194.5" y="350" font-size="14" text-anchor="middle">10</text><text x="319.0" y="350" font-size="14" text-anchor="middle">100</text><text x="443.5" y="350" font-size="14" text-anchor="middle">1,000</text><text x="568.0" y="350" font-size="14" text-anchor="middle">10,000</text><text x="319.0" y="372" font-size="15" text-anchor="middle" fill="#6A626B">qubits (log scale)</text><text x="16" y="175.0" font-size="15" text-anchor="middle" fill="#6A626B" transform="rotate(-90 16 175.0)">two-qubit error</text><circle cx="343.0" cy="193.1" r="7" fill="#99004C"/><text x="351.0" y="209.1" font-size="14" text-anchor="start" fill="#99004C">ibm_boston</text><circle cx="328.9" cy="148.1" r="7" fill="#99004C"/><text x="336.9" y="140.1" font-size="14" text-anchor="start" fill="#99004C">ibm_miami</text><circle cx="321.6" cy="141.7" r="7" fill="#99004C"/><text x="311.6" y="159.7" font-size="14" text-anchor="end" fill="#99004C">Willow</text><circle cx="317.9" cy="218.7" r="7" fill="#24313D"/><text x="325.9" y="223.7" font-size="14" text-anchor="start" fill="#24313D">Helios</text><circle cx="244.0" cy="131.3" r="7" fill="#24313D"/><text x="236.0" y="123.3" font-size="14" text-anchor="end" fill="#24313D">IonQ Aria</text><circle cx="291.4" cy="121.5" r="7" fill="#C08A00"/><text x="299.4" y="111.5" font-size="14" text-anchor="start" fill="#C08A00">Harvard/QuEra atoms</text><circle cx="107.5" cy="82.0" r="7" fill="#2E7D32"/><text x="117.5" y="87.0" font-size="14" text-anchor="start" fill="#2E7D32">silicon (bound)</text><circle cx="418" cy="230.8" r="6" fill="#99004C"/><text x="430" y="235.8" font-size="14">superconducting</text><circle cx="418" cy="250.8" r="6" fill="#24313D"/><text x="430" y="255.8" font-size="14">trapped ions</text><circle cx="418" cy="270.8" r="6" fill="#C08A00"/><text x="430" y="275.8" font-size="14">neutral atoms</text><circle cx="418" cy="290.8" r="6" fill="#2E7D32"/><text x="430" y="295.8" font-size="14">silicon spins</text></svg></div>
+    <div>
+      <p style="font-size:22px">Published two-qubit errors against qubit count, log scales. Lower is better.</p>
+      <p style="font-size:22px">The points are not all the same kind of number: medians, means, averages from benchmarking, a bound (silicon) and a fusion (photons).</p>
+      <p style="font-size:22px">No platform wins on every axis.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Module 5 · Quantum hardware and careers</span><span>10</span></div>
+</section>
+
+<!-- 11 -->
+<section class="slide">
+  <h2>An error budget</h2>
+  <div class="eq">P(no error) = (1 − e1)<sup>n1</sup> · (1 − e2)<sup>n2</sup> · (1 − e_ro)<sup>nm</sup></div>
+  <div class="cols">
+    <div style="flex:0 0 600px"><svg width="600" height="320" viewBox="0 0 600 320" aria-label="Probability of an error-free run for two circuits on five devices"><rect x="150" y="6" width="14" height="12" fill="#B9AEB4"/><text x="170" y="17" font-size="14">GHZ, 20 qubits</text><rect x="310" y="6" width="14" height="12" fill="#99004C"/><text x="330" y="17" font-size="14">20 layers, 50 qubits</text><text x="140" y="60" font-size="15" text-anchor="end">ibm_boston</text><rect x="150" y="34" width="343.4" height="22" fill="#B9AEB4"/><text x="499.4" y="50" font-size="14">0.881</text><rect x="150" y="58" width="138.3" height="22" fill="#99004C"/><text x="294.3" y="74" font-size="14">0.355</text><text x="140" y="114" font-size="15" text-anchor="end">ibm_miami</text><rect x="150" y="88" width="257.1" height="22" fill="#B9AEB4"/><text x="413.1" y="104" font-size="14">0.659</text><rect x="150" y="112" width="30.0" height="22" fill="#99004C"/><text x="186.0" y="128" font-size="14">0.077</text><text x="140" y="168" font-size="15" text-anchor="end">Willow</text><rect x="150" y="142" width="313.7" height="22" fill="#B9AEB4"/><text x="469.7" y="158" font-size="14">0.804</text><rect x="150" y="166" width="35.8" height="22" fill="#99004C"/><text x="191.8" y="182" font-size="14">0.092</text><text x="140" y="222" font-size="15" text-anchor="end">Helios</text><rect x="150" y="196" width="380.5" height="22" fill="#B9AEB4"/><text x="536.5" y="212" font-size="14">0.976</text><rect x="150" y="220" width="250.1" height="22" fill="#99004C"/><text x="406.1" y="236" font-size="14">0.641</text><text x="140" y="276" font-size="15" text-anchor="end">IonQ Aria</text><rect x="150" y="250" width="334.1" height="22" fill="#B9AEB4"/><text x="490.1" y="266" font-size="14">0.857</text><text x="156" y="290" font-size="13" fill="#6A626B">only 25 qubits</text><line x1="150" y1="30" x2="150" y2="298" stroke="#24313D" stroke-width="2"/></svg></div>
+    <div>
+      <p style="font-size:22px">A 20-qubit GHZ state runs error free most of the time on every device listed.</p>
+      <p style="font-size:22px">A 50-qubit circuit with 500 two-qubit gates separates them: 0.64 on Helios, 0.35 on ibm_boston, 0.09 on Willow.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Module 5 · Quantum hardware and careers</span><span>11</span></div>
+</section>
+
+<!-- 12 -->
+<section class="slide">
+  <h2>Pause and predict</h2>
+  <p>Device A reports a median two-qubit error of 0.2%. Device B advertises its best pair at 0.1%, with a median of 0.4%. Which do you expect to run a 50-qubit circuit with 300 two-qubit gates better?</p>
+  <div class="reveal"><button type="button">Show the answer</button>
+    <div class="ans">Device A. A 50-qubit circuit uses many pairs, so the median is the fair number: 0.998<sup>300</sup> ≈ 0.55 for A against 0.996<sup>300</sup> ≈ 0.30 for B. The best pair, 0.999<sup>300</sup> ≈ 0.74, describes one pair, not the circuit.</div></div>
+  <div class="foot"><span>Module 5 · Quantum hardware and careers</span><span>12</span></div>
+</section>
+
+<!-- 13 -->
+<section class="slide">
+  <h2>One chip, many qubits</h2>
+  <div class="cols">
+    <div style="flex:0 0 600px"><svg width="600" height="330" viewBox="0 0 600 330" aria-label="Histogram of the CZ errors of the pairs of ibm_boston"><line x1="60" y1="280" x2="580" y2="280" stroke="#24313D" stroke-width="2"/><rect x="113.0" y="255.6" width="15.3" height="24.4" fill="#B9AEB4"/><rect x="130.3" y="30.0" width="15.3" height="250.0" fill="#B9AEB4"/><rect x="147.7" y="30.0" width="15.3" height="250.0" fill="#B9AEB4"/><rect x="165.0" y="103.2" width="15.3" height="176.8" fill="#B9AEB4"/><rect x="182.3" y="133.7" width="15.3" height="146.3" fill="#B9AEB4"/><rect x="199.7" y="225.1" width="15.3" height="54.9" fill="#B9AEB4"/><rect x="217.0" y="231.2" width="15.3" height="48.8" fill="#B9AEB4"/><rect x="234.3" y="261.7" width="15.3" height="18.3" fill="#B9AEB4"/><rect x="251.7" y="255.6" width="15.3" height="24.4" fill="#B9AEB4"/><rect x="269.0" y="273.9" width="15.3" height="6.1" fill="#B9AEB4"/><rect x="286.3" y="273.9" width="15.3" height="6.1" fill="#B9AEB4"/><rect x="303.7" y="261.7" width="15.3" height="18.3" fill="#B9AEB4"/><rect x="321.0" y="273.9" width="15.3" height="6.1" fill="#B9AEB4"/><rect x="390.3" y="273.9" width="15.3" height="6.1" fill="#B9AEB4"/><rect x="459.7" y="273.9" width="15.3" height="6.1" fill="#B9AEB4"/><rect x="511.7" y="261.7" width="15.3" height="18.3" fill="#B9AEB4"/><rect x="529.0" y="273.9" width="15.3" height="6.1" fill="#B9AEB4"/><text x="146.7" y="300" font-size="14" text-anchor="middle">0.001</text><text x="320.0" y="300" font-size="14" text-anchor="middle">0.01</text><text x="493.3" y="300" font-size="14" text-anchor="middle">0.1</text><text x="320.0" y="322" font-size="15" text-anchor="middle" fill="#6A626B">CZ error of each pair (log scale)</text><text x="16" y="155.0" font-size="15" text-anchor="middle" fill="#6A626B" transform="rotate(-90 16 155.0)">pairs</text><line x1="164.7" y1="24" x2="164.7" y2="280" stroke="#24313D" stroke-width="3" stroke-dasharray="6 4"/><text x="168.7" y="38" font-size="14" fill="#24313D" text-anchor="start">median</text><line x1="122.9" y1="24" x2="122.9" y2="280" stroke="#C9A227" stroke-width="3"/><text x="116.9" y="54" font-size="14" fill="#C9A227" text-anchor="end">best</text><line x1="528.6" y1="24" x2="528.6" y2="280" stroke="#99004C" stroke-width="3"/><text x="522.6" y="70" font-size="14" fill="#99004C" text-anchor="end">worst</text></svg></div>
+    <div>
+      <p style="font-size:22px">The CZ error of each of the 175 usable pairs of ibm_boston: median 0.0013, best 0.00073, worst 0.16.</p>
+      <p style="font-size:22px">T1 runs from 6.8 µs to 404 µs around a median of 292 µs.</p>
+      <p style="font-size:22px">The transpiler uses this calibration to avoid the worst qubits.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Module 5 · Quantum hardware and careers</span><span>13</span></div>
+</section>
+
+<!-- 14 -->
+<section class="slide">
+  <h2>Coherence against speed</h2>
+  <div class="cols">
+    <div style="flex:0 0 600px"><svg width="600" height="300" viewBox="0 0 600 300" aria-label="Gate times within the coherence time, and time for 1,000 layers"><text x="120" y="18" font-size="15" fill="#6A626B">two-qubit gate times within T2</text><text x="110" y="52" font-size="15" text-anchor="end">ibm_boston</text><rect x="120" y="34" width="354.7" height="26" fill="#99004C"/><text x="480.7" y="52" font-size="14">5,191</text><text x="110" y="100" font-size="15" text-anchor="end">ibm_miami</text><rect x="120" y="82" width="119.8" height="26" fill="#99004C"/><text x="245.8" y="100" font-size="14">1,753</text><text x="110" y="148" font-size="15" text-anchor="end">IonQ Aria</text><rect x="120" y="130" width="113.9" height="26" fill="#24313D"/><text x="239.9" y="148" font-size="14">1,667</text><text x="120" y="198" font-size="15" fill="#6A626B">time for 1,000 layers of two-qubit gates</text><text x="110" y="224" font-size="15" text-anchor="end">ibm_boston</text><text x="120" y="224" font-size="15">68 µs</text><text x="110" y="252" font-size="15" text-anchor="end">ibm_miami</text><text x="120" y="252" font-size="15">138 µs</text><text x="110" y="280" font-size="15" text-anchor="end">IonQ Aria</text><text x="120" y="280" font-size="15">0.6 s</text></svg></div>
+    <div>
+      <p style="font-size:22px">IonQ Aria keeps its phase about 1 s, ibm_boston 353 µs. But a gate takes 600 µs on Aria and 68 ns on ibm_boston.</p>
+      <p style="font-size:22px">Two-qubit gate times within T2: 1,667 for Aria, 5,191 for ibm_boston. 1,000 layers take 0.6 s on Aria and 68 µs on ibm_boston.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Module 5 · Quantum hardware and careers</span><span>14</span></div>
+</section>
+
+<!-- 15 -->
+<section class="slide">
+  <h2>Who builds quantum computers?</h2>
+  <p style="font-size:23px">A survey of 57 quantum companies (Hughes and colleagues, IEEE Transactions on Education, 2022) listed 19 kinds of jobs, grouped here into three areas:</p>
+  <div class="cols">
+    <div class="card"><h3>Hardware</h3><p style="font-size:20px">device and component engineers, cryogenics, control systems, circuit design, photonics, test and measurement, technicians, experimental physicists</p></div>
+    <div class="card"><h3>Software</h3><p style="font-size:20px">software developers, algorithm developers, error-correction scientists, data scientists, computational chemists</p></div>
+    <div class="card"><h3>Business</h3><p style="font-size:20px">applications and solutions architects, sales and marketing, technical support</p></div>
+  </div>
+  <p style="font-size:22px;margin-top:14px">Most of the skills the companies rated important were not quantum: software development, electronics, circuit design, modelling, device testing.</p>
+  <div class="foot"><span>Module 5 · Quantum hardware and careers</span><span>15</span></div>
+</section>
+
+<!-- 16 -->
+<section class="slide">
+  <h2>Where semiconductor skills fit</h2>
+  <ul>
+    <li style="font-size:24px">Superconducting and silicon spin chips are made in cleanrooms with lithography, deposition, etching and metrology.</li>
+    <li style="font-size:24px">Silicon spin qubits come off 300 mm production lines; testing them uses wafer probers cooled to about 1.7 K.</li>
+    <li style="font-size:24px">Every platform needs microwave and RF engineering, cryogenics or vacuum, lasers and optics, and control electronics.</li>
+    <li style="font-size:24px">Technicians fabricate, assemble, test, operate and maintain these systems. QED-C's <em>Guide to Building a Quantum Technician Workforce</em> (2023) notes that companies often hire them from fields with shared skills: microelectronics, semiconductors and photonics.</li>
+  </ul>
+  <div class="foot"><span>Module 5 · Quantum hardware and careers</span><span>16</span></div>
+</section>
+
+<!-- 17 -->
+<section class="slide">
+  <h2>Try it: the Module 5 explorer</h2>
+  <ul>
+    <li style="font-size:24px">Tab 1: choose the qubits and layers of a circuit and compare its chance of an error-free run on each device. Switch IBM between median, best and worst qubits.</li>
+    <li style="font-size:24px">Tab 2: the calibration of every qubit and pair of ibm_boston and ibm_miami: T1, T2, gate and readout errors.</li>
+  </ul>
+  <p class="small" style="margin-top:20px">The explorer is on the Module 5 page in Canvas, below these slides.</p>
+  <div class="foot"><span>Module 5 · Quantum hardware and careers</span><span>17</span></div>
+</section>
+
+<!-- 18 -->
+<section class="slide">
+  <h2>Summary</h2>
+  <ul>
+    <li>Five platforms, one set of requirements: long-lived qubits, accurate gates and readout, and a path to scale.</li>
+    <li>Read every figure for what it is; compare medians with medians.</li>
+    <li>Two-qubit errors set the depth of a circuit: about 0.69/e2 gates halve the chance of an error-free run.</li>
+    <li>Coherence counts relative to gate time, and speed matters on its own.</li>
+    <li>Silicon spin qubits bring quantum computing into semiconductor fabs, and most quantum jobs need skills that are not quantum.</li>
+  </ul>
+  <p style="margin-top:16px">Next: the Module 5 lab. You write <code>circuit_success()</code>, <code>max_two_qubit_gates()</code> and <code>summarize()</code>.</p>
+  <div class="foot"><span>Module 5 · Quantum hardware and careers</span><span>18</span></div>
+</section>
+
+<!-- 19 -->
+<section class="slide">
+  <h2>Credits and license</h2>
+  <p style="font-size:22px">These slides were written for SemiAcademy's Quantum Computing Advanced course, developed through the Intel Semiconductor Education Program at Central State University (ISEP-CSU).</p>
+  <p style="font-size:22px">License: Creative Commons Attribution 4.0 International (CC BY 4.0), https://creativecommons.org/licenses/by/4.0/. You may copy, adapt and share them, with credit.</p>
+  <p style="font-size:22px">Suggested credit: "Module 5 slides, Quantum Computing Advanced, SemiAcademy / ISEP-CSU, CC BY 4.0."</p>
+  <p style="font-size:19px">Figures: IBM calibration data shipped in qiskit-ibm-runtime 0.50.0 (ibm_boston and ibm_miami, 17 April 2026); Google Quantum AI, Willow spec sheet; Quantinuum, arXiv:2511.05465; Azure Quantum documentation (IonQ); Evered et al., Nature 622, 268 (2023); Manetsch et al., Nature 647, 60 (2025); Steinacker et al., Nature 646, 81 (2025); George et al., arXiv:2410.16583; PsiQuantum, Nature (2025); Aghaee Rad et al., Nature 638, 912 (2025); Hughes et al., IEEE Trans. Educ. (2022); QED-C, Guide to Building a Quantum Technician Workforce (2023). Source: github.com/CSU-Physics/quantum-computing-notebooks (media/level3/m5-slides.html).</p>
+  <div class="foot"><span>Module 5 · Quantum hardware and careers</span><span>19</span></div>
+</section>
+
+</div></div>
+<div id="bar">
+  <button type="button" id="prev" aria-label="Previous slide">◀ Prev</button>
+  <span id="count">1 / 19</span>
+  <button type="button" id="next" aria-label="Next slide">Next ▶</button>
+  <button type="button" id="full">Full screen</button>
+  <button type="button" id="print">Print / PDF</button>
+</div>
+<script>
+(function () {
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide')), i = 0;
+  var m = /[#&]s=?(\d+)/.exec(location.hash); if (m) i = Math.min(slides.length - 1, Math.max(0, parseInt(m[1], 10) - 1));
+  function show(n) {
+    i = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach(function (s, j) { s.classList.toggle('on', j === i); });
+    document.getElementById('count').textContent = (i + 1) + ' / ' + slides.length;
+    try { history.replaceState(null, '', '#s' + (i + 1)); } catch (e) {}
+  }
+  function fit() {
+    var vp = document.getElementById('viewport'), st = document.getElementById('stage');
+    var sc = Math.min(vp.clientWidth / 1280, vp.clientHeight / 720);
+    st.style.transform = 'scale(' + sc + ')';
+  }
+  document.getElementById('prev').onclick = function () { show(i - 1); };
+  document.getElementById('next').onclick = function () { show(i + 1); };
+  document.getElementById('full').onclick = function () { var d = document.documentElement; if (!document.fullscreenElement && d.requestFullscreen) d.requestFullscreen(); else if (document.exitFullscreen) document.exitFullscreen(); };
+  document.getElementById('print').onclick = function () { window.print(); };
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { show(i + 1); e.preventDefault(); }
+    if (e.key === 'ArrowLeft' || e.key === 'PageUp') { show(i - 1); e.preventDefault(); }
+    if (e.key === 'Home') show(0); if (e.key === 'End') show(slides.length - 1);
+  });
+  var tx = null;
+  document.addEventListener('touchstart', function (e) { tx = e.touches[0].clientX; }, { passive: true });
+  document.addEventListener('touchend', function (e) { if (tx === null) return; var dx = e.changedTouches[0].clientX - tx; if (Math.abs(dx) > 50) show(i + (dx < 0 ? 1 : -1)); tx = null; });
+  document.getElementById('stage').addEventListener('click', function (e) {
+    var b = e.target.closest('.reveal button'); if (b) b.parentNode.classList.add('open');
+  });
+  window.addEventListener('resize', fit);
+  fit(); show(i);
+})();
+</script>
+</body>
+</html>
