@@ -1,0 +1,244 @@
+<!-- 1 -->
+<section class="slide title-slide">
+  <div class="kicker">Quantum Computing Advanced · Module 6</div>
+  <h1>Capstone: one experiment, done properly</h1>
+  <p style="font-size:30px;max-width:600px">Run an experiment on a noisy quantum computer, say how certain every number is, and say what it cannot show.</p>
+  <div style="position:absolute;right:60px;top:210px;width:460px">/*TITLE_FIG*/</div>
+  <div class="foot"><span>SemiAcademy · ISEP-CSU</span><span>CC BY 4.0</span></div>
+</section>
+
+<!-- 2 -->
+<section class="slide">
+  <h2>By the end of this module you can</h2>
+  <ul>
+    <li>plan and run one experiment on a noisy simulator: error correction, mitigation, simulation or classification;</li>
+    <li>give every measured number with its uncertainty from the shots;</li>
+    <li>combine uncertainties, and decide with the 3σ rule whether a difference is real;</li>
+    <li>weigh bias against shot noise when you choose a method;</li>
+    <li>report the experiment: question, method, result, interpretation and limits.</li>
+  </ul>
+  <p class="small" style="margin-top:24px">The capstone brings course outcomes 2, 3 and 4 together: a code, a mitigation and an application, in one experiment.</p>
+  <div class="foot"><span>Module 6 · Capstone</span><span>2</span></div>
+</section>
+
+<!-- 3 -->
+<section class="slide">
+  <h2>How the capstone works</h2>
+  <div class="cols">
+    <div class="card"><h3>1. Choose</h3><p>One of four experiments. Your Module 2 choice is a starting point; you can change it.</p></div>
+    <div class="card"><h3>2. Run</h3><p>The capstone notebook in your browser, about 5 hours. You write most of the code; a check cell gives your verification value.</p></div>
+    <div class="card"><h3>3. Report</h3><p>The capstone quiz for your experiment (20 points, pass at 16), and a short summary, required but not graded.</p></div>
+  </div>
+  <p style="font-size:24px;margin-top:22px">Only one capstone quiz counts. A real IBM run in Colab is optional and not graded.</p>
+  <div class="foot"><span>Module 6 · Capstone</span><span>3</span></div>
+</section>
+
+<!-- 4 -->
+<section class="slide">
+  <h2>The four experiments</h2>
+  <table style="font-size:21px">
+    <tr><th>Experiment</th><th>The question</th><th>From</th></tr>
+    <tr><td><strong>Repetition code</strong></td><td>Does a three-qubit code store a bit better than one qubit, and up to what noise level?</td><td>Module 2</td></tr>
+    <tr><td><strong>Mitigation study</strong></td><td>How close to 1 can readout mitigation and ZNE bring ⟨X X X⟩ of a GHZ state, and at what cost in shots?</td><td>Module 3</td></tr>
+    <tr><td><strong>Spin chain</strong></td><td>How many Trotter steps when every step adds noise, and how much does mitigation recover?</td><td>Module 4B</td></tr>
+    <tr><td><strong>Kernel classifier</strong></td><td>Does the quantum-kernel classifier survive the limits of a real run: 8 + 4 points, 1,000 shots?</td><td>Module 4A</td></tr>
+  </table>
+  <p class="small" style="margin-top:16px">Every notebook starts with the same Steps 0 to 2: Python, three statistics functions, the noise model.</p>
+  <div class="foot"><span>Module 6 · Capstone</span><span>4</span></div>
+</section>
+
+<!-- 5 -->
+<section class="slide">
+  <h2>The capstone noise model</h2>
+  <ul>
+    <li>Depolarizing error <strong>P2</strong> after every two-qubit gate, P2/10 after every one-qubit gate.</li>
+    <li>Readout: a 0 is read as 1 with probability <strong>READOUT</strong>, a 1 as 0 with 2 · READOUT.</li>
+    <li>An idle error on <code>id</code> gates (repetition code only).</li>
+    <li>Course values P2 = 0.01, READOUT = 0.02: several times worse than IBM's best devices, so effects show in a few thousand shots.</li>
+  </ul>
+  <div class="cols" style="margin-top:8px">
+    <div class="card"><h3>Exact</h3><p><code>exact_probabilities()</code>: the noise model's probability of every result, from the density matrix. The value to compare with.</p></div>
+    <div class="card"><h3>Sampled</h3><p><code>sample_counts()</code>: random shots drawn from those probabilities, as a quantum computer gives them.</p></div>
+  </div>
+  <div class="foot"><span>Module 6 · Capstone</span><span>5</span></div>
+</section>
+
+<!-- 6 -->
+<section class="slide">
+  <h2>Three formulas for the uncertainty of a result</h2>
+  <table style="font-size:25px">
+    <tr><th>What you measure</th><th>Standard deviation from S shots</th></tr>
+    <tr><td>a fraction, true probability p</td><td>σ = √( p (1 − p) / S )</td></tr>
+    <tr><td>an average of ±1 results, value E</td><td>σ = √( (1 − E²) / S )</td></tr>
+    <tr><td>a combination Σ cᵢ Eᵢ of independent results</td><td>σ = √( Σ (cᵢ σᵢ)² )</td></tr>
+  </table>
+  <p style="font-size:24px;margin-top:18px">Example: E = 0.8 from 4,000 shots has σ = √(0.36 / 4000) = 0.0095. The difference of two results has σ<sub>diff</sub> = √(σ₁² + σ₂²): uncertainties add <strong>in quadrature</strong>.</p>
+  <div class="foot"><span>Module 6 · Capstone</span><span>6</span></div>
+</section>
+
+<!-- 7 -->
+<section class="slide">
+  <h2>The 3σ rule</h2>
+  <ul>
+    <li>A measured value <strong>agrees</strong> with an expected one when they differ by at most 3σ.</li>
+    <li>A difference larger than 3σ<sub>diff</sub> is <strong>significant</strong>: shot noise alone almost never produces it.</li>
+    <li>A smaller difference may be real, but your data cannot show it. More shots shrink σ as 1/√S.</li>
+  </ul>
+  <div class="card" style="margin-top:10px"><h3>Two cautions</h3><p>The rule assumes a bell-shaped spread, which holds when many shots give each result. And with many comparisons, a chance "significant" difference becomes likely somewhere: with 20 comparisons, about 5%. Test a surprise again with new shots.</p></div>
+  <div class="foot"><span>Module 6 · Capstone</span><span>7</span></div>
+</section>
+
+<!-- 8 -->
+<section class="slide">
+  <h2>Pause and predict</h2>
+  <p>Zero-noise extrapolation combines three runs with weights 1.875, −1.25 and 0.375. Each run has σ of about 0.012 to 0.020. Is the extrapolated value more or less certain than a single run?</p>
+  <div class="reveal"><button type="button">Show the answer</button>
+    <div class="ans">Less certain. With σ = 0.012, 0.015 and 0.020: √((1.875 · 0.012)² + (1.25 · 0.015)² + (0.375 · 0.020)²) = 0.030, about twice the σ of any single run. Large weights multiply the shot noise: removing bias costs certainty.</div></div>
+  <div class="foot"><span>Module 6 · Capstone</span><span>8</span></div>
+</section>
+
+<!-- 9 -->
+<section class="slide">
+  <h2>Repetition code: is the code worth it?</h2>
+  <div class="cols">
+    <div style="flex:0 0 560px">/*REP_FIG*/</div>
+    <div>
+      <p style="font-size:23px">A memory experiment: encode 0, measure the syndrome for 1 to 5 rounds, decode by majority vote.</p>
+      <p style="font-size:23px">After 3 rounds the code's logical error is <strong>/*REP_E3*/</strong> against <strong>/*REP_B3*/</strong> for one qubit that waits as long.</p>
+      <p style="font-size:23px">Detection events (changes of the syndrome) are far more common than logical errors. Above P2 ≈ /*REP_CROSS*/ the code stops helping: its break-even.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Module 6 · Capstone</span><span>9</span></div>
+</section>
+
+<!-- 10 -->
+<section class="slide">
+  <h2>Mitigation study: removing bias step by step</h2>
+  <div class="cols">
+    <div style="flex:0 0 560px">/*MIT_FIG*/</div>
+    <div>
+      <p style="font-size:23px">⟨X X X⟩ of a GHZ state, ideally 1, under the course noise model; error bars for 4,000 shots per circuit.</p>
+      <p style="font-size:23px">Readout mitigation removes most of the bias; zero-noise extrapolation with global folding removes almost all of the rest.</p>
+      <p style="font-size:23px">Each step makes σ larger. ZNE alone, without the readout fix, reaches only /*MIT_LINRAW*/: folding does not amplify readout errors.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Module 6 · Capstone</span><span>10</span></div>
+</section>
+
+<!-- 11 -->
+<section class="slide">
+  <h2>Bias or shot noise: the shot budget</h2>
+  <div class="cols">
+    <div style="flex:0 0 580px">/*RMS_FIG*/</div>
+    <div>
+      <p style="font-size:23px">Root-mean-square error: <strong>RMS = √(bias² + σ²)</strong>. σ shrinks as 1/√shots; the bias does not.</p>
+      <p style="font-size:23px">Few shots: readout mitigation alone is best. From about <strong>/*CROSS1*/</strong> shots in all, linear ZNE wins; quadratic ZNE only from about <strong>/*CROSS2*/</strong>.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Module 6 · Capstone</span><span>11</span></div>
+</section>
+
+<!-- 12 -->
+<section class="slide">
+  <h2>Spin chain: more steps, more noise</h2>
+  <div class="cols">
+    <div style="flex:0 0 560px">/*SPIN_FIG*/</div>
+    <div>
+      <p style="font-size:23px">M(T = 2) for three spins, h = 0.7. Without noise, more Trotter steps are always better.</p>
+      <p style="font-size:23px">With noise, the raw value is best near /*SPIN_BEST_RAW*/ steps. Readout correction plus ZNE on the folded RZZ gates moves it close to the exact /*SPIN_EXACT*/, and the best number of steps after mitigation is /*SPIN_BEST*/.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Module 6 · Capstone</span><span>12</span></div>
+</section>
+
+<!-- 13 -->
+<section class="slide">
+  <h2>Pause and predict</h2>
+  <p>The readout maps a true ⟨Z⟩ = z to (1 − 3r) z + r. At 8 Trotter steps the raw magnetization is about 0.33. How much will the readout correction change it?</p>
+  <div class="reveal"><button type="button">Show the answer</button>
+    <div class="ans">Almost not at all. The map leaves z = 1/3 unchanged: (1 − 3r) · 1/3 + r = 1/3. M ≈ 0.33 sits next to this fixed point, so the correction moves it by about 0.0001. At t = 0, where M = 1, the same correction removes an error of 2r = 0.04.</div></div>
+  <div class="foot"><span>Module 6 · Capstone</span><span>13</span></div>
+</section>
+
+<!-- 14 -->
+<section class="slide">
+  <h2>Kernel classifier: noise the classifier ignores</h2>
+  <div class="cols">
+    <div style="flex:0 0 520px">/*KER_FIG*/</div>
+    <div>
+      <p style="font-size:23px">60 overlap circuits of 1,000 shots: 28 for training, 32 for testing. Noise lowers every entry, and K(x, x) is about /*KER_DIAG*/, not 1.</p>
+      <p style="font-size:23px">But noisy ≈ /*KER_A*/ · exact + /*KER_B*/: a straight line. Adding a constant and scaling (with C / a) leave the SVC's decisions unchanged.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Module 6 · Capstone</span><span>14</span></div>
+</section>
+
+<!-- 15 -->
+<section class="slide">
+  <h2>Pause and predict</h2>
+  <p>A classifier gets all 4 test points right. How often would a classifier that guesses at random do the same?</p>
+  <div class="reveal"><button type="button">Show the answer</button>
+    <div class="ans">(1/2)⁴ = 0.0625, about one time in 16. An accuracy measured on 4 points also has σ = √(p (1 − p) / 4): 0.15 for p = 0.9. On all 20 test points of the data set the quantum kernel scores /*KER_ACC20*/, with σ about 0.07.</div></div>
+  <div class="foot"><span>Module 6 · Capstone</span><span>15</span></div>
+</section>
+
+<!-- 16 -->
+<section class="slide">
+  <h2>Reporting an experiment</h2>
+  <table style="font-size:23px">
+    <tr><td><strong>Question</strong></td><td>What did you want to find out?</td></tr>
+    <tr><td><strong>Method</strong></td><td>Circuits, noise model (P2, READOUT), shots, mitigation or decoding</td></tr>
+    <tr><td><strong>Result</strong></td><td>Main numbers, each with its uncertainty: 0.976 ± 0.011</td></tr>
+    <tr><td><strong>Interpretation</strong></td><td>What the numbers say; which differences exceed 3σ</td></tr>
+    <tr><td><strong>Limits</strong></td><td>What the experiment does not show: model, size, decoder, data</td></tr>
+  </table>
+  <p style="font-size:23px;margin-top:16px">Your capstone summary has exactly these five parts. You submit it in the Course Completion module.</p>
+  <div class="foot"><span>Module 6 · Capstone</span><span>16</span></div>
+</section>
+
+<!-- 17 -->
+<section class="slide">
+  <h2>Optional: a real IBM quantum computer</h2>
+  <ul>
+    <li style="font-size:24px">The Module 6 hardware notebook in Colab runs your capstone's circuits on a real computer, or on a small fake device without an account.</li>
+    <li style="font-size:24px">The Open Plan gives up to 10 minutes of quantum computer time every 28 days; one capstone run uses well under a minute, plus the queue.</li>
+    <li style="font-size:24px">Your API key stays in Colab's Secrets. Never type it into a cell.</li>
+    <li style="font-size:24px">Folding needs <strong>barriers</strong> on hardware, or the transpiler removes U⁻¹U. Readout errors are measured with two calibration circuits, because they are not the course's.</li>
+  </ul>
+  <div class="foot"><span>Module 6 · Capstone</span><span>17</span></div>
+</section>
+
+<!-- 18 -->
+<section class="slide">
+  <h2>Try it: the Module 6 explorer</h2>
+  <ul>
+    <li style="font-size:24px">Tab 1: the shot budget. Choose the number of qubits and the total shots, and see which method of the mitigation study has the smallest RMS error.</li>
+    <li style="font-size:24px">Tab 2: combining uncertainties. Choose weights (a difference, linear or quadratic ZNE), set each run's value and σ, and test the result against an expected value with the 3σ rule.</li>
+  </ul>
+  <p class="small" style="margin-top:20px">The explorer is on the Module 6 page in Canvas, below these slides.</p>
+  <div class="foot"><span>Module 6 · Capstone</span><span>18</span></div>
+</section>
+
+<!-- 19 -->
+<section class="slide">
+  <h2>Summary</h2>
+  <ul>
+    <li>One experiment, run on a noisy simulator, compared with the noise model's exact prediction.</li>
+    <li>Every number with its σ; uncertainties of a combination add in quadrature.</li>
+    <li>A difference counts only if it exceeds 3σ<sub>diff</sub>.</li>
+    <li>Mitigation trades bias for σ: the best method depends on the shot budget.</li>
+    <li>A report states its limits.</li>
+  </ul>
+  <p style="margin-top:16px">Next: the page "Choose Your Capstone", then your capstone notebook.</p>
+  <div class="foot"><span>Module 6 · Capstone</span><span>19</span></div>
+</section>
+
+<!-- 20 -->
+<section class="slide">
+  <h2>Credits and license</h2>
+  <p style="font-size:22px">These slides were written for SemiAcademy's Quantum Computing Advanced course, developed through the Intel Semiconductor Education Program at Central State University (ISEP-CSU).</p>
+  <p style="font-size:22px">License: Creative Commons Attribution 4.0 International (CC BY 4.0), https://creativecommons.org/licenses/by/4.0/. You may copy, adapt and share them, with credit.</p>
+  <p style="font-size:22px">Suggested credit: "Module 6 slides, Quantum Computing Advanced, SemiAcademy / ISEP-CSU, CC BY 4.0."</p>
+  <p style="font-size:19px">Every number and figure was computed for the course with the capstone notebooks' exact noise model (course values P2 = 0.01, READOUT = 0.02). IBM Open Plan terms: IBM Quantum documentation, "Plans overview". Source: github.com/CSU-Physics/quantum-computing-notebooks (media/level3/m6-slides.html).</p>
+  <div class="foot"><span>Module 6 · Capstone</span><span>20</span></div>
+</section>
