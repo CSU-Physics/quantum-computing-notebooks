@@ -146,17 +146,18 @@
   <h2>Feedforward in code</h2>
   <div class="cols">
     <div style="flex:0 0 560px">
-      <div class="eq" style="font-size:20px;line-height:1.5;font-family:Consolas,'Courier New',monospace;white-space:pre">with qc.if_test((0, 1)):
-    with qc.if_test((1, 1)):
+      <div class="eq" style="font-size:20px;line-height:1.5;font-family:Consolas,'Courier New',monospace;white-space:pre">c = qc.clbits
+with qc.if_test((c[0], 1)):
+    with qc.if_test((c[1], 1)):
         qc.x(1)
-    with qc.if_test((1, 0)):
+    with qc.if_test((c[1], 0)):
         qc.x(0)
-with qc.if_test((0, 0)):
-    with qc.if_test((1, 1)):
+with qc.if_test((c[0], 0)):
+    with qc.if_test((c[1], 1)):
         qc.x(2)</div>
     </div>
     <div>
-      <p style="font-size:23px"><code>if_test((bit, value))</code> runs its block only in shots where that classical bit was measured as value. Nesting tests two bits.</p>
+      <p style="font-size:23px"><code>if_test((clbit, value))</code> runs its block only in shots where that classical bit was measured as value; <code>qc.clbits[0]</code> is classical bit 0. Nesting tests two bits.</p>
       <p style="font-size:23px">This needs hardware that measures a qubit, sends the result to classical electronics and acts on it while the other qubits wait: <strong>mid-circuit measurement</strong> and <strong>dynamic circuits</strong>, available on IBM's current devices.</p>
     </div>
   </div>
