@@ -81,7 +81,7 @@
 <!-- TOOL 2 -->
 <section class="tool" id="t-dist">
   <h2>Longer repetition codes and the threshold</h2>
-  <p class="hint">A repetition code of distance d uses d data qubits and corrects up to (d − 1)/2 bit flips. With perfect syndromes and flip probability p on each qubit, it fails when more than half the qubits flip. Move p and compare the distances.</p>
+  <p class="hint">A repetition code of bit-flip distance d uses d data qubits and corrects up to (d − 1)/2 bit flips. With perfect syndromes and flip probability p on each qubit, it fails when more than half the qubits flip. Move p and compare the distances.</p>
   <div class="grid">
     <div class="box">
       <h3>Flip probability</h3>
@@ -162,7 +162,7 @@
     if (bitOK && !zp) { v.className = 'verdict v-ok'; v.textContent = 'Back in the encoded state α|000⟩ + β|111⟩.'; }
     else if (bitL || (bitOK && zp) || (bitL && zp)) { v.className = 'verdict v-bad'; v.textContent = 'Logical error: still a code state, but the wrong one' + (bitL ? ' (all three qubits flipped: logical X)' : '') + (zp ? (bitL ? ' and' : '') + ' (a phase flip: logical Z)' : '') + '. The code cannot see it.'; }
     else { v.className = 'verdict v-warn'; v.textContent = 'Out of the code space: ' + w + ' qubit(s) still flipped. The next round would see it, but may correct it the wrong way.'; }
-    if (x[0] + x[1] + x[2] >= 2) m = 'Two or more flips give the syndrome of a different, single flip, so the correction completes a flip of all three qubits. The code has distance 3: it corrects one error, not two.';
+    if (x[0] + x[1] + x[2] >= 2) m = 'Two or more flips give the syndrome of a different, single flip, so the correction completes a flip of all three qubits. Against bit flips the code has distance 3: it corrects one flip, not two.';
     else if (st.m1 || st.m2) m = 'A misread syndrome bit makes the code apply a correction that is not needed, or the wrong one. That is why real codes measure the syndrome again and again before trusting it.';
     else if (z[0] + z[1] + z[2] > 0) m = 'Z errors do not change any parity, so the syndrome stays (0, 0). One Z error (or three) is a logical phase flip. Two Z errors cancel on α|000⟩ + β|111⟩: Z₀Z₁ is one of the parities the code measures, so it leaves every code state unchanged.';
     else m = 'Each single bit flip has its own syndrome: (1, 0) for qubit 0, (1, 1) for qubit 1, (0, 1) for qubit 2. The syndrome never depends on α or β.';

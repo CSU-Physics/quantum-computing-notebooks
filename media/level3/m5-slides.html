@@ -86,9 +86,10 @@
   <div class="cols">
     <div class="card"><h3>Qubits that last</h3><p>Two well-defined states that keep their phase (T2) much longer than a gate takes.</p></div>
     <div class="card"><h3>Gates and readout</h3><p>A universal gate set and a measurement, all with small errors.</p></div>
-    <div class="card"><h3>Room to grow</h3><p>Many qubits that can be prepared, wired, controlled and connected, ideally made in a factory.</p></div>
+    <div class="card"><h3>A known start</h3><p>Every qubit can be prepared in a known state, such as |0⟩.</p></div>
+    <div class="card"><h3>Room to grow</h3><p>Many well-characterized qubits that can be wired, controlled and connected, ideally made in a factory.</p></div>
   </div>
-  <p style="font-size:24px;margin-top:20px">These are DiVincenzo's criteria (2000), in short. Every platform meets them; they differ in how well, how fast and at what scale.</p>
+  <p style="font-size:24px;margin-top:20px">These are DiVincenzo's five criteria for computing (2000), in short. They are the yardstick for every platform in this module, which differ in how well, how fast and at what scale they meet them.</p>
   <div class="foot"><span>Module 5 · Quantum hardware and careers</span><span>3</span></div>
 </section>
 
@@ -98,7 +99,7 @@
   <table style="font-size:22px">
     <tr><td><strong>qubits</strong></td><td>how many, and which pairs can interact (connectivity)</td></tr>
     <tr><td><strong>e1, e2</strong></td><td>error per single-qubit and two-qubit gate (0.001 = 99.9% fidelity)</td></tr>
-    <tr><td><strong>e_ro</strong></td><td>readout error, or SPAM error (preparation and measurement)</td></tr>
+    <tr><td><strong>e_ro</strong></td><td>readout error (measurement only); some sources quote a SPAM error, which also includes state preparation</td></tr>
     <tr><td><strong>T1, T2</strong></td><td>energy relaxation and dephasing times (Module 1)</td></tr>
     <tr><td><strong>gate time</strong></td><td>how long an operation takes; with T2 it says how many gates fit</td></tr>
   </table>
@@ -182,12 +183,12 @@
 
 <!-- 11 -->
 <section class="slide">
-  <h2>An error budget</h2>
+  <h2>An error budget (an illustrative model)</h2>
   <div class="eq">P(no error) = (1 − e1)<sup>n1</sup> · (1 − e2)<sup>n2</sup> · (1 − e_ro)<sup>nm</sup></div>
   <div class="cols">
     <div style="flex:0 0 600px"><svg width="600" height="320" viewBox="0 0 600 320" aria-label="Probability of an error-free run for two circuits on five devices"><rect x="150" y="6" width="14" height="12" fill="#B9AEB4"/><text x="170" y="17" font-size="14">GHZ, 20 qubits</text><rect x="310" y="6" width="14" height="12" fill="#99004C"/><text x="330" y="17" font-size="14">20 layers, 50 qubits</text><text x="140" y="60" font-size="15" text-anchor="end">ibm_boston</text><rect x="150" y="34" width="343.4" height="22" fill="#B9AEB4"/><text x="499.4" y="50" font-size="14">0.881</text><rect x="150" y="58" width="138.3" height="22" fill="#99004C"/><text x="294.3" y="74" font-size="14">0.355</text><text x="140" y="114" font-size="15" text-anchor="end">ibm_miami</text><rect x="150" y="88" width="257.1" height="22" fill="#B9AEB4"/><text x="413.1" y="104" font-size="14">0.659</text><rect x="150" y="112" width="30.0" height="22" fill="#99004C"/><text x="186.0" y="128" font-size="14">0.077</text><text x="140" y="168" font-size="15" text-anchor="end">Willow</text><rect x="150" y="142" width="313.7" height="22" fill="#B9AEB4"/><text x="469.7" y="158" font-size="14">0.804</text><rect x="150" y="166" width="35.8" height="22" fill="#99004C"/><text x="191.8" y="182" font-size="14">0.092</text><text x="140" y="222" font-size="15" text-anchor="end">Helios</text><rect x="150" y="196" width="380.5" height="22" fill="#B9AEB4"/><text x="536.5" y="212" font-size="14">0.976</text><rect x="150" y="220" width="250.1" height="22" fill="#99004C"/><text x="406.1" y="236" font-size="14">0.641</text><text x="140" y="276" font-size="15" text-anchor="end">IonQ Aria</text><rect x="150" y="250" width="334.1" height="22" fill="#B9AEB4"/><text x="490.1" y="266" font-size="14">0.857</text><text x="156" y="290" font-size="13" fill="#6A626B">only 25 qubits</text><line x1="150" y1="30" x2="150" y2="298" stroke="#24313D" stroke-width="2"/></svg></div>
     <div>
-      <p style="font-size:22px">A 20-qubit GHZ state runs error free most of the time on every device listed.</p>
+      <p style="font-size:22px">Independent errors, each published error used as a failure probability: a toy comparison, not a device prediction. In it, a 20-qubit GHZ state runs error free most of the time on every device listed.</p>
       <p style="font-size:22px">A 50-qubit circuit with 500 two-qubit gates separates them: 0.64 on Helios, 0.35 on ibm_boston, 0.09 on Willow.</p>
     </div>
   </div>
