@@ -45,12 +45,20 @@ print("Ready. qsim", qsim.__version__, "| NumPy", np.__version__)"""),
     ]
 
 
-def step1_statistics():
+KERNEL_STEP1 = """In this capstone two kinds of numbers have an uncertainty, and they get it from different places. A **kernel entry** is a fraction of shots, so its uncertainty comes from the shots: the formulas below are for these. A classifier's **accuracy** is a fraction of **test points**: its uncertainty comes from how many points you test, not from the shots, and two classifiers tested on the same points are compared point by point (Step 6), not with the 3σ rule below.
+"""
+KERNEL_3SIGMA = """
+
+**Accuracies are reported differently.** Give an accuracy as a count, for example 4 of 4 or 18 of 20. Do not put an observed 4 of 4 into √(p (1 − p) / N): p = 1 gives σ = 0, a certainty that 4 points cannot give. If you need an interval, use one made for small counts, such as the Wilson interval (Step 6)."""
+
+
+def step1_statistics(track=None):
+    first = (KERNEL_STEP1 if track == "kernel" else
+             "Every number you measure in this capstone comes from shots, so every number has an uncertainty. Three formulas cover all of them.\n")
     return [
-        md("""## Step 1: how certain is a result from shots?
+        md("## Step 1: how certain is a result" + ("?" if track == "kernel" else " from shots?") + """
 
-Every number you measure in this capstone comes from shots, so every number has an uncertainty. Three formulas cover all of them.
-
+""" + first + """
 **A fraction.** If a result has probability p and you take S shots, the fraction f of shots with that result has standard deviation
 
 **σ = √( p (1 − p) / S )**.
@@ -67,7 +75,7 @@ This is twice the σ of the fraction of +1 results, because E = 2 f − 1. For E
 
 Uncertainties add **in quadrature**. The difference of two results is the special case c = (1, −1): σ_diff = √(σ₁² + σ₂²). Large coefficients, as in an extrapolation, make the combination much less certain than any single run: this is the price of mitigation you met in Module 3.
 
-**The course rule: 3σ.** A measured value agrees with an expected value when they differ by at most 3σ. A difference larger than 3σ_diff is **significant**: shot noise alone would almost never produce it. A smaller difference may be real, but your data cannot show it. Two cautions: the rule treats the spread as normal (bell-shaped), which is good when many shots give each result; and when you compare many settings, chance alone makes one "significant" difference likely somewhere (with 20 comparisons, about 5%). Treat a single surprising difference among many as a question to test again with new shots.
+**The course rule: 3σ.** A measured value agrees with an expected value when they differ by at most 3σ. A difference larger than 3σ_diff is **significant**: shot noise alone would almost never produce it. A smaller difference may be real, but your data cannot show it. Two cautions: the rule treats the spread as normal (bell-shaped), which is good when many shots give each result; and when you compare many settings, chance alone makes one "significant" difference likely somewhere (with 20 comparisons, about 5%). Treat a single surprising difference among many as a question to test again with new shots.""" + (KERNEL_3SIGMA if track == "kernel" else "") + """
 
 **Your task:** write the three functions below. Every later step uses them.
 
@@ -202,7 +210,13 @@ else:
     return code(hidden_check(["l3_m6_common", project_module], func, call))
 
 
-def ending(limits, quiz_name):
+def ending(limits, quiz_name, track=None):
+    result = ("Your main numbers: kernel entries with their uncertainty from the shots (for example 0.558 ± 0.016), and each accuracy as a count of test points "
+              "(for example 4 of 4, or 18 of 20), with a small-sample interval such as Wilson's if you give one."
+              if track == "kernel" else "Your main numbers, each with its uncertainty (for example 0.976 ± 0.010).")
+    interp = ("What do the numbers say about the question? For the classifiers, what does the point-by-point comparison on the same test points show? "
+              "Which kernel entries differ by more than 3σ?"
+              if track == "kernel" else "What do the numbers say about the question? Which differences are significant (more than 3σ)?")
     return [
         md("## Limits of this experiment\n\n" + limits + """
 
@@ -216,8 +230,8 @@ Write five short answers here (double-click this cell to edit it). They are how 
 
 1. **Question.** What did you want to find out?
 2. **Method.** Which circuits, which noise model (P2, READOUT), how many shots, which mitigation or decoding?
-3. **Result.** Your main numbers, each with its uncertainty (for example 0.976 ± 0.010).
-4. **Interpretation.** What do the numbers say about the question? Which differences are significant (more than 3σ)?
+3. **Result.** """ + result + """
+4. **Interpretation.** """ + interp + """
 5. **Limits.** What does this experiment not show?"""),
         md(f"""**Next in Canvas:** {quiz_name}, then the Module 6 time log."""),
     ]

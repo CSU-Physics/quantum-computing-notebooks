@@ -43,6 +43,18 @@ NDIS = ONLY_Q + ONLY_R
 P_SIGN = min(1.0, 2 * sum(math.comb(NDIS, i) for i in range(min(ONLY_Q, ONLY_R) + 1)) / 2 ** NDIS)
 assert (ONLY_Q, ONLY_R) == (6, 0) and 0.003 < P_SIGN < 0.05, (ONLY_Q, ONLY_R, P_SIGN)
 
+
+def wilson(k, n, z=1.96):
+    p = k / n
+    d = 1 + z * z / n
+    c, h = (p + z * z / (2 * n)) / d, z * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / d
+    return max(0.0, c - h), min(1.0, c + h)
+
+
+K20 = round(acc20["noisy"] * 20)
+W4, W20 = wilson(4, 4), wilson(K20, 20)
+assert K20 == 18 and abs(W4[0] - 0.510) < 0.001 and abs(W20[0] - 0.699) < 0.001 and abs(W20[1] - 0.972) < 0.001, (K20, W4, W20)
+
 cells = [
 intro("Quantum-kernel classifier within hardware limits",
       "Does the quantum-kernel classifier of Module 4 still work when every kernel entry comes from a noisy quantum computer "
@@ -56,7 +68,7 @@ intro("Quantum-kernel classifier within hardware limits",
 6. get your verification value (Step 7).""",
       "Question 1 gives you three personal numbers: PAIR, P2 and READOUT."),
 *step0("\nfrom sklearn.svm import SVC"),
-*step1_statistics(),
+*step1_statistics("kernel"),
 *step2_noise(),
 
 md(f"""## Step 3: one kernel entry
@@ -214,7 +226,7 @@ md(f"""## Step 6: why the noise does so little, and what 4 points can show
 
 The one part that is not a straight line is the **diagonal**, set to 1 instead of the noisy ≈ {NUM['diag']:.3f}. That adds a small constant to the diagonal only, which acts like a little extra regularization.
 
-**Four test points.** A test accuracy from 4 points is a fraction of 4, with σ = √(p (1 − p) / 4): for a true accuracy of 0.9 that is **0.15**. And a classifier that guesses at random gets all 4 right with probability (1/2)⁴ = **0.0625**. So 4 out of 4 is encouraging but weak evidence. Run the cell: it fits the line, shows that the SVC on a K + b with C / a gives the same decision values, and then tests the classifiers on all 20 test points of the data set (exact kernels, no shots), which a real run would pay for with 160 more circuits."""),
+**Four test points.** A test accuracy from 4 points is a fraction of 4, with σ = √(p (1 − p) / 4): for a true accuracy of 0.9 that is **0.15**. And a classifier that guesses at random gets all 4 right with probability (1/2)⁴ = **0.0625**. So 4 out of 4 is encouraging but weak evidence. Do not put the observed 4 of 4 into the formula: p = 1 gives σ = 0, a certainty that 4 points cannot give. Report \"4 of 4\" and say how few points that is. If you need an interval, use one made for small counts, such as the **Wilson interval**: for 4 of 4 its 95% range is {W4[0]:.2f} to {W4[1]:.2f}. The usual interval p ± 1.96 √(p (1 − p) / N), the normal approximation, behaves poorly for so few points. Run the cell: it fits the line, shows that the SVC on a K + b with C / a gives the same decision values, and then tests the classifiers on all 20 test points of the data set (exact kernels, no shots), which a real run would pay for with 160 more circuits."""),
 code("""Ke, Kn = kernels["exact"][0], kernels["noisy"][0]
 a, b = np.polyfit(Ke[off], Kn[off], 1)
 print(f"noisy = {a:.3f} x exact + {b:.3f};  spread around the line {np.std(Kn[off] - (a * Ke[off] + b)):.4f}")
@@ -230,11 +242,24 @@ print("decision values, a K + b with C / a: ", np.round(m2.decision_function(a *
 
 print("\\nWith 4 test points, sigma of an accuracy of 0.9:", round(fraction_sigma(0.9, 4), 3),
       "  chance of 4/4 by guessing:", 0.5 ** 4)
+
+
+def wilson(k, n, z=1.96):
+    \"\"\"95% Wilson interval for k successes in n trials: better than p +- 1.96 sigma when n is small.\"\"\"
+    p = k / n
+    d = 1 + z * z / n
+    c, h = (p + z * z / (2 * n)) / d, z * np.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / d
+    return round(float(max(0.0, c - h)), 2), round(float(min(1.0, c + h)), 2)
+
+
+print("95% Wilson interval for 4 of 4:", wilson(4, 4))
 X_all, y_all = np.array(DATA["X_test"]), np.array(DATA["y_test"])
 for name, est in (("exact", est_exact), ("noisy", est_noisy)):
     acc = SVC(kernel="precomputed", C=1).fit(kernels[name][0], y_train).score(test_kernel(X_all, X_train, est), y_all)
-    print(f"quantum, {name}: accuracy on all {len(y_all)} test points {acc:.2f}")
-print(f"classical RBF:  accuracy on all {len(y_all)} test points {rbf.score(X_all, y_all):.2f}")
+    k = int(round(acc * len(y_all)))
+    print(f"quantum, {name}: {k} of {len(y_all)} test points right, 95% Wilson interval {wilson(k, len(y_all))}")
+k = int(round(rbf.score(X_all, y_all) * len(y_all)))
+print(f"classical RBF:  {k} of {len(y_all)} test points right, 95% Wilson interval {wilson(k, len(y_all))}")
 pred_exact = SVC(kernel="precomputed", C=1).fit(kernels["exact"][0], y_train).predict(test_kernel(X_all, X_train, est_exact))
 pred_q = SVC(kernel="precomputed", C=1).fit(kernels["noisy"][0], y_train).predict(test_kernel(X_all, X_train, est_noisy))
 print(f"noisy and exact kernels give the same {len(y_all)} predictions: {bool(np.all(pred_q == pred_exact))}")
@@ -242,7 +267,7 @@ pred_r = rbf.predict(X_all)
 only_q = int(np.sum((pred_q == y_all) & (pred_r != y_all)))
 only_r = int(np.sum((pred_q != y_all) & (pred_r == y_all)))
 print(f"paired, same {len(y_all)} points: noisy quantum right and RBF wrong on {only_q}, RBF right and noisy quantum wrong on {only_r}")"""),
-md(f"""**What to notice.** The noisy entries follow K_noisy ≈ {NUM['slope']:.3f} K_exact + {NUM['icpt']:.3f} closely, and the SVC trained on a K + b with C / a gives exactly the same decision values as the exact kernel: the noise that looks like a straight line is invisible to the classifier. On all 20 test points the quantum kernels reach {NUM['acc20']['exact']:.2f} (exact) and {NUM['acc20']['noisy']:.2f} (noisy), against {NUM['acc20']['rbf']:.2f} for the RBF kernel: the 4-point result of 1.00 was optimistic. These accuracies describe this test set. Their uncertainty comes from which 20 points happen to be in it (about ± {(0.9 * 0.1 / 20) ** 0.5:.2f} for a true accuracy of 0.9), not from the shots, which here are not used at all.
+md(f"""**What to notice.** The noisy entries follow K_noisy ≈ {NUM['slope']:.3f} K_exact + {NUM['icpt']:.3f} closely, and the SVC trained on a K + b with C / a gives exactly the same decision values as the exact kernel: the noise that looks like a straight line is invisible to the classifier. On all 20 test points the quantum kernels reach {NUM['acc20']['exact']:.2f} (exact) and {NUM['acc20']['noisy']:.2f} (noisy), against {NUM['acc20']['rbf']:.2f} for the RBF kernel: the 4-point result of 1.00 was optimistic. These accuracies describe this test set. Their uncertainty comes from which 20 points happen to be in it, not from the shots, which here are not used at all: {K20} of 20 has a 95% Wilson interval of {W20[0]:.2f} to {W20[1]:.2f}.
 
 **Comparing the two classifiers.** Both are tested on the **same** 20 points, so their results are paired, not independent, and combined_sigma does not apply to the difference of their accuracies. Only the points where they disagree carry information. The cell compares the RBF kernel with the quantum kernel built from the **noisy** entries, the classifier a run would use (here without shot noise), and first checks that its 20 predictions are identical to those of the exact kernel, so the result holds for both. The noisy quantum kernel is right on {ONLY_Q} points where the RBF kernel is wrong, and the RBF kernel on {ONLY_R} where the quantum kernel is wrong. If the two were equally good, a split of {NDIS} disagreements as uneven as this would happen by chance with probability about {P_SIGN:.2f} (a two-sided sign test). That is suggestive, but weaker than the course's 3σ standard (a chance of about 0.003), and it is one data set built from the same feature map (see Limits). A claim about one particular run with 1,000-shot entries would repeat this comparison with that run's kernel; Step 5 showed its decision values move only a little. Comparing classifiers needs many more test points than a hardware run of this size allows."""),
 
@@ -258,7 +283,7 @@ check_cell(hidden_check, "l3_m6_kernel_check", "check_l3_m6_kernel",
 - **The noise model is simple.** Its depolarizing noise acts almost like a straight line on the kernel, which the SVC ignores. Coherent errors and drifting calibrations can distort the kernel in ways that are not a straight line, and the diagonal set to 1 hides how noisy the device is.
 - **Two qubits.** With more features, the circuits get deeper and the kernel values of different points get very small (they **concentrate** near 0), so far more shots are needed to tell them apart.
 - **No C search.** C = 1 was fixed. With so few points, cross-validation (Module 4) would be unreliable, which is itself a limit of small experiments.""",
-       "the **Capstone Quiz — Kernel Classifier**"),
+       "the **Capstone Quiz — Kernel Classifier**", track="kernel"),
 ]
 
 nb = nbf.v4.new_notebook(cells=cells, metadata=META)

@@ -220,7 +220,7 @@ rep = {"/*TITLE_FIG*/": title_fig(), "/*REP_FIG*/": rep_fig(), "/*MIT_FIG*/": mi
        "/*REP_E3*/": f"{enc[3]:.4f}", "/*REP_B3*/": f"{bare[3]:.4f}", "/*REP_CROSS*/": "0.037",
        "/*MIT_LINRAW*/": f"{MC.study(3, P2, RO)['zne_lin_raw']:.3f}", "/*CROSS1*/": f"{r2(cross1):,}", "/*CROSS2*/": f"{r2(cross2):,}",
        "/*SPIN_BEST_RAW*/": str(best_raw), "/*SPIN_EXACT*/": f"{EXACT_M:.3f}", "/*SPIN_BEST*/": str(best_mit),
-       "/*KER_DIAG*/": f"{kdiag:.2f}", "/*KER_A*/": f"{ka:.2f}", "/*KER_B*/": f"{kb:.2f}", "/*KER_ACC20*/": "0.90"}
+       "/*KER_DIAG*/": f"{kdiag:.2f}", "/*KER_A*/": f"{ka:.2f}", "/*KER_B*/": f"{kb:.2f}", "/*KER_ACC20*/": "18 of 20"}
 body = (ROOT / "tools/l3_m6_slides_body.html").read_text()
 for k, v in rep.items():
     assert k in body, k

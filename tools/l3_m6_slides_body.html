@@ -178,7 +178,7 @@
   <h2>Pause and predict</h2>
   <p>A classifier gets all 4 test points right. How often would a classifier that guesses at random do the same?</p>
   <div class="reveal"><button type="button">Show the answer</button>
-    <div class="ans">(1/2)⁴ = 0.0625, about one time in 16. An accuracy measured on 4 points also has σ = √(p (1 − p) / 4): 0.15 for p = 0.9. On all 20 test points of the data set the quantum kernel scores /*KER_ACC20*/, with σ about 0.07 from the choice of test points (not from the shots).</div></div>
+    <div class="ans">(1/2)⁴ = 0.0625, about one time in 16. Report it as 4 of 4: putting the observed p = 1 into √(p (1 − p) / 4) would give σ = 0. A small-sample (Wilson) 95% interval for 4 of 4 runs from 0.51 to 1.00. On all 20 test points the quantum kernel gets /*KER_ACC20*/ (Wilson interval 0.70 to 0.97); this uncertainty comes from the choice of test points, not from the shots.</div></div>
   <div class="foot"><span>Module 6 · Capstone</span><span>15</span></div>
 </section>
 
