@@ -42,7 +42,7 @@ print({k: (round(v, 5) if isinstance(v, float) else v) for k, v in NUM.items()})
 
 cells = [
 intro("Repetition code: syndrome statistics and the logical error",
-      "Does the three-qubit repetition code protect a stored bit better than a single qubit that waits as long, how does its "
+      "Does the three-qubit repetition code protect a stored bit better than a single unencoded qubit, how does its "
       "logical error grow with the number of syndrome rounds, and at which noise level does it stop helping?",
       """1. write the statistics functions every capstone uses (Step 1) and meet the capstone noise model (Step 2);
 2. build the **memory experiment**: encode, several rounds of syndrome measurement, a final measurement of the data (Step 3);
@@ -73,13 +73,13 @@ A **memory experiment** stores one bit and checks how well it survives. It is ho
 
 There is no correction during the circuit: the decoder reads everything afterwards. (Correcting with `if_test` in every round, as in Module 2, gives the same logical error for this code, because a correction only flips a data qubit the final majority vote would flip anyway.)
 
-**Your task:** write `memory_circuit(rounds, bit=0)`. The prepared cell after it defines `bare_circuit(rounds, bit)`, a single qubit that waits as long (one id gate per round), and the exact tools."""),
+**Your task:** write `memory_circuit(rounds, bit=0)`. The prepared cell after it defines `bare_circuit(rounds, bit)`, a single unencoded qubit with one idle error per round (one id gate), and the exact tools. This is a simple reference, not an equal-time or equal-hardware comparison: a real round of the code takes longer than one idle step, because of its CX gates, measurements and resets."""),
 code("""def memory_circuit(rounds, bit=0):
     \"\"\"The memory experiment: encode `bit`, `rounds` rounds of syndrome measurement, then measure the data.\"\"\"
     # YOUR CODE HERE
     raise NotImplementedError("Complete memory_circuit() first.")"""),
 code("""def bare_circuit(rounds, bit=0):
-    \"\"\"Prepared: an unencoded qubit that waits as long (one id gate per round), then a measurement.\"\"\"
+    \"\"\"Prepared: an unencoded qubit with one idle error per round (one id gate), then a measurement.\"\"\"
     qc = QuantumCircuit(1, 1)
     if bit:
         qc.x(0)
@@ -244,7 +244,7 @@ plt.plot(p2_values, code_err, "o-", label="repetition code, 3 rounds")
 plt.plot(p2_values, bare_err, "s--", label="bare qubit")
 plt.axvline(cross, color="grey", ls=":")
 plt.xlabel("P2 (and idle error)"); plt.ylabel("logical error"); plt.legend(); plt.tight_layout(); plt.show()"""),
-md(f"""**What to notice.** The code wins below P2 ≈ **{NUM['cross']:.3f}** and loses above it. This is the repetition code's version of a **threshold**: below it, encoding helps, and a longer code (distance 5, 7, ...) would help more; above it, more qubits and more gates only add errors. Real devices are well below this break-even for the bit-flip code (IBM's median CZ error is about 0.0013 to 0.003), which is why the repetition code works on hardware; the hard part is the surface code, which must correct phase flips as well."""),
+md(f"""**What to notice.** The code wins below P2 ≈ **{NUM['cross']:.3f}** and loses above it. This break-even belongs to this toy model and this comparison (one idle error per round for the bare qubit, the same depolarizing error on every gate): it is not a fault-tolerance threshold, and this experiment does not test whether longer codes would do better. It shows the idea behind a threshold: encoding helps only when the extra gates add fewer errors than the code removes."""),
 
 *personal_step(9, ["ROUNDS", "P2", "READOUT"], "ROUNDS (1 to 5), P2 and READOUT (0.005 to 0.030)",
                "ROUNDS, P2, READOUT = 3, 0.01, 0.02 gives " + str(R.personal_value(3, 0.01, 0.02)), None, None,
@@ -254,7 +254,8 @@ check_cell(hidden_check, "l3_m6_rep_check", "check_l3_m6_rep",
            "fraction_sigma, expectation_sigma, combined_sigma, memory_circuit, detection_events, decode,\n"
            "                                          ROUNDS, P2, READOUT"),
 *ending("""- **Only one kind of error is tested.** A stored 0 or 1 suffers only from bit flips. The noise model also makes phase flips, which this code cannot see; a superposition such as (|000⟩ + |111⟩)/√2 would lose its phase, as you saw in Module 2. A real memory must protect both, which needs a larger code such as the surface code.
-- **The decoder is simple.** The majority vote ignores the syndrome history. A decoder that uses the detection events in time (for example minimum-weight matching) can tell a measurement error from a data error and does better with more rounds.
+- **The decoder is simple.** The majority vote ignores the syndrome history. A decoder that uses the detection events in time (for example minimum-weight matching) is better at telling a likely measurement error from a likely data error.
+- **The comparison is a toy one.** The bare qubit gets one idle error per round, while a round of the code also has CX gates, measurements and resets that take time on hardware. The comparison is not equal in time or hardware, and the break-even of Step 8 holds for this model only.
 - **The noise model is simple.** Errors are independent and the same for every qubit and gate; real devices have crosstalk, leakage, drifting calibrations and errors that hit several qubits at once (and readout that disturbs neighbouring qubits).
 - **Exact values, sampled runs.** Your 4,000-shot run measures each rate with an uncertainty; small rates, such as the post-selected error, need far more shots for a precise value.
 - **No connectivity.** Here any qubit can share a CX with any other. On a heavy-hex chip the ancillas must sit next to the data qubits, which IBM's layouts allow for this code, but larger codes need careful layouts.""",

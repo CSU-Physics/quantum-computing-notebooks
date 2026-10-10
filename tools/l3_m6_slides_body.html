@@ -17,7 +17,7 @@
     <li>weigh bias against shot noise when you choose a method;</li>
     <li>report the experiment: question, method, result, interpretation and limits.</li>
   </ul>
-  <p class="small" style="margin-top:24px">The capstone brings course outcomes 2, 3 and 4 together: a code, a mitigation and an application, in one experiment.</p>
+  <p class="small" style="margin-top:24px">Each capstone builds on one of course outcomes 2, 3 and 4, and all four share the same skills: uncertainty, the 3σ rule and limits.</p>
   <div class="foot"><span>Module 6 · Capstone</span><span>2</span></div>
 </section>
 
@@ -104,8 +104,8 @@
     <div style="flex:0 0 560px">/*REP_FIG*/</div>
     <div>
       <p style="font-size:23px">A memory experiment: encode 0, measure the syndrome for 1 to 5 rounds, decode by majority vote.</p>
-      <p style="font-size:23px">After 3 rounds the code's logical error is <strong>/*REP_E3*/</strong> against <strong>/*REP_B3*/</strong> for one qubit that waits as long.</p>
-      <p style="font-size:23px">Detection events (changes of the syndrome) are far more common than logical errors. Above P2 ≈ /*REP_CROSS*/ the code stops helping: its break-even.</p>
+      <p style="font-size:23px">After 3 rounds the code's logical error is <strong>/*REP_E3*/</strong> against <strong>/*REP_B3*/</strong> for an unencoded qubit with one idle error per round.</p>
+      <p style="font-size:23px">Detection events (changes of the syndrome) are far more common than logical errors. Above P2 ≈ /*REP_CROSS*/ the code stops helping: its break-even in this model.</p>
     </div>
   </div>
   <div class="foot"><span>Module 6 · Capstone</span><span>9</span></div>
@@ -178,7 +178,7 @@
   <h2>Pause and predict</h2>
   <p>A classifier gets all 4 test points right. How often would a classifier that guesses at random do the same?</p>
   <div class="reveal"><button type="button">Show the answer</button>
-    <div class="ans">(1/2)⁴ = 0.0625, about one time in 16. An accuracy measured on 4 points also has σ = √(p (1 − p) / 4): 0.15 for p = 0.9. On all 20 test points of the data set the quantum kernel scores /*KER_ACC20*/, with σ about 0.07.</div></div>
+    <div class="ans">(1/2)⁴ = 0.0625, about one time in 16. An accuracy measured on 4 points also has σ = √(p (1 − p) / 4): 0.15 for p = 0.9. On all 20 test points of the data set the quantum kernel scores /*KER_ACC20*/, with σ about 0.07 from the choice of test points (not from the shots).</div></div>
   <div class="foot"><span>Module 6 · Capstone</span><span>15</span></div>
 </section>
 

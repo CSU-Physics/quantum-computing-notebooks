@@ -197,7 +197,7 @@
     <div>
       <p style="font-size:22px">Flip the qubit to |1⟩, wait a time t, measure; repeat for many waits. P(1) = e<sup>−t/T1</sup>, so ln P(1) is a straight line with slope −1/T1.</p>
       <p style="font-size:22px">On the simulator with T1 = 100 µs, 1,000 shots per wait: the fit gives <strong>/*T1FIT_VAL*/ µs</strong>. Shot noise moves each point; the long waits, with few counts, are the noisiest.</p>
-      <p class="small">T2 is measured the same way, starting from |+⟩ and measuring in the X basis (a Ramsey or echo experiment). Module 3 uses echoes to suppress errors.</p>
+      <p class="small">T2 is measured in a similar way, starting from |+⟩. The single exponential is a simplified model: IBM's calibration T2 comes from a Hahn-echo experiment, and a free (Ramsey) decay without the echo can be faster. Module 3 uses echoes to suppress errors.</p>
     </div>
   </div>
   <div class="foot"><span>Module 1 · Noise and open quantum systems</span><span>15</span></div>
@@ -223,6 +223,7 @@
   <div class="cols">
     <div style="flex:0 0 500px">
       <p style="font-size:23px">How close is ρ to the pure state |ψ⟩ you wanted? The <strong>fidelity</strong> F = ⟨ψ|ρ|ψ⟩: 1 if ρ = |ψ⟩⟨ψ|, ½ for I/2 against any pure state.</p>
+      <p class="small">This course uses this squared form. IBM's lessons define the fidelity as its square root, √⟨ψ|ρ|ψ⟩, which gives 0.707 for the same case.</p>
       <p style="font-size:23px"><strong>Tomography</strong> finds ρ from measurements: x, y and z from many copies measured in the X, Y and Z bases, each as (N₀ − N₁)/N. For X apply H first; for Y, S† and then H.</p>
     </div>
     <div>/*TOMO*/</div>

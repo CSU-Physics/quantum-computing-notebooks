@@ -12,7 +12,7 @@ from l3_hidden import hidden_check  # noqa: E402
 META = {"kernelspec": {"name": "python", "display_name": "Python (Pyodide)", "language": "python"},
         "language_info": {"name": "python"}}
 NAME = "QC-L3-M3-lab-error-mitigation.ipynb"
-VERSION = "2026-10-09"
+VERSION = "2026-10-10"
 
 
 def md(s): return nbf.v4.new_markdown_cell(s)
@@ -160,7 +160,7 @@ RAW = parity_expectation(probabilities(qc, nm, P_RO))
 print(f"raw <XX> with all the noise: {RAW:.3f}")"""),
 md("""**What to notice.** The detuning costs the most: each qubit turns by 10 × 0.05 = 0.5 rad around Z, the Bell state's two terms get a relative phase of 1 rad, and ⟨XX⟩ falls to about cos(1) ≈ 0.54. Dephasing alone gives about 0.87 (close to e^(−20/150)), the readout errors about 0.88, the CNOT error about 0.98. Together they bring ⟨XX⟩ from 1 down to **0.409**. The lab check asks for this raw value.
 
-Two of these errors are **coherent** (the same rotation every time) and two are **incoherent** (random). That difference decides which tool can fix them."""),
+Only one of these errors is **coherent** (the same rotation every time): the detuning. The other three, relaxation and dephasing, the readout errors and the CNOT error, are **incoherent** (random). That difference decides which tool can fix them."""),
 
 md("""## Step 3: suppression with dynamical decoupling
 
@@ -276,7 +276,7 @@ All three steps together raised ⟨XX⟩ from 0.409 to about 0.87, but not to 1.
 
 md("""## Step 6: the price of mitigation
 
-So far every number was exact. A real computer gives **shots**, and every estimate has a statistical error. Mitigation makes the average right but the scatter larger: inverting A amplifies small fluctuations, and extrapolation from three points amplifies them again (the fitted value at 0 lies outside the measured range).
+So far every number was exact. A real computer gives **shots**, and every estimate has a statistical error. Mitigation can bring the average much closer to the ideal value (it reduces the bias, as far as its assumptions hold), but it makes the scatter larger: inverting A amplifies small fluctuations, and extrapolation from three points amplifies them again (the fitted value at 0 lies outside the measured range).
 
 The cell repeats the whole experiment 300 times with 4,000 shots per circuit (sampled from the exact probabilities; the calibration matrix is measured with shots too) and compares the spread of three estimates of the same circuit with DD: no mitigation, readout mitigation, and readout mitigation with ZNE. *Predict first:* which estimate scatters the most?"""),
 code("""rng = np.random.default_rng(2026)
@@ -341,7 +341,7 @@ With Qiskit on IBM hardware you rarely write these functions yourself. The **Est
 - `options.resilience.zne_mitigation = True` runs ZNE, with `zne.noise_factors` such as (1, 3, 5) and an `extrapolator` such as "linear" or "exponential"; IBM amplifies noise by gate folding or by learning the noise first (probabilistic error amplification, **PEA**);
 - `options.resilience_level` sets them in bulk: 0 is none, 1 (the default) is readout mitigation, 2 adds ZNE.
 
-Each option costs shots or time, as in Step 6. Probabilistic error cancellation (**PEC**) goes further and removes the bias completely, at a cost that grows exponentially with circuit size.
+Each option costs shots or time, as in Step 6. Probabilistic error cancellation (**PEC**) goes further: if the noise model it learns is exact, it removes the bias completely, at a cost that grows exponentially with circuit size.
 
 The optional Colab notebook on the Module 3 page runs this experiment with the Estimator and these options, on a real IBM computer if you have an account, or on a small simulated device."""),
 

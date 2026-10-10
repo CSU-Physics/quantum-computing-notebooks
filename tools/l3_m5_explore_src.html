@@ -41,7 +41,7 @@
 <!-- TOOL 1 -->
 <section class="tool" id="t-budget">
   <h2>How likely is a circuit to run without any error?</h2>
-  <p class="hint">A circuit on n qubits with L layers. Each layer has one single-qubit gate on every qubit and a two-qubit gate on every pair of neighbours, n/2 of them; every qubit is measured at the end. The bars show P = (1 − e1)^n1 (1 − e2)^n2 (1 − e_ro)^nm with each device's published error rates (the same model as the lab). Grey rows have too few qubits.</p>
+  <p class="hint">A circuit on n qubits with L layers. Each layer has one single-qubit gate on every qubit and a two-qubit gate on every pair of neighbours, n/2 of them; every qubit is measured at the end. The bars show P = (1 − e1)^n1 (1 − e2)^n2 (1 − e_ro)^nm with each device's published error rates (the same illustrative model as the lab: published errors are averages, so the bars compare how errors add up, not how real devices rank). Grey rows have too few qubits.</p>
   <div class="grid">
     <div class="box">
       <h3>Circuit</h3>
@@ -143,9 +143,9 @@ var DATA = /*DATA*/;
       '<span>measurements nm</span><span class="v">' + nm + '</span>' +
       '<span>two-qubit gates for P = 0.5 at e2 = 0.001</span><span class="v">692</span>';
     $('bmsg').textContent = !best ? 'No listed device has ' + n + ' qubits with all three error rates published.'
-      : (MODE !== 'median' ? 'IBM rows now use the ' + MODE + ' qubit, pair and readout of the chip. A real circuit uses many qubits, so the median is the fair choice; the best values describe one pair, not the chip. '
+      : (MODE !== 'median' ? 'IBM rows now use the ' + MODE + ' qubit, pair and readout of the chip. A real circuit uses many qubits, so the median is the fair choice; the best qubit, pair and readout may not even sit together on the chip, so this combination is illustrative, not a circuit you could run. '
         : '') + (n2 > 300 ? 'With ' + n2 + ' two-qubit gates, small differences in e2 become large differences in P: the error rate is raised to the number of gates.'
-        : 'Highest here: ' + best[0] + ' (' + best[1].toFixed(3) + '). Add layers and watch the bars fall at different rates.');
+        : 'Highest in this model: ' + best[0] + ' (' + best[1].toFixed(3) + '). Add layers and watch the bars fall at different rates.');
   }
   $('bq').oninput = drawBudget; $('bl').oninput = drawBudget;
   document.querySelectorAll('[data-m]').forEach(function (b) { b.onclick = function () { MODE = b.dataset.m; drawBudget(); }; });

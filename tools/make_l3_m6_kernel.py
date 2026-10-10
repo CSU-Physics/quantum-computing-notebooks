@@ -1,6 +1,7 @@
 """Build the Level 3 Module 6 capstone notebook "Quantum-kernel classifier within hardware limits".
 Numbers quoted in the text are computed here from checks/l3_m6_kernel_check.py (exact, course noise model)."""
 import json
+import math
 import sys
 from pathlib import Path
 
@@ -33,8 +34,12 @@ acc4_rbf = SVC(kernel="rbf", C=1).fit(Xtr, ytr).score(Xte, yte)
 NUM = dict(k01=Ke[0, 1], k01n=Kn[0, 1], k10n=no(Xtr[1], Xtr[0]), slope=slope, icpt=icpt, diag=diag, acc20=acc20, acc4_rbf=acc4_rbf)
 print({k: (round(v, 4) if isinstance(v, float) else v) for k, v in NUM.items()})
 assert acc4_rbf == 0.25
-ZDIFF = (acc20["exact"] - acc20["rbf"]) / ((acc20["exact"] * (1 - acc20["exact"]) + acc20["rbf"] * (1 - acc20["rbf"])) / 20) ** 0.5
-assert ZDIFF < 3, ZDIFF
+pq = SVC(kernel="precomputed", C=1).fit(Ke, ytr).predict(K.reference_test_kernel(XT, Xtr, ex))
+pr = SVC(kernel="rbf", C=1).fit(Xtr, ytr).predict(XT)
+ONLY_Q, ONLY_R = int(((pq == yT) & (pr != yT)).sum()), int(((pq != yT) & (pr == yT)).sum())
+NDIS = ONLY_Q + ONLY_R
+P_SIGN = min(1.0, 2 * sum(math.comb(NDIS, i) for i in range(min(ONLY_Q, ONLY_R) + 1)) / 2 ** NDIS)
+assert (ONLY_Q, ONLY_R) == (6, 0) and 0.003 < P_SIGN < 0.05, (ONLY_Q, ONLY_R, P_SIGN)
 
 cells = [
 intro("Quantum-kernel classifier within hardware limits",
@@ -226,10 +231,16 @@ print("\\nWith 4 test points, sigma of an accuracy of 0.9:", round(fraction_sigm
 X_all, y_all = np.array(DATA["X_test"]), np.array(DATA["y_test"])
 for name, est in (("exact", est_exact), ("noisy", est_noisy)):
     acc = SVC(kernel="precomputed", C=1).fit(kernels[name][0], y_train).score(test_kernel(X_all, X_train, est), y_all)
-    print(f"quantum, {name}: accuracy on all {len(y_all)} test points {acc:.2f} +- {fraction_sigma(acc, len(y_all)):.2f}")
-acc = rbf.score(X_all, y_all)
-print(f"classical RBF:  accuracy on all {len(y_all)} test points {acc:.2f} +- {fraction_sigma(acc, len(y_all)):.2f}")"""),
-md(f"""**What to notice.** The noisy entries follow K_noisy ≈ {NUM['slope']:.3f} K_exact + {NUM['icpt']:.3f} closely, and the SVC trained on a K + b with C / a gives exactly the same decision values as the exact kernel: the noise that looks like a straight line is invisible to the classifier. On all 20 test points the quantum kernels reach {NUM['acc20']['exact']:.2f} (exact) and {NUM['acc20']['noisy']:.2f} (noisy), each ± about {(0.9 * 0.1 / 20) ** 0.5:.2f}, against {NUM['acc20']['rbf']:.2f} for the RBF kernel: the 4-point result of 1.00 was optimistic, as its σ warned. The difference between quantum and RBF here is {ZDIFF:.1f} σ_diff (combined_sigma of the two), below the 3σ of the course rule: with 20 test points, even a difference of {NUM['acc20']['exact'] - NUM['acc20']['rbf']:.2f} in accuracy is not significant. Comparing classifiers needs many more test points than a hardware run of this size allows."""),
+    print(f"quantum, {name}: accuracy on all {len(y_all)} test points {acc:.2f}")
+print(f"classical RBF:  accuracy on all {len(y_all)} test points {rbf.score(X_all, y_all):.2f}")
+pred_q = SVC(kernel="precomputed", C=1).fit(kernels["exact"][0], y_train).predict(test_kernel(X_all, X_train, est_exact))
+pred_r = rbf.predict(X_all)
+only_q = int(np.sum((pred_q == y_all) & (pred_r != y_all)))
+only_r = int(np.sum((pred_q != y_all) & (pred_r == y_all)))
+print(f"paired, same {len(y_all)} points: quantum right and RBF wrong on {only_q}, RBF right and quantum wrong on {only_r}")"""),
+md(f"""**What to notice.** The noisy entries follow K_noisy ≈ {NUM['slope']:.3f} K_exact + {NUM['icpt']:.3f} closely, and the SVC trained on a K + b with C / a gives exactly the same decision values as the exact kernel: the noise that looks like a straight line is invisible to the classifier. On all 20 test points the quantum kernels reach {NUM['acc20']['exact']:.2f} (exact) and {NUM['acc20']['noisy']:.2f} (noisy), against {NUM['acc20']['rbf']:.2f} for the RBF kernel: the 4-point result of 1.00 was optimistic. These accuracies describe this test set. Their uncertainty comes from which 20 points happen to be in it (about ± {(0.9 * 0.1 / 20) ** 0.5:.2f} for a true accuracy of 0.9), not from the shots, which here are not used at all.
+
+**Comparing the two classifiers.** Both are tested on the **same** 20 points, so their results are paired, not independent, and combined_sigma does not apply to the difference of their accuracies. Only the points where they disagree carry information: the quantum kernel is right on {ONLY_Q} points where the RBF kernel is wrong, and the RBF kernel on {ONLY_R} where the quantum kernel is wrong. If the two were equally good, a split of {NDIS} disagreements as uneven as this would happen by chance with probability about {P_SIGN:.2f} (a two-sided sign test). That is suggestive, but weaker than the course's 3σ standard (a chance of about 0.003), and it is one data set built from the same feature map (see Limits). Comparing classifiers needs many more test points than a hardware run of this size allows."""),
 
 *personal_step(7, ["PAIR", "P2", "READOUT"], "PAIR (1 to 28), P2 and READOUT (0.005 to 0.030)",
                "PAIR, P2, READOUT = 1, 0.01, 0.02 gives " + str(K.personal_value(1, 0.01, 0.02)), None, None,

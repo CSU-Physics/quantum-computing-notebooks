@@ -138,7 +138,7 @@ def ball():
     for (x, z), t, dx, dy in (((0, 1), "|0⟩", 0, -16), ((0, -1), "|1⟩", 0, 34), ((1, 0), "|+⟩", 34, 7), ((-1, 0), "|−⟩", -34, 7)):
         p += [dot(P, x, z, INK), label(P, x, z, t, dx, dy, 22)]
     p += [dot(P, 0, 0, MUTED, 8), label(P, 0, 0, "I/2", 0, 30, 20, MUTED)]
-    p += [dot(P, r_p[0], r_p[2], MAROON, 10), label(P, r_p[0], r_p[2], "¾|0⟩ + ¼|+⟩", -16, 6, 18, MAROON, "end")]
+    p += [dot(P, r_p[0], r_p[2], MAROON, 10), label(P, r_p[0], r_p[2], "75% |0⟩, 25% |+⟩", -14, 24, 15, MAROON, "end")]
     p.append(label(P, 0, -1, "pure states: on the edge; mixed: inside", 0, 70, 16, MUTED))
     p[0] = p[0].replace('height="470"', 'height="490"').replace("0 0 470 470", "0 0 470 490")
     p.append('</svg>')

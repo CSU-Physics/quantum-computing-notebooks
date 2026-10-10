@@ -1,7 +1,7 @@
 """Shared cells for the Level 3 Module 6 capstone notebooks (see make_l3_m6.py)."""
 import nbformat as nbf
 
-VERSION = "2026-10-09"
+VERSION = "2026-10-10"
 COLAB_BASE = "https://colab.research.google.com/github/CSU-Physics/quantum-computing-notebooks/blob/main/colab/level3/"
 HARDWARE_COLAB = COLAB_BASE + "QC-L3-M6-hardware-colab.ipynb"
 META = {"kernelspec": {"name": "python", "display_name": "Python (Pyodide)", "language": "python"},

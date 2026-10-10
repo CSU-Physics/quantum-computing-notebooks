@@ -158,7 +158,7 @@ with qc.if_test((0, 0)):
     <div style="flex:0 0 560px">/*DEVICE*/</div>
     <div>
       <p style="font-size:21px">Three rounds of the code, 4,000 shots of logical |0⟩, with the noise of five neighbouring qubits of ibm_pittsburgh (FakePittsburgh, simulated).</p>
-      <p style="font-size:21px">A <strong>detection event</strong> is a syndrome that differs from the round before. A misread ancilla gives a syndrome that appears in one round and is gone in the next; a real data flip changes the syndrome and keeps it changed.</p>
+      <p style="font-size:21px">A <strong>detection event</strong> is a syndrome that differs from the round before. A misread ancilla most likely gives a syndrome that appears in one round and is gone in the next; a real data flip most likely changes it and keeps it changed.</p>
       <p style="font-size:21px">A single data qubit reads wrong /*Q_RAW*/ of the time; the majority vote of the three is wrong only /*Q_VOTE*/.</p>
     </div>
   </div>
@@ -183,7 +183,7 @@ with qc.if_test((0, 0)):
     <div style="flex:0 0 420px">/*SURFACE*/</div>
     <div>
       <p style="font-size:21px">Data qubits on a square grid, with measure qubits between them that check X or Z parities of their neighbours only. Distance d needs d² data qubits; it corrects (d − 1)/2 errors.</p>
-      <p style="font-size:21px"><strong>Threshold:</strong> if every operation fails less often than a threshold (around 1% for the surface code), each increase of d lowers the logical error rate.</p>
+      <p style="font-size:21px"><strong>Threshold:</strong> if every operation fails less often than a threshold (around 1% for the surface code in common noise models; it depends on the code and the noise), each increase of d lowers the logical error rate.</p>
       <p style="font-size:21px">Google, 2024: surface codes of distance 3, 5 and 7 on its Willow chip; the distance-7 code (101 qubits) failed 0.143% of rounds, and each step d → d + 2 cut the error rate by a factor of 2.14.</p>
     </div>
   </div>
@@ -219,7 +219,7 @@ with qc.if_test((0, 0)):
   <h2>Summary</h2>
   <ul>
     <li style="font-size:23px">A code protects a qubit by entangling it with others and measuring only parities: the syndrome locates an error without revealing the state.</li>
-    <li style="font-size:23px">The three-qubit code corrects one bit flip (distance 3): failure 3p² − 2p³ with perfect syndromes. It cannot see phase flips; Shor's and stabilizer codes handle both.</li>
+    <li style="font-size:23px">The three-qubit code corrects one bit flip (bit-flip distance 3; as a quantum code [[3, 1, 1]]): failure 3p² − 2p³ with perfect syndromes. It cannot see phase flips; Shor's and stabilizer codes handle both.</li>
     <li style="font-size:23px">Noisy syndromes and noisy gates add errors: codes need repeated rounds, and operations below a threshold.</li>
     <li style="font-size:23px">Below threshold, bigger codes do better: Google's distance-7 surface code; IBM's qLDPC plans for Starling.</li>
   </ul>

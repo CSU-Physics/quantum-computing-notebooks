@@ -12,7 +12,7 @@ from l3_hidden import hidden_check  # noqa: E402
 META = {"kernelspec": {"name": "python", "display_name": "Python (Pyodide)", "language": "python"},
         "language_info": {"name": "python"}}
 NAME = "QC-L3-M5-lab-hardware-data.ipynb"
-VERSION = "2026-10-09"
+VERSION = "2026-10-10"
 
 
 def md(s): return nbf.v4.new_markdown_cell(s)
@@ -67,11 +67,11 @@ md("""**What to notice.** The figures are of different kinds. IBM's are medians 
 
 md("""## Step 2: an error budget for a circuit
 
-A simple model: every operation fails independently, with the error rate of its kind. A circuit with n1 single-qubit gates, n2 two-qubit gates and nm measurements then runs without any error with probability
+An illustrative model: every operation fails independently, with the error rate of its kind. A circuit with n1 single-qubit gates, n2 two-qubit gates and nm measurements then runs without any error with probability
 
 P = (1 − e1)^n1 · (1 − e2)^n2 · (1 − e_ro)^nm.
 
-The model ignores idle errors, crosstalk and leakage, and real errors do not always ruin the result, but it is a good first estimate. Write `circuit_success(e1, e2, e_ro, n1, n2, nm)`. The cell then applies it to two circuits on every device that has all three error rates and enough qubits: a 20-qubit GHZ state (1 H gate, 19 CNOTs, 20 measurements) and a 50-qubit circuit of 20 layers (1,000 single-qubit and 500 two-qubit gates, 50 measurements)."""),
+The model ignores idle errors, crosstalk and leakage, and real errors do not always ruin the result. Published gate errors are usually average infidelities, not literal failure probabilities, so P is a toy comparison of how fast errors add up, not a prediction of what a device will do or a ranking of real computers. Write `circuit_success(e1, e2, e_ro, n1, n2, nm)`. The cell then applies it to two circuits on every device that has all three error rates and enough qubits: a 20-qubit GHZ state (1 H gate, 19 CNOTs, 20 measurements) and a 50-qubit circuit of 20 layers (1,000 single-qubit and 500 two-qubit gates, 50 measurements)."""),
 code("""def circuit_success(e1, e2, e_ro, n1, n2, nm):
     \"\"\"Probability that n1 single-qubit gates, n2 two-qubit gates and nm measurements all run without error.\"\"\"
     # YOUR CODE HERE
@@ -85,7 +85,7 @@ for cname, (n1, n2, nm, nq) in CIRCUITS.items():
         if None in (p["e1"], p["e2"], p["e_ro"]) or (p["qubits"] or 0) < nq:
             continue
         print(f"   {p['name']:32s} P = {circuit_success(p['e1'], p['e2'], p['e_ro'], n1, n2, nm):.3f}")"""),
-md("""**What to notice.** For the GHZ state every listed device keeps most of its runs error free, from 0.659 (ibm_miami) to 0.976 (Helios). For the 20-layer circuit the differences grow: 0.641 for Helios, 0.355 for ibm_boston, below 0.1 for Willow and ibm_miami. Small differences in the error rate become large differences in deep circuits, because the error rate is raised to the number of gates. Two-qubit gates dominate: 500 of them at 0.3% error leave only (0.997)^500 ≈ 0.22."""),
+md("""**What to notice.** In this model, for the GHZ state every listed device keeps most of its runs error free, from 0.659 (ibm_miami) to 0.976 (Helios). For the 20-layer circuit the differences grow: 0.641 for Helios, 0.355 for ibm_boston, below 0.1 for Willow and ibm_miami. Small differences in the error rate become large differences in deep circuits, because the error rate is raised to the number of gates. Two-qubit gates dominate: 500 of them at 0.3% error leave only (0.997)^500 ≈ 0.22."""),
 
 md("""## Step 3: how many two-qubit gates?
 
@@ -101,7 +101,7 @@ code("""def max_two_qubit_gates(e2, target=0.5):
 for p in platforms:
     if p["e2"] is not None:
         print(f"{p['name']:34s} e2 = {p['e2']:<9.4g} at most {max_two_qubit_gates(p['e2']):4d} two-qubit gates")"""),
-md("""**What to notice.** From 68 gates (silicon, using the 1% bound) to 877 (Helios). None of these devices can run the millions of gates that useful algorithms such as Shor's need: that requires error correction (Module 2), which turns many physical qubits into fewer, better logical qubits. These numbers say how deep a circuit can be today **without** it, and why mitigation (Module 3) matters now."""),
+md("""**What to notice.** From 68 gates (silicon) to 877 (Helios). The silicon row uses e2 = 0.01, a conservative assumed value: the paper reports fidelities above 99%, so the real error is below 1% and the model's count for these devices would be higher, not lower. None of these devices can run the millions of gates that useful algorithms such as Shor's need: that requires error correction (Module 2), which turns many physical qubits into fewer, better logical qubits. These numbers say how deep a circuit can be today **without** it, and why mitigation (Module 3) matters now."""),
 
 md("""## Step 4: one chip, many qubits
 

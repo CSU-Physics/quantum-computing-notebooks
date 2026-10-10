@@ -28,9 +28,10 @@
   <div class="cols">
     <div class="card"><h3>Qubits that last</h3><p>Two well-defined states that keep their phase (T2) much longer than a gate takes.</p></div>
     <div class="card"><h3>Gates and readout</h3><p>A universal gate set and a measurement, all with small errors.</p></div>
-    <div class="card"><h3>Room to grow</h3><p>Many qubits that can be prepared, wired, controlled and connected, ideally made in a factory.</p></div>
+    <div class="card"><h3>A known start</h3><p>Every qubit can be prepared in a known state, such as |0⟩.</p></div>
+    <div class="card"><h3>Room to grow</h3><p>Many well-characterized qubits that can be wired, controlled and connected, ideally made in a factory.</p></div>
   </div>
-  <p style="font-size:24px;margin-top:20px">These are DiVincenzo's criteria (2000), in short. Every platform meets them; they differ in how well, how fast and at what scale.</p>
+  <p style="font-size:24px;margin-top:20px">These are DiVincenzo's five criteria for computing (2000), in short. They are the yardstick for every platform in this module, which differ in how well, how fast and at what scale they meet them.</p>
   <div class="foot"><span>Module 5 · Quantum hardware and careers</span><span>3</span></div>
 </section>
 
@@ -40,7 +41,7 @@
   <table style="font-size:22px">
     <tr><td><strong>qubits</strong></td><td>how many, and which pairs can interact (connectivity)</td></tr>
     <tr><td><strong>e1, e2</strong></td><td>error per single-qubit and two-qubit gate (0.001 = 99.9% fidelity)</td></tr>
-    <tr><td><strong>e_ro</strong></td><td>readout error, or SPAM error (preparation and measurement)</td></tr>
+    <tr><td><strong>e_ro</strong></td><td>readout error (measurement only); some sources quote a SPAM error, which also includes state preparation</td></tr>
     <tr><td><strong>T1, T2</strong></td><td>energy relaxation and dephasing times (Module 1)</td></tr>
     <tr><td><strong>gate time</strong></td><td>how long an operation takes; with T2 it says how many gates fit</td></tr>
   </table>
@@ -124,12 +125,12 @@
 
 <!-- 11 -->
 <section class="slide">
-  <h2>An error budget</h2>
+  <h2>An error budget (an illustrative model)</h2>
   <div class="eq">P(no error) = (1 − e1)<sup>n1</sup> · (1 − e2)<sup>n2</sup> · (1 − e_ro)<sup>nm</sup></div>
   <div class="cols">
     <div style="flex:0 0 600px">/*BUDGET_FIG*/</div>
     <div>
-      <p style="font-size:22px">A 20-qubit GHZ state runs error free most of the time on every device listed.</p>
+      <p style="font-size:22px">Independent errors, each published error used as a failure probability: a toy comparison, not a device prediction. In it, a 20-qubit GHZ state runs error free most of the time on every device listed.</p>
       <p style="font-size:22px">A 50-qubit circuit with 500 two-qubit gates separates them: /*HELIOS_L*/ on Helios, /*BOSTON_L*/ on ibm_boston, /*WILLOW_L*/ on Willow.</p>
     </div>
   </div>

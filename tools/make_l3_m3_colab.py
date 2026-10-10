@@ -9,7 +9,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "colab" / "level3"
 NAME = "QC-L3-M3-estimator-colab.ipynb"
-VERSION = "2026-10-09"
+VERSION = "2026-10-10"
 META = {"kernelspec": {"name": "python3", "display_name": "Python 3", "language": "python"},
         "language_info": {"name": "python"}, "colab": {"provenance": []}}
 
@@ -112,12 +112,12 @@ for name, opts in RUNS.items():
 
 md("""## Step 4: did each option help?
 
-Judge every step against its statistical error, as in the lab's Step 6: a change smaller than about two standard deviations is no change. The cell prints each step's change and whether it is larger than twice the combined error."""),
+Judge every step against its statistical error, as in the lab's Step 6. The cell prints each step's change and its combined error σ_diff, and applies the course's 3σ rule (Module 6): a change larger than 3σ_diff is significant, because shot noise alone almost never produces it. A smaller change may still be real, but this run cannot show it. The rule assumes the shot noise is roughly bell-shaped, which holds for many shots."""),
 code("""names = list(results)
 for a, b in zip(names, names[1:]):
     (va, sa), (vb, sb) = results[a], results[b]
     diff, err = vb - va, np.hypot(sa, sb)
-    verdict = "a real change" if abs(diff) > 2 * err else "within the statistical error"
+    verdict = "significant (more than 3 sigma_diff)" if abs(diff) > 3 * err else "not significant: this run cannot tell"
     print(f"{a:>20s} -> {b:20s} change {diff:+.3f} (error {err:.3f}): {verdict}")"""),
 
 md("""## What to look for

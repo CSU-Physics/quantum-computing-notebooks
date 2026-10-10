@@ -11,7 +11,7 @@ from l3_hidden import hidden_check  # noqa: E402
 META = {"kernelspec": {"name": "python", "display_name": "Python (Pyodide)", "language": "python"},
         "language_info": {"name": "python"}}
 NAME = "QC-L3-M2-lab-repetition-code.ipynb"
-VERSION = "2026-10-08"
+VERSION = "2026-10-10"
 
 
 def md(s): return nbf.v4.new_markdown_cell(s)
@@ -39,7 +39,7 @@ The **Module 2 lab check** in Canvas asks for results from this notebook, so kee
 
 md("""## Step 0: start Python
 
-Run the cell below. The first time, Python can take up to a minute to start in your browser. It also loads the saved device run used in Step 6."""),
+Run the cell below. The first time, Python can take up to a minute to start in your browser. It also loads the saved device run used in Step 7."""),
 code("""import json
 import numpy as np
 import matplotlib.pyplot as plt
@@ -179,7 +179,7 @@ for errors in [(), (0,), (1,), (2,), (0, 1), (1, 2)]:
     print(f"X errors on {str(list(errors)):8s} -> fidelity after correction {fidelity(one_round(theta, errors), theta):.4f}")
 print(f"sin^2(theta) = {np.sin(theta)**2:.4f}")
 one_round(theta).draw()"""),
-md("""**What to notice.** Every single flip is corrected exactly: fidelity 1. Two flips are "corrected" the wrong way: the syndrome of flips on qubits 0 and 1 is the same as that of one flip on qubit 2, so the correction completes a flip of all three qubits. That is a **logical** X, and the fidelity drops to sin²θ (it would be 0 for a basis state). A code with three qubits corrects any one error but not two: its **distance** is 3."""),
+md("""**What to notice.** Every single flip is corrected exactly: fidelity 1. Two flips are "corrected" the wrong way: the syndrome of flips on qubits 0 and 1 is the same as that of one flip on qubit 2, so the correction completes a flip of all three qubits. That is a **logical** X, and the fidelity drops to sin²θ (it would be 0 for a basis state). A code with three qubits corrects any one bit flip but not two: its **distance against bit flips** is 3. As a full quantum code its distance is only 1, because a single Z error is already an undetected logical error (Step 6)."""),
 
 md("""## Step 5: the code on a noisy simulator
 
@@ -221,7 +221,7 @@ md("""## Step 6: two limits of this code
 
 **(a) Phase flips.** The code watches for X errors only. A Z error on any qubit turns α|000⟩ + β|111⟩ into α|000⟩ − β|111⟩: both parities still agree, the syndrome is (0, 0), and nothing is corrected. The first cell shows it for |+⟩ encoded (θ = π/2), and then the **phase-flip code**: H gates after encoding (and before the syndrome) turn Z errors into X errors, so the same syndrome circuit catches them. Shor's nine-qubit code combines both ideas to correct any single-qubit error.
 
-**(b) Noisy gates.** The syndrome circuit itself uses four CNOTs, and each can cause errors. The second cell adds a depolarizing error of 1% to every CNOT (including the two of the encoder) and finds the **break-even point**: the flip probability p below which the code beats an unprotected qubit."""),
+**(b) Noisy gates.** The syndrome circuit itself uses four CNOTs, and each can cause errors. The second cell adds a depolarizing error of 1% to every CNOT (including the two of the encoder) and finds the **break-even point**: the flip probability p above which the code beats an unprotected qubit (below it, the CNOT errors cost more than the code removes)."""),
 code("""theta = np.pi / 2                                   # |+> encoded
 qc = QuantumCircuit(5, 2)
 qc.ry(theta, 0); encode(qc)
@@ -259,7 +259,7 @@ pb = break_even(0.01)
 print(f"With 1% CNOT errors: at p = 0.002 the code fails with {failure(0.002, 0, 0.01):.4f} (no code: 0.002)")
 print(f"                     at p = 0.10  the code fails with {failure(0.10, 0, 0.01):.4f} (no code: 0.10)")
 print(f"Break-even flip probability: p = {pb:.3f}")"""),
-md("""**What to notice.** (a) The bit-flip code is blind to the phase flip: syndrome 00, fidelity 0. The phase-flip code catches the same error and restores the state. (b) With noisy CNOTs the code adds errors of its own: for small p it does **worse** than an unprotected qubit, and it only helps once p is above about 0.033, the break-even point printed above (the lab check asks for it). The extra qubits and gates must be good enough for correction to win. This is the idea behind a **threshold**: below a certain error rate per operation, larger codes do better and better; above it, adding qubits makes things worse."""),
+md("""**What to notice.** (a) The bit-flip code is blind to the phase flip: syndrome 00, fidelity 0. The phase-flip code catches the same error and restores the state. (b) With noisy CNOTs the code adds errors of its own: for small p it does **worse** than an unprotected qubit, and it only helps once p is above about 0.033, the break-even point printed above (the lab check asks for it). The extra qubits and gates must be good enough for correction to win. This is the idea behind a **threshold**: if every operation is good enough, larger codes do better and better; if not, adding qubits makes things worse. The 0.033 here belongs to this simple model; real thresholds depend on the code, the operations and the noise."""),
 
 md("""## Step 7: three rounds with a real device's noise
 
@@ -292,7 +292,7 @@ for logical in (0, 1):
 
 top = sorted(run["counts_logical_0"].items(), key=lambda kv: -kv[1])[:8]
 print("\\nmost frequent records for logical 0:", top)"""),
-md("""**What to notice.** About 98% of the shots report syndrome 00 in each round, and the detection events grow a little from round to round as errors build up. Most nonzero syndromes appear in **one round only** and are gone in the next: these are mostly measurement errors on the ancillas, not real data errors. A real flip of a data qubit would make the syndrome change once and then **stay** changed. That is why decoders for real codes look at detection events across rounds rather than at one round's syndrome. In the final data, a single data qubit reads wrong about 1% of the time, but the majority vote of the three is wrong only about once in 4,000 shots: the code works on these qubits for bit flips. The lab check asks how many logical-0 shots show syndrome 00 in round 1.
+md("""**What to notice.** About 98% of the shots report syndrome 00 in each round, and the detection events grow a little from round to round as errors build up. Most nonzero syndromes appear in **one round only** and are gone in the next: this pattern most likely comes from measurement errors on the ancillas, not real data errors. A real flip of a data qubit would most likely make the syndrome change once and then **stay** changed. These patterns suggest a cause; they do not prove it. That is why decoders for real codes look at detection events across rounds rather than at one round's syndrome. In the final data, a single data qubit reads wrong about 1% of the time, but the majority vote of the three is wrong only about once in 4,000 shots: the code works on these qubits for bit flips. The run stores the basis states |000⟩ and |111⟩ only and applies no correction, so it tests bit-flip protection of a stored 0 or 1, not the protection of a superposition. The lab check asks how many logical-0 shots show syndrome 00 in round 1.
 
 This is a simulation of a device, not a real run. The course team may add a real run of the same circuits to this file; the analysis stays the same."""),
 

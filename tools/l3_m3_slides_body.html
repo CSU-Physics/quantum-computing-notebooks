@@ -26,7 +26,7 @@
   <h2>Three ways to fight noise</h2>
   <table style="font-size:21px">
     <tr><th></th><th>what it does</th><th>example</th><th>cost</th></tr>
-    <tr><td><strong>suppression</strong></td><td>changes the circuit so that less error happens</td><td>dynamical decoupling, better compilation</td><td>almost none</td></tr>
+    <tr><td><strong>suppression</strong></td><td>changes the circuit so that less error happens</td><td>dynamical decoupling, better compilation</td><td>no extra circuits; the extra pulses add a little error</td></tr>
     <tr><td><strong>mitigation</strong></td><td>runs extra circuits and corrects the <em>average</em> result afterwards</td><td>readout mitigation, zero-noise extrapolation</td><td>more circuits and shots; larger statistical error</td></tr>
     <tr><td><strong>correction</strong></td><td>finds and fixes errors in each shot, while the circuit runs</td><td>the repetition code, the surface code</td><td>many qubits per logical qubit</td></tr>
   </table>
@@ -168,7 +168,7 @@
   <div class="cols">
     <div style="flex:0 0 560px">/*STD_BARS*/</div>
     <div>
-      <p style="font-size:22px">300 repeats of the experiment, 4,000 shots per circuit. The averages are right, but the scatter grows: about /*AMP*/ times for ZNE, so about /*AMP2*/ times the shots per circuit, on three circuits instead of one.</p>
+      <p style="font-size:22px">300 repeats of the experiment, 4,000 shots per circuit. The averages land close to the exact values, but the scatter grows: about /*AMP*/ times for ZNE, so about /*AMP2*/ times the shots per circuit, on three circuits instead of one.</p>
       <p style="font-size:22px"><strong>Mitigation trades bias for variance.</strong> The stronger the noise it removes, the higher the price; for large circuits it grows quickly.</p>
     </div>
   </div>
@@ -209,7 +209,7 @@
   <h2>Did it help? Judge each step</h2>
   <ul>
     <li style="font-size:23px">Compare with a value you know: an ideal value from a simulator, a symmetry, or a circuit run forwards and backwards (which should return to the start).</li>
-    <li style="font-size:23px">Report every estimate with its <strong>statistical error</strong>. A change smaller than the error is no change (the echo on FakePittsburgh).</li>
+    <li style="font-size:23px">Report every estimate with its <strong>statistical error</strong>. A change well within the error of the difference is not evidence of a change (the echo on FakePittsburgh); it may be real, but the data cannot show it.</li>
     <li style="font-size:23px">Check the fit: points that do not follow a smooth curve, or a value outside [−1, 1], mean the extrapolation cannot be trusted.</li>
     <li style="font-size:23px">Say what is left: here, dephasing during the wait. Mitigation cannot beat the decoherence it does not touch.</li>
   </ul>

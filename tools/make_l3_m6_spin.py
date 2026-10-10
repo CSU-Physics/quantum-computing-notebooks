@@ -39,6 +39,7 @@ print("exact", round(EXACT, 4), "best raw", best_raw, "best mitigated", best_mit
       {s: (round(ST[s]["ideal"], 4), round(ST[s]["raw"][1], 4), round(ST[s]["corrected"][1], 4), round(ST[s]["mitigated"], 4),
            round(SIG[s][0], 4), round(SIG[s][1], 4)) for s in STEP_LIST})
 assert best_mit == 6
+assert all(abs(ST[b]["ideal"] - EXACT) < abs(ST[a]["ideal"] - EXACT) for a, b in zip(STEP_LIST, STEP_LIST[1:]))
 assert max(ST[s]["mitigated"] for s in (4, 6, 8, 10)) - min(ST[s]["mitigated"] for s in (4, 6, 8, 10)) < SIG[8][1]
 TS = [(0.25 * k, P.exact_magnetization(3, 0.7, 0.25 * k), P.study(k, P2, RO, T=0.25 * k)["mitigated"]) for k in range(1, 13)]
 gaps = [e - m for _, e, m in TS]
@@ -138,7 +139,7 @@ print("Exact M(2.0) =", round(M_EXACT, 4))
 for steps in [2, 4, 6, 8, 10, 12]:
     ideal = magnetization(exact_probabilities(measured(trotter_circuit(N, H_FIELD, T, steps)), 0, 0))
     print(f"   {steps:2d} Trotter steps, no noise: M = {ideal:.4f}   Trotter error {ideal - M_EXACT:+.4f}")"""),
-md(f"""**What to notice.** With 2 steps (dt = 1) the Trotter circuit gives {ST[2]['ideal']:.4f}, far from {EXACT:.4f}; with 8 steps it gives {ST[8]['ideal']:.4f}, and the error keeps shrinking roughly as dt. Without noise, more steps is always better."""),
+md(f"""**What to notice.** With 2 steps (dt = 1) the Trotter circuit gives {ST[2]['ideal']:.4f}, far from {EXACT:.4f}; with 8 steps it gives {ST[8]['ideal']:.4f}, and the error keeps shrinking roughly as dt. Without noise, every step added in this range (2 to 12) brought the value closer to the exact one."""),
 
 md("""## Step 4: more steps, more noise
 
@@ -154,7 +155,7 @@ for steps in [2, 4, 6, 8, 10, 12]:
     sg = magnetization_sigma(probs_by_steps[steps], 4000)
     print(f"{steps:6d}{2 * steps:5d}{ideal:10.4f}{raw_exact[steps]:14.4f}{run:11.4f} +- {sg:.4f}{raw_exact[steps] - M_EXACT:+16.4f}")
 print("Exact M(2.0) =", round(M_EXACT, 4))"""),
-md(f"""**What to notice.** The noisy value first gets closer to the exact {EXACT:.4f} as the Trotter error shrinks, then falls away as the gate noise builds up: the raw value is best at about **{best_raw} steps** ({ST[best_raw]['raw'][1]:.4f}), and at 8 steps it is **{s8['raw'][1]:.4f}**. This trade-off decides the number of steps on every real device: the best dt is set by the noise, not by the mathematics. Noise pulls every ⟨Zᵢ⟩ toward 0, so it pulls M toward 0, here downward. With σ ≈ {SIG[8][0] * (1 - 3 * RO):.3f} for 4,000 shots, neighbouring step numbers are hard to tell apart from a single run."""),
+md(f"""**What to notice.** The noisy value first gets closer to the exact {EXACT:.4f} as the Trotter error shrinks, then falls away as the gate noise builds up: the raw value is best at about **{best_raw} steps** ({ST[best_raw]['raw'][1]:.4f}), and at 8 steps it is **{s8['raw'][1]:.4f}**. In this model the noise, not the mathematics alone, sets the best dt; a real device has the same trade-off with its own numbers. Noise pulls every ⟨Zᵢ⟩ toward 0, so it pulls M toward 0, here downward. With σ ≈ {SIG[8][0] * (1 - 3 * RO):.3f} for 4,000 shots, neighbouring step numbers are hard to tell apart from a single run."""),
 
 md("""## Step 5: correct the readout
 
@@ -224,7 +225,7 @@ for steps in [2, 4, 6, 8, 10, 12]:
     vals = ", ".join(f"{corr[s]:.3f}" for s in SCALES)
     print(f"{steps:6d}{vals:>28s}{m_exact:18.4f}{m_run:11.4f} +- {sg:.4f}{m_exact - M_EXACT:+9.4f}")
 print("Exact M(2.0) =", round(M_EXACT, 4), "  best number of steps after mitigation:", min(mit, key=lambda s: abs(mit[s] - M_EXACT)))"""),
-md(f"""**What to notice.** Mitigation moves the 8-step value from {s8['corrected'][1]:.4f} to **{s8['mitigated']:.4f}**, and the best number of steps rises to **{best_mit}** ({ST[best_mit]['mitigated']:.4f}): once the noise is partly removed, more steps can be afforded. What remains (about {EXACT - ST[best_mit]['mitigated']:.3f} at {best_mit} steps) is the Trotter error, the RX noise that was not folded, and the curvature that a straight line misses. The price is in σ: about {SIG[8][1]:.3f} for the mitigated value against {SIG[8][0] * (1 - 3 * RO):.3f} for the raw one, with three times the shots. Compare the error column with σ: from 4 to 10 steps the exact mitigated values differ by less than one σ, so a single run could not pick the best one; the exact noise model can."""),
+md(f"""**What to notice.** Mitigation moves the 8-step value from {s8['corrected'][1]:.4f} to **{s8['mitigated']:.4f}**, {'and the best number of steps rises to **' + str(best_mit) + '**' if best_mit > best_raw else 'and the best number of steps stays at **' + str(best_mit) + '**, as for the raw values,'} ({ST[best_mit]['mitigated']:.4f}); the curve beyond it is flatter, because extra steps now cost less. What remains (about {EXACT - ST[best_mit]['mitigated']:.3f} at {best_mit} steps) is the Trotter error, the RX noise that was not folded, and the curvature that a straight line misses. The price is in σ: about {SIG[8][1]:.3f} for the mitigated value against {SIG[8][0] * (1 - 3 * RO):.3f} for the raw one, with three times the shots. Compare the error column with σ: from 4 to 10 steps the exact mitigated values differ by less than one σ, so a single run could not pick the best one; the exact noise model can."""),
 
 md("""## Step 7: the magnetization in time
 
