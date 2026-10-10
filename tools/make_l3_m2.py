@@ -141,12 +141,14 @@ md("""## Step 4: correcting with feedforward
 Now act on the syndrome, in the same shot: apply X to the qubit the syndrome points to. A gate that depends on a measurement result made earlier in the circuit is **feedforward**; in Qiskit and qsim it is written with `if_test`, as in the teleportation circuit of Level 2:
 
 ```python
-with qc.if_test((0, 1)):        # runs only when classical bit 0 is 1
-    with qc.if_test((1, 1)):    # ... and classical bit 1 is 1
+with qc.if_test((qc.clbits[0], 1)):        # runs only when classical bit 0 is 1
+    with qc.if_test((qc.clbits[1], 1)):    # ... and classical bit 1 is 1
         qc.x(1)
 ```
 
-**Your task:** write `correct(qc)` for all three single-flip syndromes: (s₁, s₂) = (1, 0) → X on qubit 0; (1, 1) → X on qubit 1; (0, 1) → X on qubit 2; (0, 0) → nothing. Nest one `if_test` inside another to test both bits (`with qc.if_test((1, 0)):` tests for bit 1 being 0)."""),
+`qc.clbits[0]` is classical bit 0, the form in Qiskit's documentation of `if_test`. Qiskit and qsim also accept the plain index, `qc.if_test((0, 1))`, but the explicit bit is the portable choice.
+
+**Your task:** write `correct(qc)` for all three single-flip syndromes: (s₁, s₂) = (1, 0) → X on qubit 0; (1, 1) → X on qubit 1; (0, 1) → X on qubit 2; (0, 0) → nothing. Nest one `if_test` inside another to test both bits (`with qc.if_test((qc.clbits[1], 0)):` tests for bit 1 being 0)."""),
 code("""def correct(qc):
     \"\"\"Apply X to the data qubit that the syndrome in classical bits 0 and 1 points to.\"\"\"
     # YOUR CODE HERE
